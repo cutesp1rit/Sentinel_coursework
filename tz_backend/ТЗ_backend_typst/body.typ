@@ -1,4 +1,5 @@
 #import "data.typ": data
+#show figure: set block(breakable: true)
 
 = ВВЕДЕНИЕ
 == Наименование программы
@@ -516,12 +517,12 @@
         ),
 
         [Отображение событий], plus, plus, plus, plus, plus, plus, plus, plus,
-        [Генерация событий через ИИ], minus, minus, minus, plus, minus, minus, minus, plus,
+        [Генерация через ИИ], minus, minus, minus, plus, minus, minus, minus, plus,
         [Интеграция с Apple Calendar], minus, plus, minus, minus, minus, plus, minus, plus,
         [Ребалансировка расписания], minus, minus, plus, plus, minus, minus, minus, plus,
         [Модель энергии дня], minus, minus, minus, minus, minus, minus, minus, plus,
         [Достижения/геймификация], minus, minus, minus, minus, plus, minus, minus, plus,
-        [Кроссплатформенность], plus, plus, plus, plus, plus, minus, plus, minus,
+        [Кроссплатф.], plus, plus, plus, plus, plus, minus, plus, minus,
         [Уведомления], plus, plus, plus, plus, plus, plus, plus, plus,
     )
 )
