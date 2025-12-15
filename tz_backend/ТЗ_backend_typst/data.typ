@@ -2,7 +2,7 @@
   // Project code
   // Example: "01-01"
   // You can find it here: https://ru-ikt.ru/reestrpo
-  code: "01-01",
+  code: "06.05",
 
   // Project name
   // Example: "Учимся закупать ТОН"
