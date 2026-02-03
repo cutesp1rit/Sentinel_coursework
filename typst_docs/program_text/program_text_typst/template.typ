@@ -3,9 +3,7 @@
     assert(cfg.project != none)
     assert(cfg.project.code != none)
     assert(cfg.project.name != none)
-    assert(cfg.student != none)
-    assert(cfg.student.name != none)
-    assert(cfg.student.group != none)
+    assert(cfg.students != none)
     assert(cfg.agreed_by.name != none)
     assert(cfg.agreed_by.position != none)
     assert(cfg.approved_by.name != none)
@@ -98,13 +96,17 @@
         let student_info = align(right)[
             #set par(spacing: 1em)
 
-            Исполнитель:
+            Исполнители:
 
-            Студент группы #cfg.student.group
+            #cfg.students.map(
+              student => [
+                Студент группы #student.group
 
-            #un(13) / #cfg.student.name /
-
-            "#un(3)" #un(15) #cfg.year г.
+                #un(13) / #student.name /
+    
+                "#un(3)" #un(15) #cfg.year г.
+              ]
+            ).join[#linebreak() #linebreak()]
         ]
 
         let bottom_banner = [
@@ -343,10 +345,25 @@
             ]
         )
 
+        
+
         set par(
-            //first-line-indent: 1em,
+            first-line-indent: 2em,
             justify: true,
             leading: 1em,
+        )
+
+        // List style
+        set list(
+            indent: 2em,
+            spacing: 0.65em,
+            marker: "-"
+        )
+
+        // Enumerated list style
+        set enum(
+            indent: 2em,
+            spacing: 0.65em
         )
 
         set heading(numbering: "1.")
@@ -371,22 +388,10 @@
         }
 
         pagebreak(weak: true)
-        // align(center, text(weight: "bold", size: 12pt, [АННОТАЦИЯ]))
-        // cfg.annotation
+        align(center, text(weight: "bold", size: 12pt, [АННОТАЦИЯ]))
+        cfg.annotation
 
         outline
-        // set page(
-        //     header: [
-        //         #set align(center)
-        //         #set text(weight: "bold")
-
-        //         #context counter(page).display()
-
-        //         #cfg.project.code
-        //     ]
-        // )
-
-        // counter(page).update(6)
 
         body
     }
@@ -394,7 +399,8 @@
     set text(
         lang: "ru",
         size: 12pt,
-        font: "Times New Roman"
+        font: "Times New Roman",
+        hyphenate: false
     )
 
     approval_page
