@@ -27,6 +27,7 @@ class User(Base):
     
     # Relationships
     events = relationship("Event", back_populates="user", cascade="all, delete-orphan")
+    chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User {self.email}>"
