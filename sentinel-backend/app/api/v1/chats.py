@@ -1,0 +1,71 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
+
+from app.infrastructure.database.base import get_db
+from app.infrastructure.database.repositories.chat_repository import ChatRepository, ChatMessageRepository
+from app.infrastructure.database.models import User
+from app.core.schemas.chat import (
+    Chat, ChatCreate, ChatList,
+    ChatMessage, ChatMessageCreate, ChatMessageList,
+)
+from app.api.dependencies import get_current_user
+
+router = APIRouter(prefix="/chats", tags=["Chats"])
+
+
+@router.get("/", response_model=ChatList)
+async def get_chats(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Список чатов текущего пользователя, отсортированных по последнему сообщению."""
+    repo = ChatRepository(db)
+    items = await repo.get_user_chats(current_user.id)
+    return ChatList(items=items, total=len(items))
+
+
+@router.post("/", response_model=Chat, status_code=status.HTTP_201_CREATED)
+async def create_chat(
+    data: ChatCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Создать новую чат-сессию."""
+    repo = ChatRepository(db)
+    return await repo.create(current_user.id, data)
+
+
+@router.get("/{chat_id}/messages", response_model=ChatMessageList)
+async def get_messages(
+    chat_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """История сообщений чата в хронологическом порядке."""
+    chat_repo = ChatRepository(db)
+    chat = await chat_repo.get_by_id(chat_id, current_user.id)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+    msg_repo = ChatMessageRepository(db)
+    items = await msg_repo.get_messages(chat_id)
+    total = await msg_repo.count(chat_id)
+    return ChatMessageList(items=items, total=total)
+
+
+@router.post("/{chat_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED)
+async def create_message(
+    chat_id: uuid.UUID,
+    data: ChatMessageCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Добавить сообщение в историю чата."""
+    chat_repo = ChatRepository(db)
+    chat = await chat_repo.get_by_id(chat_id, current_user.id)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+    msg_repo = ChatMessageRepository(db)
+    return await msg_repo.create(chat_id, data)
