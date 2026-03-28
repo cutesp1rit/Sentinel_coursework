@@ -48,6 +48,15 @@ class ChatMessageRepository:
         )
         return list(result.scalars().all())
 
+    async def get_by_id(self, message_id: uuid.UUID, chat_id: uuid.UUID) -> Optional[ChatMessage]:
+        result = await self.db.execute(
+            select(ChatMessage).where(
+                ChatMessage.id == message_id,
+                ChatMessage.chat_id == chat_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def count(self, chat_id: uuid.UUID) -> int:
         result = await self.db.execute(
             select(func.count(ChatMessage.id)).where(ChatMessage.chat_id == chat_id)
@@ -55,11 +64,17 @@ class ChatMessageRepository:
         return result.scalar_one()
 
     async def create(self, chat_id: uuid.UUID, data: ChatMessageCreate) -> ChatMessage:
+        # Сериализуем Pydantic-объект в dict для JSONB
+        structured = (
+            data.content_structured.model_dump(mode="json")
+            if data.content_structured is not None
+            else None
+        )
         message = ChatMessage(
             chat_id=chat_id,
             role=data.role,
             content_text=data.content_text,
-            content_structured=data.content_structured,
+            content_structured=structured,
             ai_model=data.ai_model,
         )
         self.db.add(message)
@@ -70,6 +85,21 @@ class ChatMessageRepository:
         if chat:
             chat.last_message_at = datetime.now(timezone.utc)
 
+        await self.db.commit()
+        await self.db.refresh(message)
+        return message
+
+    async def update_structured(
+        self,
+        message_id: uuid.UUID,
+        chat_id: uuid.UUID,
+        content_structured: dict,
+    ) -> Optional[ChatMessage]:
+        """Обновить content_structured сообщения (статусы действий после apply)."""
+        message = await self.get_by_id(message_id, chat_id)
+        if not message:
+            return None
+        message.content_structured = content_structured
         await self.db.commit()
         await self.db.refresh(message)
         return message
