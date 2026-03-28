@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select
 from typing import Optional, List
 from datetime import datetime, timezone
 import uuid
@@ -40,13 +40,42 @@ class ChatMessageRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def get_messages(self, chat_id: uuid.UUID) -> List[ChatMessage]:
-        result = await self.db.execute(
-            select(ChatMessage)
-            .where(ChatMessage.chat_id == chat_id)
-            .order_by(ChatMessage.created_at.asc())
-        )
-        return list(result.scalars().all())
+    async def get_messages(
+        self,
+        chat_id: uuid.UUID,
+        limit: int = 100,
+        before: Optional[uuid.UUID] = None,
+    ) -> tuple[List[ChatMessage], bool]:
+        """
+        Cursor-based пагинация сообщений чата.
+
+        Возвращает (messages, has_more):
+        - messages: список сообщений от старых к новым
+        - has_more: True если есть ещё более старые сообщения
+        """
+        query = select(ChatMessage).where(ChatMessage.chat_id == chat_id)
+
+        if before is not None:
+            # Находим created_at курсорного сообщения и берём всё старше него
+            ref = await self.db.execute(
+                select(ChatMessage.created_at).where(ChatMessage.id == before)
+            )
+            ref_ts = ref.scalar_one_or_none()
+            if ref_ts is not None:
+                query = query.where(ChatMessage.created_at < ref_ts)
+
+        # Запрашиваем limit+1 чтобы понять есть ли ещё сообщения
+        query = query.order_by(ChatMessage.created_at.desc()).limit(limit + 1)
+        result = await self.db.execute(query)
+        rows = list(result.scalars().all())
+
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        # Разворачиваем в хронологический порядок (старые → новые)
+        rows.reverse()
+        return rows, has_more
 
     async def get_by_id(self, message_id: uuid.UUID, chat_id: uuid.UUID) -> Optional[ChatMessage]:
         result = await self.db.execute(
@@ -56,12 +85,6 @@ class ChatMessageRepository:
             )
         )
         return result.scalar_one_or_none()
-
-    async def count(self, chat_id: uuid.UUID) -> int:
-        result = await self.db.execute(
-            select(func.count(ChatMessage.id)).where(ChatMessage.chat_id == chat_id)
-        )
-        return result.scalar_one()
 
     async def create(self, chat_id: uuid.UUID, data: ChatMessageCreate) -> ChatMessage:
         # Сериализуем Pydantic-объект в dict для JSONB

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 import uuid
 
 from app.infrastructure.database.base import get_db
@@ -41,19 +42,27 @@ async def create_chat(
 @router.get("/{chat_id}/messages", response_model=ChatMessageList)
 async def get_messages(
     chat_id: uuid.UUID,
+    limit: int = Query(100, ge=1, le=200, description="Количество сообщений"),
+    before: Optional[uuid.UUID] = Query(None, description="ID сообщения — вернуть сообщения старше него"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """История сообщений чата в хронологическом порядке."""
+    """
+    История сообщений чата. Сортировка: старые → новые.
+
+    - Без параметров — последние 100 сообщений.
+    - **before** — ID самого старого из уже загруженных сообщений;
+      вернёт следующую порцию ещё более старых (для подгрузки при скролле вверх).
+    - **has_more** — если True, есть ещё более старые сообщения.
+    """
     chat_repo = ChatRepository(db)
     chat = await chat_repo.get_by_id(chat_id, current_user.id)
     if not chat:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
 
     msg_repo = ChatMessageRepository(db)
-    items = await msg_repo.get_messages(chat_id)
-    total = await msg_repo.count(chat_id)
-    return ChatMessageList(items=items, total=total)
+    items, has_more = await msg_repo.get_messages(chat_id, limit=limit, before=before)
+    return ChatMessageList(items=items, has_more=has_more)
 
 
 @router.post("/{chat_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED)

@@ -78,8 +78,8 @@ class ChatMessage(BaseModel):
 
 
 class ChatMessageList(BaseModel):
-    items: list[ChatMessage]
-    total: int
+    items: list[ChatMessage]  # отсортированы от старых к новым
+    has_more: bool            # есть ли более старые сообщения (для подгрузки)
 
 
 # ─── Apply actions ────────────────────────────────────────────────────────────
