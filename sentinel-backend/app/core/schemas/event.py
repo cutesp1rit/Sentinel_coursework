@@ -12,7 +12,6 @@ class EventBase(BaseModel):
     all_day: bool = False
     type: Literal["event", "reminder"] = "event"
     location: Optional[str] = Field(None, max_length=255)
-    energy_cost: int = Field(0, ge=-50, le=50)
     is_fixed: bool = False
 
     @model_validator(mode="after")
@@ -34,7 +33,6 @@ class EventUpdate(BaseModel):
     all_day: Optional[bool] = None
     type: Optional[Literal["event", "reminder"]] = None
     location: Optional[str] = Field(None, max_length=255)
-    energy_cost: Optional[int] = Field(None, ge=-50, le=50)
     is_fixed: Optional[bool] = None
 
 

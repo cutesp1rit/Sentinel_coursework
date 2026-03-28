@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Boolean, Text, ForeignKey, TIMESTAMP, Integer
+from sqlalchemy import Column, String, Boolean, Text, ForeignKey, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -28,9 +28,7 @@ class Event(Base):
     location = Column(String(255))
     source = Column(String(20), default="user")  # user, ai, import
     
-    # Resource Battery & Rebalance
-    energy_cost = Column(Integer, default=0)  # Энергозатраты: -50 (восстановление) до +50 (затраты)
-    is_fixed = Column(Boolean, default=False, nullable=False)  # Зафиксировано для перебалансировки
+    is_fixed = Column(Boolean, default=False, nullable=False)
     
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
