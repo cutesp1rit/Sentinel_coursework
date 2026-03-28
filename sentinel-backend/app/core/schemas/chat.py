@@ -3,6 +3,14 @@ from typing import Literal, Optional, Any
 from datetime import datetime
 import uuid
 
+from app.core.schemas.event import EventCreate
+
+
+class EventSuggestionsContent(BaseModel):
+    """Структурированный контент сообщения — список предложений событий от модели."""
+    type: Literal["event_suggestions"] = "event_suggestions"
+    events: list[EventCreate]
+
 
 class ChatCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -28,7 +36,7 @@ class ChatList(BaseModel):
 class ChatMessageCreate(BaseModel):
     role: Literal["user", "assistant", "tool", "system"]
     content_text: Optional[str] = None
-    content_structured: Optional[dict[str, Any]] = None
+    content_structured: Optional[EventSuggestionsContent] = None
     ai_model: Optional[str] = None
 
 
@@ -37,7 +45,7 @@ class ChatMessage(BaseModel):
     chat_id: uuid.UUID
     role: str
     content_text: Optional[str]
-    content_structured: Optional[dict[str, Any]]
+    content_structured: Optional[dict[str, Any]]  # читаем как dict — приходит из JSONB
     ai_model: Optional[str]
     created_at: datetime
 
