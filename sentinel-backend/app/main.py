@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 
 from app.core.config import settings
 from app.api.v1 import auth, events, chats
@@ -50,7 +51,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content={
             "code": "VALIDATION_ERROR",
             "message": "Validation failed",
-            "details": exc.errors(),
+            "details": jsonable_encoder(exc.errors()),
         },
     )
 
