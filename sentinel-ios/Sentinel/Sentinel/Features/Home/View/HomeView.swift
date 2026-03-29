@@ -33,12 +33,13 @@ struct HomeView: View {
                             onChatTap: { viewStore.send(.chatTapped) },
                             onRebalanceTap: { viewStore.send(.rebalanceTapped) }
                         )
-                    }
-                    .padding(.horizontal, AppSpacing.large)
-                    .padding(.vertical, AppSpacing.xLarge)
                 }
-                .background(Color(uiColor: .systemGroupedBackground))
-                .navigationTitle(L10n.App.navigationTitle)
+                .padding(.horizontal, AppSpacing.large)
+                .padding(.vertical, AppSpacing.xLarge)
+                .padding(.bottom, AppGrid.value(12))
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle(L10n.App.navigationTitle)
                 .navigationBarTitleDisplayMode(.inline)
             }
         }

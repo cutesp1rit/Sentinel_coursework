@@ -8,6 +8,12 @@ struct AppView: View {
         HomeView(
             store: store.scope(state: \.home, action: \.home)
         )
+        .sheet(isPresented: .constant(true)) {
+            ChatSheetView(
+                store: store.scope(state: \.chatSheet, action: \.chatSheet)
+            )
+            .interactiveDismissDisabled()
+        }
     }
 }
 
