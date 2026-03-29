@@ -61,11 +61,6 @@ app.include_router(events.router, prefix=settings.API_V1_STR)
 app.include_router(chats.router, prefix=settings.API_V1_STR)
 
 
-@app.get("/")
-async def root():
-    return {"message": "Sentinel API", "version": settings.VERSION, "docs": "/docs"}
-
-
 @app.get(f"{settings.API_V1_STR}/health", tags=["System"])
 async def health_check():
     return {"status": "healthy"}
