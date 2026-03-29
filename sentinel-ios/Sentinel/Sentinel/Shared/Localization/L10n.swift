@@ -37,4 +37,45 @@ enum L10n {
         static let rebalanceTitle = String(localized: "home.rebalance_title")
         static let rebalanceBody = String(localized: "home.rebalance_body")
     }
+
+    enum ChatSheet {
+        static let addAttachmentAccessibility = String(localized: "chat_sheet.add_attachment_accessibility")
+        static let composerPlaceholder = String(localized: "chat_sheet.composer_placeholder")
+        static let sendMessageAccessibility = String(localized: "chat_sheet.send_message_accessibility")
+        static let suggestedEvents = String(localized: "chat_sheet.suggested_events")
+        static let conflict = String(localized: "chat_sheet.conflict")
+        static let addToCalendar = String(localized: "chat_sheet.add_to_calendar")
+
+        static func selectedCount(_ count: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "chat_sheet.selected_count_format"),
+                count
+            )
+        }
+
+        static func addCountToCalendar(_ count: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "chat_sheet.add_count_to_calendar_format"),
+                count
+            )
+        }
+
+        enum Mock {
+            static let suggestionOneTitle = String(localized: "chat_sheet.mock.suggestion_one.title")
+            static let suggestionOneTimeRange = String(localized: "chat_sheet.mock.suggestion_one.time_range")
+            static let suggestionOneLocation = String(localized: "chat_sheet.mock.suggestion_one.location")
+
+            static let suggestionTwoTitle = String(localized: "chat_sheet.mock.suggestion_two.title")
+            static let suggestionTwoTimeRange = String(localized: "chat_sheet.mock.suggestion_two.time_range")
+            static let suggestionTwoLocation = String(localized: "chat_sheet.mock.suggestion_two.location")
+
+            static let suggestionThreeTitle = String(localized: "chat_sheet.mock.suggestion_three.title")
+            static let suggestionThreeTimeRange = String(localized: "chat_sheet.mock.suggestion_three.time_range")
+            static let suggestionThreeLocation = String(localized: "chat_sheet.mock.suggestion_three.location")
+
+            static let messageOne = String(localized: "chat_sheet.mock.message_one")
+            static let messageTwo = String(localized: "chat_sheet.mock.message_two")
+            static let messageThree = String(localized: "chat_sheet.mock.message_three")
+        }
+    }
 }

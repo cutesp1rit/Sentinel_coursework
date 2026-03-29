@@ -29,3 +29,28 @@
 "home.chat_body" = "Chat sheet arrives in the next slice, but the home screen already reserves its entry point.";
 "home.rebalance_title" = "Rebalance";
 "home.rebalance_body" = "Disabled for MVP until the backend contract is ready.";
+
+"chat_sheet.add_attachment_accessibility" = "Add attachment";
+"chat_sheet.composer_placeholder" = "Ask Sentinel to plan your day...";
+"chat_sheet.send_message_accessibility" = "Send message";
+"chat_sheet.suggested_events" = "Suggested Events";
+"chat_sheet.selected_count_format" = "%lld selected";
+"chat_sheet.conflict" = "Conflict";
+"chat_sheet.add_to_calendar" = "Add to Calendar";
+"chat_sheet.add_count_to_calendar_format" = "Add %lld to Calendar";
+
+"chat_sheet.mock.suggestion_one.title" = "API Review (Shifted)";
+"chat_sheet.mock.suggestion_one.time_range" = "10:30 - 11:30";
+"chat_sheet.mock.suggestion_one.location" = "Zoom";
+
+"chat_sheet.mock.suggestion_two.title" = "Client Call (Rescheduled)";
+"chat_sheet.mock.suggestion_two.time_range" = "12:00 - 12:30";
+"chat_sheet.mock.suggestion_two.location" = "Phone";
+
+"chat_sheet.mock.suggestion_three.title" = "Architecture Review";
+"chat_sheet.mock.suggestion_three.time_range" = "15:30 - 16:30";
+"chat_sheet.mock.suggestion_three.location" = "Meeting Room C";
+
+"chat_sheet.mock.message_one" = "Move low-priority calls away from afternoon.";
+"chat_sheet.mock.message_two" = "I found a conflict around 13:30. Want me to suggest safer alternatives?";
+"chat_sheet.mock.message_three" = "Yes, and keep focus time after 15:00.";
