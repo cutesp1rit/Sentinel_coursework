@@ -112,6 +112,19 @@ class ChatMessageRepository:
         await self.db.refresh(message)
         return message
 
+    async def get_recent_for_llm(self, chat_id: uuid.UUID, limit: int) -> list[dict]:
+        """Последние N сообщений чата в формате для передачи в LLM (role/content)."""
+        result = await self.db.execute(
+            select(ChatMessage)
+            .where(ChatMessage.chat_id == chat_id)
+            .where(ChatMessage.role.in_(["user", "assistant"]))
+            .order_by(ChatMessage.created_at.desc())
+            .limit(limit)
+        )
+        messages = list(result.scalars().all())
+        messages.reverse()
+        return [{"role": m.role, "content": m.content_text or ""} for m in messages]
+
     async def update_structured(
         self,
         message_id: uuid.UUID,
