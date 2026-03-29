@@ -12,6 +12,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Схема для создания пользователя"""
     password: str = Field(..., min_length=8, description="Пароль (минимум 8 символов)")
+    timezone: str = Field(default="UTC", max_length=50)
 
 
 class UserLogin(BaseModel):
