@@ -30,8 +30,10 @@ class Settings(BaseSettings):
             return v
         raise ValueError(v)
     
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4-turbo-preview"
+    LLM_API_KEY: str = ""
+    LLM_MODEL: str = ""
+    LLM_BASE_URL: str = ""
+    LLM_HISTORY_LIMIT: int = 20
     
     MAX_FILE_SIZE: int = 10 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "heic"]

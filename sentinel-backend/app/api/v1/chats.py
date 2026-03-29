@@ -6,12 +6,15 @@ import uuid
 from app.infrastructure.database.base import get_db
 from app.infrastructure.database.repositories.chat_repository import ChatRepository, ChatMessageRepository
 from app.infrastructure.database.repositories.event_repository import EventRepository
+from app.infrastructure.external.openai_client import get_llm_client
 from app.infrastructure.database.models import User
+from app.core.config import settings
 from app.core.schemas.chat import (
     Chat, ChatCreate, ChatList,
     ChatMessage, ChatMessageCreate, ChatMessageList,
     EventActionsContent, ApplyActionsRequest,
 )
+from app.core.services.llm_service import LLMService
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
@@ -72,14 +75,49 @@ async def create_message(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Добавить сообщение в историю чата."""
+    """
+    Отправить сообщение в чат.
+
+    Если role == "user" — сохраняет сообщение, вызывает LLM и возвращает ответ ассистента.
+    """
     chat_repo = ChatRepository(db)
     chat = await chat_repo.get_by_id(chat_id, current_user.id)
     if not chat:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
 
     msg_repo = ChatMessageRepository(db)
-    return await msg_repo.create(chat_id, data)
+
+    if data.role != "user":
+        return await msg_repo.create(chat_id, data)
+
+    # Загружаем историю до сохранения нового сообщения
+    history = await msg_repo.get_recent_for_llm(chat_id, limit=settings.LLM_HISTORY_LIMIT)
+
+    await msg_repo.create(chat_id, data)
+
+    try:
+        llm = LLMService(get_llm_client())
+        text, actions = await llm.process_user_message(
+            user_message=data.content_text or "",
+            history=history,
+            user_id=current_user.id,
+            user_timezone=current_user.timezone,
+            event_repo=EventRepository(db),
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="LLM service unavailable",
+        )
+
+    content_structured = EventActionsContent(actions=actions) if actions else None
+    assistant_data = ChatMessageCreate(
+        role="assistant",
+        content_text=text or None,
+        content_structured=content_structured,
+        ai_model=settings.LLM_MODEL,
+    )
+    return await msg_repo.create(chat_id, assistant_data)
 
 
 @router.post("/{chat_id}/messages/{message_id}/apply", response_model=ChatMessage)

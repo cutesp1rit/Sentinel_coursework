@@ -47,7 +47,6 @@ class EventRepository:
             all_day=event_data.all_day,
             type=event_data.type,
             location=event_data.location,
-            energy_cost=event_data.energy_cost,
             is_fixed=event_data.is_fixed,
             source=event_data.source,
         )
