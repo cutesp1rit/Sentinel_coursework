@@ -17,8 +17,6 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E8C537442F6E9DBA001637AB /* Sentinel */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = Sentinel;
 			sourceTree = "<group>";
 		};
