@@ -33,6 +33,7 @@ class UserRepository:
         user = User(
             email=user_data.email,
             password_hash=get_password_hash(user_data.password),
+            timezone=user_data.timezone,
         )
         self.db.add(user)
         await self.db.commit()
