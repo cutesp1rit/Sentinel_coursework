@@ -42,5 +42,5 @@ def decode_access_token(token: str) -> Optional[uuid.UUID]:
         if user_id is None:
             return None
         return uuid.UUID(user_id)
-    except JWTError:
+    except (JWTError, ValueError):
         return None
