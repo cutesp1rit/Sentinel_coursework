@@ -217,12 +217,14 @@ class LLMService:
     def _build_system_prompt(timezone: str) -> str:
         try:
             tz = ZoneInfo(timezone)
+            tz_label = timezone
         except ZoneInfoNotFoundError:
             tz = ZoneInfo("UTC")
+            tz_label = "UTC"
         now = datetime.now(tz)
         return (
             f"You are Sentinel, an intelligent time management assistant.\n"
-            f"Current date and time: {now.strftime('%Y-%m-%d %H:%M')} ({timezone}).\n\n"
+            f"Current date and time: {now.strftime('%Y-%m-%d %H:%M')} ({tz_label}).\n\n"
             "Help users manage their calendar. Use search_events to look up existing events when needed.\n"
             "create_event, update_event and delete_event only PROPOSE changes — "
             "they are not applied until the user explicitly confirms.\n"
