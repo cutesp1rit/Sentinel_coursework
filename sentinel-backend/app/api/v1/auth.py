@@ -3,8 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.database.base import get_db
 from app.infrastructure.database.repositories import UserRepository
+from app.infrastructure.database.models import User as UserModel
 from app.core.schemas.user import UserCreate, UserLogin, Token, User
 from app.core.security import verify_password, create_access_token
+from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -39,3 +41,8 @@ async def login(
     await user_repo.update_last_login(user.id)
     access_token = create_access_token(data={"sub": str(user.id)})
     return Token(access_token=access_token)
+
+
+@router.get("/me", response_model=User)
+async def get_me(current_user: UserModel = Depends(get_current_user)):
+    return current_user
