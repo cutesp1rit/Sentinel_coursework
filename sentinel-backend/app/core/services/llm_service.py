@@ -7,7 +7,7 @@ from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.core.schemas.chat import EventActionsContent, EventAction
+from app.core.schemas.chat import EventActionsContent, EventAction, EventSnapshot
 from app.core.schemas.event import EventCreate, EventUpdate
 from app.infrastructure.database.repositories.event_repository import EventRepository
 
@@ -121,7 +121,7 @@ class LLMService:
 
         collected_actions: list[EventAction] = []
 
-        for _ in range(6):  # защита от бесконечного цикла
+        for _ in range(6):  # guard against infinite tool-call loops
             response = await self.client.chat.completions.create(
                 model=settings.LLM_MODEL,
                 messages=messages,
@@ -136,6 +136,7 @@ class LLMService:
             messages.append(assistant_msg.model_dump(exclude_unset=True, exclude_none=True))
 
             if not assistant_msg.tool_calls:
+                await self._enrich_with_snapshots(collected_actions, user_id, event_repo)
                 return assistant_msg.content or "", collected_actions
 
             # Обрабатываем tool calls
@@ -164,6 +165,22 @@ class LLMService:
                 })
 
         return "", collected_actions
+
+    async def _enrich_with_snapshots(
+        self,
+        actions: list[EventAction],
+        user_id: uuid.UUID,
+        event_repo: EventRepository,
+    ) -> None:
+        for action in actions:
+            if action.action in ("update", "delete") and action.event_id:
+                event = await event_repo.get_by_id(action.event_id, user_id)
+                if event:
+                    action.event_snapshot = EventSnapshot(
+                        title=event.title,
+                        start_at=event.start_at,
+                        end_at=event.end_at,
+                    )
 
     async def _execute_search(
         self,
