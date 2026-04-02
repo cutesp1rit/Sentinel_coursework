@@ -2,47 +2,58 @@ import ComposableArchitecture
 import SwiftUI
 
 struct HomeView: View {
-    let store: Store<HomeState, HomeAction>
+    let store: StoreOf<HomeReducer>
 
     var body: some View {
-        WithViewStore(store, observe: { $0 }) { viewStore in
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-                        HomeHeaderView()
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+                    HomeTodaySnapshotSectionView(
+                        snapshot: store.todaySnapshot
+                    )
 
-                        HomeTodaySnapshotSectionView(
-                            snapshot: viewStore.todaySnapshot
-                        )
+                    HomeEventsSectionView(
+                        schedule: store.schedule
+                    )
 
-                        HomeEventsSectionView(
-                            schedule: viewStore.schedule
-                        )
+                    HomeCalendarSectionView(
+                        dayStrip: store.dayStrip,
+                        selectedDayID: store.selectedDayID,
+                        onSelectDay: { store.send(.daySelected($0)) }
+                    )
 
-                        HomeCalendarSectionView(
-                            dayStrip: viewStore.dayStrip,
-                            selectedDayID: viewStore.selectedDayID,
-                            onSelectDay: { viewStore.send(.daySelected($0)) }
-                        )
+                    HomeBatterySectionView(
+                        battery: store.battery
+                    )
 
-                        HomeBatterySectionView(
-                            battery: viewStore.battery
-                        )
-
-                        HomeQuickActionsSectionView(
-                            onChatTap: { viewStore.send(.chatTapped) },
-                            onRebalanceTap: { viewStore.send(.rebalanceTapped) }
-                        )
+                    HomeQuickActionsSectionView(
+                        onChatTap: { store.send(.chatTapped) },
+                        onRebalanceTap: { store.send(.rebalanceTapped) }
+                    )
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppSpacing.large)
-                .padding(.vertical, AppSpacing.xLarge)
-                .padding(.bottom, AppGrid.value(12))
+                .padding(.top, AppSpacing.small)
+                .padding(.bottom, AppSpacing.small)
+                .background(Color(uiColor: .systemGroupedBackground))
             }
-            .background(Color(uiColor: .systemGroupedBackground))
-            .navigationTitle(L10n.App.navigationTitle)
-                .navigationBarTitleDisplayMode(.inline)
+            .scrollIndicators(.hidden)
+            .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+            .navigationTitle(L10n.App.title)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        store.send(.profileTapped)
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                    }
+                    .accessibilityLabel(L10n.Profile.openButton)
+                }
             }
         }
+        .toolbarBackground(Color(uiColor: .systemGroupedBackground), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
     }
 }
 

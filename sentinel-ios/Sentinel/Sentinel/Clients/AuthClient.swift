@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import Foundation
 
-struct AuthClient {
+struct AuthClient: Sendable {
     var login: @Sendable (_ email: String, _ password: String) async throws -> Session
     var register: @Sendable (_ email: String, _ password: String) async throws -> User
 }
@@ -36,7 +36,7 @@ extension AuthClient: DependencyKey {
 }
 
 extension DependencyValues {
-    var authClient: AuthClient {
+    nonisolated var authClient: AuthClient {
         get { self[AuthClient.self] }
         set { self[AuthClient.self] = newValue }
     }

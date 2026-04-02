@@ -54,3 +54,27 @@
 "chat_sheet.mock.message_one" = "Move low-priority calls away from afternoon.";
 "chat_sheet.mock.message_two" = "I found a conflict around 13:30. Want me to suggest safer alternatives?";
 "chat_sheet.mock.message_three" = "Yes, and keep focus time after 15:00.";
+
+"profile.auth_hint" = "Registration creates the account and then signs in with the same credentials so protected features can restore locally on the next launch.";
+"profile.close_button" = "Done";
+"profile.email_invalid" = "Enter a valid email address.";
+"profile.email_placeholder" = "Email";
+"profile.email_required" = "Email is required.";
+"profile.logged_out_status" = "Session cleared on this device.";
+"profile.login_button" = "Log In";
+"profile.login_mode" = "Log In";
+"profile.logout_button" = "Log Out";
+"profile.logout_hint" = "Logout only clears the local session for now. Home remains available without backend access.";
+"profile.mode_picker_label" = "Authorization Mode";
+"profile.open_button" = "Open Profile";
+"profile.password_placeholder" = "Password";
+"profile.password_required" = "Password is required.";
+"profile.register_button" = "Create Account";
+"profile.register_mode" = "Register";
+"profile.restoring_status" = "Restoring saved session…";
+"profile.session_stored_body" = "Protected backend features can reuse this saved session until you log out.";
+"profile.signed_in_status" = "Session restored and ready.";
+"profile.signed_in_title" = "Signed In";
+"profile.signed_out_body" = "Home stays local-first, but chat history and other protected backend features require authorization.";
+"profile.signed_out_title" = "Signed Out";
+"profile.title" = "Profile";

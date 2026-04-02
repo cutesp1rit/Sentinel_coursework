@@ -1,5 +1,7 @@
+import ComposableArchitecture
 import Foundation
 
+@ObservableState
 struct HomeState: Equatable {
     var schedule = HomeScheduleState()
     var battery = HomeBatteryState.placeholder

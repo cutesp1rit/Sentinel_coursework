@@ -7,7 +7,7 @@ struct HomeReducer: Reducer {
     var body: some Reducer<HomeState, HomeAction> {
         Reduce { state, action in
             switch action {
-            case .chatTapped, .rebalanceTapped:
+            case .chatTapped, .profileTapped, .rebalanceTapped:
                 return .none
 
             case let .daySelected(dayID):
