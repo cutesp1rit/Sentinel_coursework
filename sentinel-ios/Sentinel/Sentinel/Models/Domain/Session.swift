@@ -1,11 +1,11 @@
 import Foundation
 
-struct Session: Equatable {
+struct Session: Codable, Equatable, Sendable {
     let accessToken: String
     let tokenType: String
 }
 
-struct User: Equatable, Identifiable {
+struct User: Equatable, Identifiable, Sendable {
     let id: UUID
     let email: String
     let timezone: String

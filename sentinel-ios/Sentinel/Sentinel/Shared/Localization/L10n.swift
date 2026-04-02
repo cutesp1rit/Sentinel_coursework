@@ -78,4 +78,30 @@ enum L10n {
             static let messageThree = String(localized: "chat_sheet.mock.message_three")
         }
     }
+
+    enum Profile {
+        static let authHint = String(localized: "profile.auth_hint")
+        static let closeButton = String(localized: "profile.close_button")
+        static let emailInvalid = String(localized: "profile.email_invalid")
+        static let emailPlaceholder = String(localized: "profile.email_placeholder")
+        static let emailRequired = String(localized: "profile.email_required")
+        static let loggedOutStatus = String(localized: "profile.logged_out_status")
+        static let loginButton = String(localized: "profile.login_button")
+        static let loginMode = String(localized: "profile.login_mode")
+        static let logoutButton = String(localized: "profile.logout_button")
+        static let logoutHint = String(localized: "profile.logout_hint")
+        static let modePickerLabel = String(localized: "profile.mode_picker_label")
+        static let openButton = String(localized: "profile.open_button")
+        static let passwordPlaceholder = String(localized: "profile.password_placeholder")
+        static let passwordRequired = String(localized: "profile.password_required")
+        static let registerButton = String(localized: "profile.register_button")
+        static let registerMode = String(localized: "profile.register_mode")
+        static let restoringStatus = String(localized: "profile.restoring_status")
+        static let sessionStoredBody = String(localized: "profile.session_stored_body")
+        static let signedInStatus = String(localized: "profile.signed_in_status")
+        static let signedInTitle = String(localized: "profile.signed_in_title")
+        static let signedOutBody = String(localized: "profile.signed_out_body")
+        static let signedOutTitle = String(localized: "profile.signed_out_title")
+        static let title = String(localized: "profile.title")
+    }
 }

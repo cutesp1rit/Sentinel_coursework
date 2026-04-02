@@ -6,7 +6,7 @@ struct APIClient {
 }
 
 nonisolated func liveAPISend(_ request: APIRequest) async throws -> Data {
-    let urlRequest = try request.urlRequest(baseURL: AppConfiguration.apiBaseURL)
+    let urlRequest = try await request.urlRequest(baseURL: AppConfiguration.apiBaseURL)
     let (data, response) = try await URLSession.shared.data(for: urlRequest)
 
     guard let httpResponse = response as? HTTPURLResponse else {
@@ -14,7 +14,7 @@ nonisolated func liveAPISend(_ request: APIRequest) async throws -> Data {
     }
 
     guard (200..<300).contains(httpResponse.statusCode) else {
-        let errorDTO = try await MainActor.run {
+        let errorDTO = await MainActor.run {
             try? AppConfiguration.jsonDecoder.decode(APIErrorDTO.self, from: data)
         }
 
