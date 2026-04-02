@@ -8,12 +8,20 @@ from app.core.schemas.event import EventCreate, EventUpdate
 
 # ─── Structured content ───────────────────────────────────────────────────────
 
+class EventSnapshot(BaseModel):
+    """Снимок события на момент создания предложения (для update/delete)."""
+    title: str
+    start_at: datetime
+    end_at: Optional[datetime] = None
+
+
 class EventAction(BaseModel):
     """Одно предлагаемое действие над событием."""
     action: Literal["create", "update", "delete"]
     event_id: Optional[uuid.UUID] = None   # обязателен для update/delete
     payload: Optional[EventCreate | EventUpdate] = None  # данные для create/update
     status: Literal["pending", "accepted", "rejected"] = "pending"
+    event_snapshot: Optional[EventSnapshot] = None  # данные события для отображения
 
     @model_validator(mode="after")
     def check_fields(self) -> "EventAction":
