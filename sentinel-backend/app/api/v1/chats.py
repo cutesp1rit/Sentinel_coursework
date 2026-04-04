@@ -68,6 +68,19 @@ async def get_messages(
     return ChatMessageList(items=items, has_more=has_more)
 
 
+@router.delete("/{chat_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_chat(
+    chat_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Удалить чат вместе со всеми сообщениями."""
+    repo = ChatRepository(db)
+    deleted = await repo.delete(chat_id, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+
 @router.post("/{chat_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED)
 async def create_message(
     chat_id: uuid.UUID,
