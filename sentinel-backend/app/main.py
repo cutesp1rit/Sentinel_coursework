@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from app.core.config import settings
-from app.api.v1 import auth, events, chats
+from app.api.v1 import auth, events, chats, achievements
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -60,6 +60,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(events.router, prefix=settings.API_V1_STR)
 app.include_router(chats.router, prefix=settings.API_V1_STR)
+app.include_router(achievements.router, prefix=settings.API_V1_STR)
 
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["System"])
