@@ -3,7 +3,6 @@ import SwiftUI
 struct ChatSheetTranscriptView: View {
     let detent: ChatSheetState.Detent
     let messages: [ChatSheetState.Message]
-    let bottomAnchorID: String
     let onToggleSuggestionExpansion: (ChatSheetState.Message.ID) -> Void
     let onToggleSuggestionSelection: (ChatSheetState.Message.ID, ChatSheetState.Suggestion.ID) -> Void
     let onAddSelectedSuggestions: (ChatSheetState.Message.ID) -> Void
@@ -14,10 +13,6 @@ struct ChatSheetTranscriptView: View {
                 messageRow(for: message)
                     .padding(.bottom, messageSpacing(after: index))
             }
-
-            Color.clear
-                .frame(height: AppSizing.hairline)
-                .id(bottomAnchorID)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(
@@ -27,23 +22,24 @@ struct ChatSheetTranscriptView: View {
                 : 16
         )
         .padding(.top, 10)
-        .padding(.bottom, 8)
     }
 
     @ViewBuilder
     private func messageRow(for message: ChatSheetState.Message) -> some View {
-        switch message.content {
-        case .markdown:
-            ChatBubbleRow(message: message)
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            if message.markdownText != nil {
+                ChatBubbleRow(message: message)
+            }
 
-        case let .suggestions(payload):
-            SuggestionsMessageRowView(
-                messageID: message.id,
-                payload: payload,
-                onToggleExpansion: onToggleSuggestionExpansion,
-                onToggleSuggestionSelection: onToggleSuggestionSelection,
-                onAddSelectedSuggestions: onAddSelectedSuggestions
-            )
+            if let payload = message.suggestionsPayload {
+                SuggestionsMessageRowView(
+                    messageID: message.id,
+                    payload: payload,
+                    onToggleExpansion: onToggleSuggestionExpansion,
+                    onToggleSuggestionSelection: onToggleSuggestionSelection,
+                    onAddSelectedSuggestions: onAddSelectedSuggestions
+                )
+            }
         }
     }
 
@@ -61,16 +57,22 @@ private struct SuggestionsMessageRowView: View {
     let onAddSelectedSuggestions: (ChatSheetState.Message.ID) -> Void
 
     private var addToCalendarTitle: String {
-        if payload.selectedSuggestionIDs.isEmpty {
+        if payload.suggestions.count == 1 || payload.selectedSuggestionIDs.isEmpty {
             return L10n.ChatSheet.addToCalendar
         }
         return L10n.ChatSheet.addCountToCalendar(payload.selectedSuggestionIDs.count)
     }
 
+    private var isSingleSuggestion: Bool {
+        payload.suggestions.count == 1
+    }
+
+    private var canAddToCalendar: Bool {
+        isSingleSuggestion || !payload.selectedSuggestionIDs.isEmpty
+    }
+
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.small) {
-            AssistantAvatarView()
-
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 Button {
                     onToggleExpansion(messageID)
@@ -99,7 +101,9 @@ private struct SuggestionsMessageRowView: View {
                         ForEach(payload.suggestions) { suggestion in
                             SuggestionCardView(
                                 suggestion: suggestion,
-                                isSelected: payload.selectedSuggestionIDs.contains(suggestion.id)
+                                isSelected: payload.selectedSuggestionIDs.contains(suggestion.id),
+                                showsSelectionControl: !isSingleSuggestion,
+                                isInteractive: !isSingleSuggestion
                             ) {
                                 onToggleSuggestionSelection(messageID, suggestion.id)
                             }
@@ -113,22 +117,29 @@ private struct SuggestionsMessageRowView: View {
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.large)
-                                .background(Color.blue, in: Capsule())
+                                .background(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.blue,
+                                            Color.blue.opacity(0.88)
+                                        ],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    in: RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous)
+                                )
                                 .overlay {
-                                    Capsule()
-                                        .fill(.ultraThinMaterial.opacity(AppOpacity.overlay))
-                                }
-                                .overlay {
-                                    Capsule()
+                                    RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous)
                                         .stroke(
                                             Color.white.opacity(AppOpacity.secondaryBorder),
                                             lineWidth: AppStrokeWidth.standard
                                         )
                                 }
-                                .opacity(payload.selectedSuggestionIDs.isEmpty ? AppOpacity.disabled : 1)
+                                .shadow(color: Color.blue.opacity(0.18), radius: 10, y: 4)
+                                .opacity(canAddToCalendar ? 1 : AppOpacity.disabled)
                         }
                         .buttonStyle(.plain)
-                        .disabled(payload.selectedSuggestionIDs.isEmpty)
+                        .disabled(!canAddToCalendar)
                     }
                 }
             }
