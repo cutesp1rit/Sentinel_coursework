@@ -15,6 +15,7 @@ from app.core.schemas.chat import (
     EventActionsContent, ApplyActionsRequest,
 )
 from app.core.services.llm_service import LLMService
+from app.core.services.achievement_service import AchievementService
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
@@ -177,20 +178,28 @@ async def apply_actions(
             )
 
     event_repo = EventRepository(db)
+    achievement_service = AchievementService(db)
 
     for idx, action in enumerate(content.actions):
         if idx in data.accepted_indices:
             if action.action == "create":
-                await event_repo.create(current_user.id, action.payload)
+                created = await event_repo.create(current_user.id, action.payload)
+                await achievement_service.handle_event_created(
+                    current_user.id, {"source": created.source, "type": created.type}
+                )
             elif action.action == "update":
                 await event_repo.update(action.event_id, current_user.id, action.payload)
             elif action.action == "delete":
+                event = await event_repo.get_by_id(action.event_id, current_user.id)
                 await event_repo.delete(action.event_id, current_user.id)
+                if event:
+                    await achievement_service.handle_event_deleted(
+                        current_user.id, {"source": event.source, "type": event.type}
+                    )
             action.status = "accepted"
         else:
             action.status = "rejected"
 
-    updated = await msg_repo.update_structured(
+    return await msg_repo.update_structured(
         message_id, chat_id, content.model_dump(mode="json")
     )
-    return updated

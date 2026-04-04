@@ -14,13 +14,16 @@ import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, func
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.infrastructure.database.models import User, Event
+from app.infrastructure.database.models.achievement import Achievement, UserAchievement, UserCounter
+import uuid
 
 TEST_EMAIL = "test@sentinel.dev"
 TEST_PASSWORD = "Sentinel123!"
@@ -54,8 +57,9 @@ async def seed() -> None:
             user.password_hash = get_password_hash(TEST_PASSWORD)
             user.timezone = TEST_TIMEZONE
 
-        # Drop all existing events for the test user
         await db.execute(delete(Event).where(Event.user_id == user.id))
+        await db.execute(delete(UserAchievement).where(UserAchievement.user_id == user.id))
+        await db.execute(delete(UserCounter).where(UserCounter.user_id == user.id))
 
         # Build fresh event list
         events = [
@@ -286,9 +290,56 @@ async def seed() -> None:
         ]
 
         db.add_all(events)
+        await db.flush()
+
+        # Compute counters from seeded events
+        total_events = len(events)
+        ai_events = sum(1 for e in events if e.source == "ai")
+        total_reminders = sum(1 for e in events if e.type == "reminder")
+
+        subq = (
+            select(func.date_trunc("day", Event.start_at))
+            .where(Event.user_id == user.id)
+            .distinct()
+            .subquery()
+        )
+        result = await db.execute(select(func.count()).select_from(subq))
+        active_days = result.scalar() or 0
+
+        counters = [
+            {"counter_name": "total_events", "value": total_events},
+            {"counter_name": "ai_events", "value": ai_events},
+            {"counter_name": "total_reminders", "value": total_reminders},
+            {"counter_name": "active_days", "value": active_days},
+        ]
+        for c in counters:
+            stmt = (
+                pg_insert(UserCounter)
+                .values(id=uuid.uuid4(), user_id=user.id, **c)
+                .on_conflict_do_update(
+                    constraint="uq_user_counter",
+                    set_={"value": c["value"]},
+                )
+            )
+            await db.execute(stmt)
+
+        # Award achievements based on computed counters
+        counter_map = {c["counter_name"]: c["value"] for c in counters}
+        achievements_result = await db.execute(select(Achievement))
+        for achievement in achievements_result.scalars().all():
+            if counter_map.get(achievement.counter_name, 0) >= achievement.target_value:
+                await db.execute(
+                    pg_insert(UserAchievement)
+                    .values(id=uuid.uuid4(), user_id=user.id, achievement_id=achievement.id)
+                    .on_conflict_do_nothing(constraint="uq_user_achievement")
+                )
+
         await db.commit()
 
-    print(f"[seed] Test account ready: {TEST_EMAIL} / {TEST_PASSWORD} ({len(events)} events)")
+    print(
+        f"[seed] Test account ready: {TEST_EMAIL} / {TEST_PASSWORD} "
+        f"({len(events)} events, {active_days} active days)"
+    )
 
 
 if __name__ == "__main__":
