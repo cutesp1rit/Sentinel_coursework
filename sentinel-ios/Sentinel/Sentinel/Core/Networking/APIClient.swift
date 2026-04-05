@@ -5,9 +5,47 @@ struct APIClient {
     var send: @Sendable (APIRequest) async throws -> Data
 }
 
+private final class RedirectPreservingSessionDelegate: NSObject, URLSessionTaskDelegate {
+    static let shared = RedirectPreservingSessionDelegate()
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping @Sendable (URLRequest?) -> Void
+    ) {
+        guard let originalURL = task.originalRequest?.url,
+              let redirectedURL = request.url,
+              originalURL.scheme == redirectedURL.scheme,
+              originalURL.host == redirectedURL.host else {
+            completionHandler(request)
+            return
+        }
+
+        guard let authorization = task.originalRequest?.value(forHTTPHeaderField: "Authorization"),
+              request.value(forHTTPHeaderField: "Authorization") == nil else {
+            completionHandler(request)
+            return
+        }
+
+        var redirectedRequest = request
+        redirectedRequest.setValue(authorization, forHTTPHeaderField: "Authorization")
+        completionHandler(redirectedRequest)
+    }
+}
+
+private let apiURLSession: URLSession = {
+    URLSession(
+        configuration: .default,
+        delegate: RedirectPreservingSessionDelegate.shared,
+        delegateQueue: nil
+    )
+}()
+
 nonisolated func liveAPISend(_ request: APIRequest) async throws -> Data {
     let urlRequest = try await request.urlRequest(baseURL: AppConfiguration.apiBaseURL)
-    let (data, response) = try await URLSession.shared.data(for: urlRequest)
+    let (data, response) = try await apiURLSession.data(for: urlRequest)
 
     guard let httpResponse = response as? HTTPURLResponse else {
         throw APIError(code: "INVALID_RESPONSE", message: "Expected HTTP response", details: nil)
@@ -24,7 +62,6 @@ nonisolated func liveAPISend(_ request: APIRequest) async throws -> Data {
             details: errorDTO?.details
         )
     }
-
     return data
 }
 

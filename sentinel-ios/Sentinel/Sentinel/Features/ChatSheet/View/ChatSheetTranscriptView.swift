@@ -57,18 +57,37 @@ private struct SuggestionsMessageRowView: View {
     let onAddSelectedSuggestions: (ChatSheetState.Message.ID) -> Void
 
     private var addToCalendarTitle: String {
-        if payload.suggestions.count == 1 || payload.selectedSuggestionIDs.isEmpty {
+        if payload.isApplying {
+            return L10n.ChatSheet.syncingToCalendar
+        }
+
+        if !payload.hasPendingSuggestions {
+            return L10n.ChatSheet.applied
+        }
+
+        if payload.suggestions.count == 1 || selectedPendingCount == 0 {
             return L10n.ChatSheet.addToCalendar
         }
-        return L10n.ChatSheet.addCountToCalendar(payload.selectedSuggestionIDs.count)
+        return L10n.ChatSheet.addCountToCalendar(selectedPendingCount)
     }
 
     private var isSingleSuggestion: Bool {
         payload.suggestions.count == 1
     }
 
+    private var selectedPendingCount: Int {
+        payload.suggestions.filter {
+            payload.selectedSuggestionIDs.contains($0.id) && $0.status == .pending
+        }.count
+    }
+
     private var canAddToCalendar: Bool {
-        isSingleSuggestion || !payload.selectedSuggestionIDs.isEmpty
+        guard !payload.isApplying, payload.hasPendingSuggestions else {
+            return false
+        }
+
+        let pendingSuggestions = payload.suggestions.filter { $0.status == .pending }
+        return pendingSuggestions.count == 1 || selectedPendingCount > 0
     }
 
     var body: some View {
@@ -83,8 +102,8 @@ private struct SuggestionsMessageRowView: View {
 
                         Spacer()
 
-                        if !payload.selectedSuggestionIDs.isEmpty {
-                            Text(L10n.ChatSheet.selectedCount(payload.selectedSuggestionIDs.count))
+                        if selectedPendingCount > 0 {
+                            Text(L10n.ChatSheet.selectedCount(selectedPendingCount))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -102,8 +121,8 @@ private struct SuggestionsMessageRowView: View {
                             SuggestionCardView(
                                 suggestion: suggestion,
                                 isSelected: payload.selectedSuggestionIDs.contains(suggestion.id),
-                                showsSelectionControl: !isSingleSuggestion,
-                                isInteractive: !isSingleSuggestion
+                                showsSelectionControl: !isSingleSuggestion && suggestion.status == .pending,
+                                isInteractive: !isSingleSuggestion && suggestion.status == .pending && !payload.isApplying
                             ) {
                                 onToggleSuggestionSelection(messageID, suggestion.id)
                             }

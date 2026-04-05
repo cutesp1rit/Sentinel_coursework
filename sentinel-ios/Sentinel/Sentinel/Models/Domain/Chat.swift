@@ -47,10 +47,17 @@ struct EventAction: Equatable {
         case rejected
     }
 
+    struct Snapshot: Equatable {
+        let title: String
+        let startAt: Date
+        let endAt: Date?
+    }
+
     let action: Kind
     let eventId: UUID?
     let payload: EventMutationPayload?
     let status: Status
+    let eventSnapshot: Snapshot?
 }
 
 struct EventActionsContent: Equatable {

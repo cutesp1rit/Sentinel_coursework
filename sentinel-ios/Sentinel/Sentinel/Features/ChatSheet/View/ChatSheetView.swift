@@ -92,11 +92,6 @@ struct ChatSheetView: View {
                 }
             }
             .onChange(of: store.messages.count) { _, _ in
-                debugTrace(
-                    "ChatSheetView.onChange(messages.count) -> count=\(store.messages.count), " +
-                    "last=\(store.messages.last.map { "\($0.id)|\($0.role)|text:\($0.markdownText != nil)|structured:\($0.suggestionsPayload != nil)" } ?? "nil"), " +
-                    "autoScroll=\(store.shouldAutoScrollToBottom)"
-                )
                 if store.shouldAutoScrollToBottom {
                     scrollTranscriptToBottom(scrollProxy)
                     store.send(.autoScrollCompleted)
@@ -150,6 +145,10 @@ struct ChatSheetView: View {
             )
         } else {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                if let errorMessage = store.errorMessage {
+                    errorCard(message: errorMessage)
+                }
+
                 ChatSheetTranscriptView(
                     detent: store.detent,
                     messages: store.messages,

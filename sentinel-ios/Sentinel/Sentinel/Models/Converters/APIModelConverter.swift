@@ -58,12 +58,21 @@ enum APIModelConverter {
         )
     }
 
+    nonisolated static func convert(_ dto: EventSnapshotDTO) -> EventAction.Snapshot {
+        EventAction.Snapshot(
+            title: dto.title,
+            startAt: dto.startAt,
+            endAt: dto.endAt
+        )
+    }
+
     nonisolated static func convert(_ dto: EventActionDTO) -> EventAction {
         EventAction(
             action: EventAction.Kind(rawValue: dto.action) ?? .create,
             eventId: dto.eventId,
             payload: dto.payload.map(convert),
-            status: EventAction.Status(rawValue: dto.status) ?? .pending
+            status: EventAction.Status(rawValue: dto.status) ?? .pending,
+            eventSnapshot: dto.eventSnapshot.map(convert)
         )
     }
 

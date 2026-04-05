@@ -79,6 +79,18 @@ struct ApplyActionsRequestDTO: Encodable, Equatable {
     }
 }
 
+struct EventSnapshotDTO: Codable, Equatable {
+    let title: String
+    let startAt: Date
+    let endAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case endAt = "end_at"
+        case startAt = "start_at"
+        case title
+    }
+}
+
 struct EventMutationPayloadDTO: Codable, Equatable {
     let title: String?
     let description: String?
@@ -106,12 +118,14 @@ struct EventMutationPayloadDTO: Codable, Equatable {
 struct EventActionDTO: Codable, Equatable {
     let action: String
     let eventId: UUID?
+    let eventSnapshot: EventSnapshotDTO?
     let payload: EventMutationPayloadDTO?
     let status: String
 
     enum CodingKeys: String, CodingKey {
         case action
         case eventId = "event_id"
+        case eventSnapshot = "event_snapshot"
         case payload
         case status
     }
