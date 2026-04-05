@@ -3,6 +3,8 @@ import SwiftUI
 struct SuggestionCardView: View {
     let suggestion: ChatSheetState.Suggestion
     let isSelected: Bool
+    let showsSelectionControl: Bool
+    let isInteractive: Bool
     let onTap: () -> Void
 
     var body: some View {
@@ -39,8 +41,10 @@ struct SuggestionCardView: View {
                                 .foregroundStyle(.red)
                         }
 
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(isSelected ? .blue : .secondary)
+                        if showsSelectionControl {
+                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                                .foregroundStyle(isSelected ? .blue : .secondary)
+                        }
                     }
                 }
             }
@@ -52,11 +56,12 @@ struct SuggestionCardView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
                     .stroke(
-                        isSelected ? Color.blue.opacity(AppOpacity.selection) : Color.clear,
+                        showsSelectionControl && isSelected ? Color.blue.opacity(AppOpacity.selection) : Color.clear,
                         lineWidth: AppStrokeWidth.emphasis
                     )
             }
         }
         .buttonStyle(.plain)
+        .allowsHitTesting(isInteractive)
     }
 }

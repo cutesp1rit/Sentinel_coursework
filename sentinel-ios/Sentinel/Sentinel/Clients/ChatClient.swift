@@ -1,7 +1,7 @@
 import ComposableArchitecture
 import Foundation
 
-struct ChatClient {
+struct ChatClient: Sendable {
     var applyActions: @Sendable (_ chatID: UUID, _ messageID: UUID, _ acceptedIndices: [Int], _ bearerToken: String) async throws -> ChatMessage
     var createChat: @Sendable (_ title: String, _ bearerToken: String) async throws -> Chat
     var listChats: @Sendable (_ bearerToken: String) async throws -> [Chat]
@@ -35,7 +35,7 @@ extension ChatClient: DependencyKey {
                 try AppConfiguration.jsonEncoder.encode(ChatCreateRequestDTO(title: title))
             }
             let data = try await liveAPISend(
-                APIRequest(path: "chats", method: .post, body: body, bearerToken: bearerToken)
+                APIRequest(path: "chats/", method: .post, body: body, bearerToken: bearerToken)
             )
             let dto = try await MainActor.run {
                 try AppConfiguration.jsonDecoder.decode(ChatDTO.self, from: data)
@@ -44,7 +44,7 @@ extension ChatClient: DependencyKey {
         },
         listChats: { bearerToken in
             let data = try await liveAPISend(
-                APIRequest(path: "chats", method: .get, bearerToken: bearerToken)
+                APIRequest(path: "chats/", method: .get, bearerToken: bearerToken)
             )
             let dto = try await MainActor.run {
                 try AppConfiguration.jsonDecoder.decode(ChatListDTO.self, from: data)
@@ -70,6 +70,7 @@ extension ChatClient: DependencyKey {
             return (dto.items.map(APIModelConverter.convert), dto.hasMore)
         },
         sendMessage: { chatID, role, contentText, bearerToken in
+            debugTrace("ChatClient.sendMessage -> chatID=\(chatID), role=\(role), draft=\(contentText ?? "nil")")
             let body = try await MainActor.run {
                 try AppConfiguration.jsonEncoder.encode(
                     ChatMessageCreateRequestDTO(
@@ -85,19 +86,24 @@ extension ChatClient: DependencyKey {
                     path: "chats/\(chatID.uuidString)/messages",
                     method: .post,
                     body: body,
-                    bearerToken: bearerToken
+                    bearerToken: bearerToken,
+                    timeoutInterval: 180
                 )
             )
             let dto = try await MainActor.run {
                 try AppConfiguration.jsonDecoder.decode(ChatMessageDTO.self, from: data)
             }
+            debugTrace(
+                "ChatClient.sendMessage <- assistant id=\(dto.id), role=\(dto.role), " +
+                "text=\(dto.contentText ?? "nil"), structured=\(dto.contentStructured != nil)"
+            )
             return APIModelConverter.convert(dto)
         }
     )
 }
 
 extension DependencyValues {
-    var chatClient: ChatClient {
+    nonisolated var chatClient: ChatClient {
         get { self[ChatClient.self] }
         set { self[ChatClient.self] = newValue }
     }

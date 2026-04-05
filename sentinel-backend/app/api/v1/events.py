@@ -8,6 +8,7 @@ from app.infrastructure.database.base import get_db
 from app.infrastructure.database.repositories import EventRepository
 from app.infrastructure.database.models import User
 from app.core.schemas.event import Event, EventCreate, EventUpdate, EventList
+from app.core.services.achievement_service import AchievementService
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/events", tags=["Events"])
@@ -44,7 +45,11 @@ async def create_event(
     db: AsyncSession = Depends(get_db),
 ):
     event_repo = EventRepository(db)
-    return await event_repo.create(current_user.id, event_data)
+    event = await event_repo.create(current_user.id, event_data)
+    await AchievementService(db).handle_event_created(
+        current_user.id, {"source": event.source, "type": event.type}
+    )
+    return event
 
 
 @router.get("/{event_id}", response_model=Event)
@@ -81,6 +86,10 @@ async def delete_event(
     db: AsyncSession = Depends(get_db),
 ):
     event_repo = EventRepository(db)
-    deleted = await event_repo.delete(event_id, current_user.id)
-    if not deleted:
+    event = await event_repo.get_by_id(event_id, current_user.id)
+    if not event:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    await event_repo.delete(event_id, current_user.id)
+    await AchievementService(db).handle_event_deleted(
+        current_user.id, {"source": event.source, "type": event.type}
+    )

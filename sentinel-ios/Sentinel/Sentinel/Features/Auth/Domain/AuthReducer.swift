@@ -158,7 +158,7 @@ private func validate(email: String, password: String) -> String? {
     return nil
 }
 
-private func errorMessage(for error: Error) -> String {
+nonisolated private func errorMessage(for error: Error) -> String {
     if let apiError = error as? APIError {
         return apiError.message
     }

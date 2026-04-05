@@ -32,8 +32,23 @@
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
 "chat_sheet.composer_placeholder" = "Ask Sentinel to plan your day...";
+"chat_sheet.auth_required_body" = "Sign in from the profile screen to load chat history and send messages to the assistant.";
+"chat_sheet.auth_required_title" = "Authorization Required";
+"chat_sheet.error_title" = "Could not load chat";
+"chat_sheet.history_button_accessibility" = "Open chat history";
+"chat_sheet.history_title" = "Chat History";
+"chat_sheet.load_earlier_messages" = "Load Earlier Messages";
+"chat_sheet.loading_chats" = "Loading chats…";
+"chat_sheet.loading_messages" = "Loading messages…";
+"chat_sheet.new_chat" = "New Chat";
+"chat_sheet.no_chats_body" = "Start with a message and Sentinel will create your first chat automatically.";
+"chat_sheet.no_chats_title" = "No Chats Yet";
+"chat_sheet.no_messages_body" = "This chat is empty. Send a message to get started.";
+"chat_sheet.no_messages_title" = "No Messages Yet";
+"chat_sheet.retry" = "Retry";
 "chat_sheet.send_message_accessibility" = "Send message";
 "chat_sheet.suggested_events" = "Suggested Events";
+"chat_sheet.thinking" = "Sentinel is thinking…";
 "chat_sheet.selected_count_format" = "%lld selected";
 "chat_sheet.conflict" = "Conflict";
 "chat_sheet.add_to_calendar" = "Add to Calendar";

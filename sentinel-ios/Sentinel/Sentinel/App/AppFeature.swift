@@ -30,10 +30,31 @@ struct AppFeature: Reducer {
     }
 
     var body: some Reducer<State, Action> {
+        CombineReducers {
+            Scope(state: \.auth, action: \.auth) {
+                AuthReducer()
+            }
+
+            Scope(state: \.home, action: \.home) {
+                HomeReducer()
+            }
+
+            Scope(state: \.chatSheet, action: \.chatSheet) {
+                ChatSheetReducer()
+            }
+        }
+
         Reduce { state, action in
             switch action {
             case .task:
                 return .send(.auth(.restoreRequested))
+
+            case .auth:
+                let accessToken = state.auth.session?.accessToken
+                guard state.chatSheet.accessToken != accessToken else {
+                    return .none
+                }
+                return .send(.chatSheet(.accessTokenChanged(accessToken)))
 
             case .home(.chatTapped):
                 if state.isProfileSheetPresented {
@@ -94,22 +115,8 @@ struct AppFeature: Reducer {
                 state.isProfileSheetPresented = isPresented
                 return .none
 
-            case .auth, .chatSheet, .home:
+            case .chatSheet, .home:
                 return .none
-            }
-        }
-
-        CombineReducers {
-            Scope(state: \.auth, action: \.auth) {
-                AuthReducer()
-            }
-
-            Scope(state: \.home, action: \.home) {
-                HomeReducer()
-            }
-
-            Scope(state: \.chatSheet, action: \.chatSheet) {
-                ChatSheetReducer()
             }
         }
     }

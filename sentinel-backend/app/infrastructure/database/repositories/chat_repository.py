@@ -34,6 +34,14 @@ class ChatRepository:
         await self.db.refresh(chat)
         return chat
 
+    async def delete(self, chat_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        chat = await self.get_by_id(chat_id, user_id)
+        if not chat:
+            return False
+        await self.db.delete(chat)
+        await self.db.commit()
+        return True
+
 
 class ChatMessageRepository:
 
@@ -89,7 +97,7 @@ class ChatMessageRepository:
     async def create(self, chat_id: uuid.UUID, data: ChatMessageCreate) -> ChatMessage:
         # Сериализуем Pydantic-объект в dict для JSONB
         structured = (
-            data.content_structured.model_dump(mode="json")
+            data.content_structured.model_dump(mode="json", exclude_none=True)
             if data.content_structured is not None
             else None
         )

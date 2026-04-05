@@ -9,10 +9,41 @@ struct ChatSheetState: Equatable {
         case large
     }
 
+    enum SendStage: Equatable {
+        case delivering
+        case syncing
+
+        var progressValue: Double {
+            switch self {
+            case .delivering:
+                return 0.42
+            case .syncing:
+                return 0.84
+            }
+        }
+    }
+
+    struct ChatSummary: Equatable, Identifiable {
+        let id: UUID
+        var title: String
+        var lastMessageAt: Date?
+
+        init(chat: Chat) {
+            id = chat.id
+            title = chat.title
+            lastMessageAt = chat.lastMessageAt
+        }
+    }
+
     struct Message: Equatable, Identifiable {
         enum Role: Equatable {
             case user
             case assistant
+        }
+
+        enum DeliveryState: Equatable {
+            case delivered
+            case sending
         }
 
         struct SuggestionsPayload: Equatable {
@@ -21,19 +52,23 @@ struct ChatSheetState: Equatable {
             var selectedSuggestionIDs: Set<Suggestion.ID> = []
         }
 
-        enum Content: Equatable {
-            case markdown(String)
-            case suggestions(SuggestionsPayload)
-        }
-
         let id: UUID
         let role: Role
-        var content: Content
+        var deliveryState: DeliveryState
+        var markdownText: String?
+        var suggestionsPayload: SuggestionsPayload?
 
-        init(id: UUID = UUID(), role: Role, text: String) {
+        init(
+            id: UUID = UUID(),
+            role: Role,
+            text: String,
+            deliveryState: DeliveryState = .delivered
+        ) {
             self.id = id
             self.role = role
-            self.content = .markdown(text)
+            self.deliveryState = deliveryState
+            self.markdownText = text
+            self.suggestionsPayload = nil
         }
 
         init(
@@ -45,27 +80,25 @@ struct ChatSheetState: Equatable {
         ) {
             self.id = id
             self.role = role
-            self.content = .suggestions(
-                .init(
-                    suggestions: suggestions,
-                    isExpanded: isExpanded,
-                    selectedSuggestionIDs: selectedSuggestionIDs
-                )
+            self.deliveryState = .delivered
+            self.markdownText = nil
+            self.suggestionsPayload = .init(
+                suggestions: suggestions,
+                isExpanded: isExpanded,
+                selectedSuggestionIDs: selectedSuggestionIDs
             )
+        }
+
+        init(chatMessage: ChatMessage) {
+            id = chatMessage.id
+            role = chatMessage.role == .user ? .user : .assistant
+            deliveryState = .delivered
+            markdownText = chatMessage.content.markdownText
+            suggestionsPayload = chatMessage.content.eventActions.map(SuggestionsPayload.init)
         }
 
         var isUser: Bool {
             role == .user
-        }
-
-        var markdownText: String? {
-            guard case let .markdown(text) = content else { return nil }
-            return text
-        }
-
-        var suggestionsPayload: SuggestionsPayload? {
-            guard case let .suggestions(payload) = content else { return nil }
-            return payload
         }
     }
 
@@ -89,58 +122,139 @@ struct ChatSheetState: Equatable {
             self.location = location
             self.hasConflict = hasConflict
         }
+
+        init(action: EventAction) {
+            id = UUID()
+            title = Self.title(for: action)
+            timeRange = Self.timeRange(for: action)
+            location = Self.location(for: action)
+            hasConflict = false
+        }
+
+        private static func title(for action: EventAction) -> String {
+            if let title = action.payload?.title, !title.isEmpty {
+                return title
+            }
+
+            switch action.action {
+            case .create:
+                return "Create Event"
+            case .update:
+                return "Update Event"
+            case .delete:
+                return "Delete Event"
+            }
+        }
+
+        private static func timeRange(for action: EventAction) -> String {
+            let start = action.payload?.startAt
+            let end = action.payload?.endAt
+
+            switch (start, end) {
+            case let (start?, end?):
+                return "\(start.formatted(date: .omitted, time: .shortened)) - \(end.formatted(date: .omitted, time: .shortened))"
+
+            case let (start?, nil):
+                return start.formatted(date: .abbreviated, time: .shortened)
+
+            default:
+                return action.status.rawValue.capitalized
+            }
+        }
+
+        private static func location(for action: EventAction) -> String {
+            if let location = action.payload?.location, !location.isEmpty {
+                return location
+            }
+
+            switch action.action {
+            case .create:
+                return "Create proposal"
+            case .update:
+                return "Update proposal"
+            case .delete:
+                return "Delete proposal"
+            }
+        }
     }
 
+    var accessToken: String?
+    var activeChatID: UUID?
+    var chatSummaries: [ChatSummary] = []
     var draft = ""
     var detent: Detent = .collapsed
-    var messages: [Message]
+    var errorMessage: String?
+    var hasLoadedChats = false
+    var hasMoreHistory = false
+    var isChatListPresented = false
+    var isLoadingChats = false
+    var isLoadingMessages = false
+    var isLoadingMoreHistory = false
+    var isSending = false
+    var messages: [Message] = []
+    var activeSendRequestID: UUID?
+    var pendingLocalMessageID: Message.ID?
+    var sendStage: SendStage?
+    var shouldAutoScrollToBottom = false
 
     init(
+        accessToken: String? = nil,
+        activeChatID: UUID? = nil,
+        chatSummaries: [ChatSummary] = [],
         draft: String = "",
         detent: Detent = .collapsed,
-        messages: [Message] = []
+        errorMessage: String? = nil,
+        hasLoadedChats: Bool = false,
+        hasMoreHistory: Bool = false,
+        isChatListPresented: Bool = false,
+        isLoadingChats: Bool = false,
+        isLoadingMessages: Bool = false,
+        isLoadingMoreHistory: Bool = false,
+        isSending: Bool = false,
+        messages: [Message] = [],
+        activeSendRequestID: UUID? = nil,
+        pendingLocalMessageID: Message.ID? = nil,
+        sendStage: SendStage? = nil,
+        shouldAutoScrollToBottom: Bool = false
     ) {
+        self.accessToken = accessToken
+        self.activeChatID = activeChatID
+        self.chatSummaries = chatSummaries
         self.draft = draft
         self.detent = detent
+        self.errorMessage = errorMessage
+        self.hasLoadedChats = hasLoadedChats
+        self.hasMoreHistory = hasMoreHistory
+        self.isChatListPresented = isChatListPresented
+        self.isLoadingChats = isLoadingChats
+        self.isLoadingMessages = isLoadingMessages
+        self.isLoadingMoreHistory = isLoadingMoreHistory
+        self.isSending = isSending
         self.messages = messages
+        self.activeSendRequestID = activeSendRequestID
+        self.pendingLocalMessageID = pendingLocalMessageID
+        self.sendStage = sendStage
+        self.shouldAutoScrollToBottom = shouldAutoScrollToBottom
     }
 
-    private static let sampleSuggestions = [
-        Suggestion(
-            title: L10n.ChatSheet.Mock.suggestionOneTitle,
-            timeRange: L10n.ChatSheet.Mock.suggestionOneTimeRange,
-            location: L10n.ChatSheet.Mock.suggestionOneLocation,
-            hasConflict: false
-        ),
-        Suggestion(
-            title: L10n.ChatSheet.Mock.suggestionTwoTitle,
-            timeRange: L10n.ChatSheet.Mock.suggestionTwoTimeRange,
-            location: L10n.ChatSheet.Mock.suggestionTwoLocation,
-            hasConflict: false
-        ),
-        Suggestion(
-            title: L10n.ChatSheet.Mock.suggestionThreeTitle,
-            timeRange: L10n.ChatSheet.Mock.suggestionThreeTimeRange,
-            location: L10n.ChatSheet.Mock.suggestionThreeLocation,
-            hasConflict: true
-        )
-    ]
+    var activeChatTitle: String {
+        guard let activeChatID else {
+            return L10n.ChatSheet.newChat
+        }
 
-    private static let sampleMessages = [
-        Message(role: .user, text: L10n.ChatSheet.Mock.messageOne),
-        Message(role: .assistant, text: L10n.ChatSheet.Mock.messageTwo),
-        Message(role: .user, text: L10n.ChatSheet.Mock.messageThree),
-        Message(
-            role: .assistant,
-            suggestions: sampleSuggestions,
-            isExpanded: true,
-            selectedSuggestionIDs: [sampleSuggestions[0].id]
-        )
-    ]
+        return chatSummaries.first(where: { $0.id == activeChatID })?.title
+            ?? L10n.ChatSheet.newChat
+    }
 
-    static let initial = Self(
-        draft: "",
-        detent: .collapsed,
-        messages: sampleMessages
-    )
+    var isSignedIn: Bool {
+        accessToken != nil
+    }
+
+    static let initial = Self()
+}
+
+private extension ChatSheetState.Message.SuggestionsPayload {
+    init(eventActionsContent: EventActionsContent) {
+        self.init(suggestions: eventActionsContent.actions.map(ChatSheetState.Suggestion.init))
+    }
 }
