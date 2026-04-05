@@ -53,6 +53,10 @@
 "chat_sheet.conflict" = "Conflict";
 "chat_sheet.add_to_calendar" = "Add to Calendar";
 "chat_sheet.add_count_to_calendar_format" = "Add %lld to Calendar";
+"chat_sheet.applied" = "Applied";
+"chat_sheet.syncing_to_calendar" = "Syncing to Calendar…";
+"chat_sheet.status.accepted" = "Accepted";
+"chat_sheet.status.rejected" = "Rejected";
 
 "chat_sheet.mock.suggestion_one.title" = "API Review (Shifted)";
 "chat_sheet.mock.suggestion_one.time_range" = "10:30 - 11:30";

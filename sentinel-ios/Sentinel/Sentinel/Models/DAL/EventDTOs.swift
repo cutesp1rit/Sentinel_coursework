@@ -36,3 +36,49 @@ struct EventListDTO: Codable, Equatable {
     let items: [EventDTO]
     let total: Int
 }
+
+struct EventCreateRequestDTO: Encodable, Equatable {
+    let title: String
+    let description: String?
+    let startAt: Date
+    let endAt: Date?
+    let allDay: Bool
+    let type: String
+    let location: String?
+    let isFixed: Bool
+    let source: String
+
+    enum CodingKeys: String, CodingKey {
+        case allDay = "all_day"
+        case description
+        case endAt = "end_at"
+        case isFixed = "is_fixed"
+        case location
+        case source
+        case startAt = "start_at"
+        case title
+        case type
+    }
+}
+
+struct EventUpdateRequestDTO: Encodable, Equatable {
+    let title: String?
+    let description: String?
+    let startAt: Date?
+    let endAt: Date?
+    let allDay: Bool?
+    let type: String?
+    let location: String?
+    let isFixed: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case allDay = "all_day"
+        case description
+        case endAt = "end_at"
+        case isFixed = "is_fixed"
+        case location
+        case startAt = "start_at"
+        case title
+        case type
+    }
+}

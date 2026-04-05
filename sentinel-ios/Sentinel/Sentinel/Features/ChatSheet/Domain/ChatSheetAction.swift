@@ -19,6 +19,7 @@ enum ChatSheetAction: Equatable {
     case messagesFailed(String, requestToken: String)
     case messagesLoaded(chatID: UUID, messages: [ChatMessage], hasMore: Bool, reset: Bool, requestToken: String)
     case onAppear
+    case refreshSuggestionConflictsRequested(ChatSheetState.Message.ID)
     case retryTapped
     case sendButtonTapped
     case sendResponseReceived(
@@ -47,6 +48,20 @@ enum ChatSheetAction: Equatable {
         hasMore: Bool?,
         messagePersisted: Bool,
         requestToken: String
+    )
+    case suggestionApplyCompleted(
+        messageID: ChatSheetState.Message.ID,
+        updatedMessage: ChatMessage,
+        requestToken: String
+    )
+    case suggestionApplyFailed(
+        messageID: ChatSheetState.Message.ID,
+        message: String,
+        requestToken: String
+    )
+    case suggestionConflictsLoaded(
+        messageID: ChatSheetState.Message.ID,
+        conflicts: [ChatSheetState.Suggestion.ID: Bool]
     )
     case toggleSuggestionExpansion(ChatSheetState.Message.ID)
     case toggleSuggestionSelection(

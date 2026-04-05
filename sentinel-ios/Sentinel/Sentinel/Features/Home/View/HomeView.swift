@@ -54,6 +54,9 @@ struct HomeView: View {
         }
         .toolbarBackground(Color(uiColor: .systemGroupedBackground), for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
+        .onAppear {
+            store.send(.onAppear)
+        }
     }
 }
 

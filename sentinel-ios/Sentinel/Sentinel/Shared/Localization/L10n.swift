@@ -60,6 +60,10 @@ enum L10n {
         static let thinking = String(localized: "chat_sheet.thinking")
         static let conflict = String(localized: "chat_sheet.conflict")
         static let addToCalendar = String(localized: "chat_sheet.add_to_calendar")
+        static let applied = String(localized: "chat_sheet.applied")
+        static let syncingToCalendar = String(localized: "chat_sheet.syncing_to_calendar")
+        static let statusAccepted = String(localized: "chat_sheet.status.accepted")
+        static let statusRejected = String(localized: "chat_sheet.status.rejected")
 
         static func selectedCount(_ count: Int) -> String {
             String.localizedStringWithFormat(

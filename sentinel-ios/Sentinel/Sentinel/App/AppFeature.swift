@@ -115,6 +115,9 @@ struct AppFeature: Reducer {
                 state.isProfileSheetPresented = isPresented
                 return .none
 
+            case .chatSheet(.suggestionApplyCompleted):
+                return .send(.home(.onAppear))
+
             case .chatSheet, .home:
                 return .none
             }

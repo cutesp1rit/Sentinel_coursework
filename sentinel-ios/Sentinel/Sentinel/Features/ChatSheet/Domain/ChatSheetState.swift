@@ -47,6 +47,7 @@ struct ChatSheetState: Equatable {
         }
 
         struct SuggestionsPayload: Equatable {
+            var isApplying = false
             var suggestions: [Suggestion]
             var isExpanded = true
             var selectedSuggestionIDs: Set<Suggestion.ID> = []
@@ -75,6 +76,7 @@ struct ChatSheetState: Equatable {
             id: UUID = UUID(),
             role: Role,
             suggestions: [Suggestion],
+            isApplying: Bool = false,
             isExpanded: Bool = true,
             selectedSuggestionIDs: Set<Suggestion.ID> = []
         ) {
@@ -83,6 +85,7 @@ struct ChatSheetState: Equatable {
             self.deliveryState = .delivered
             self.markdownText = nil
             self.suggestionsPayload = .init(
+                isApplying: isApplying,
                 suggestions: suggestions,
                 isExpanded: isExpanded,
                 selectedSuggestionIDs: selectedSuggestionIDs
@@ -103,28 +106,63 @@ struct ChatSheetState: Equatable {
     }
 
     struct Suggestion: Equatable, Identifiable {
-        let id: UUID
+        let id: String
+        let action: EventAction.Kind
+        let actionIndex: Int
+        let allDay: Bool
+        let eventId: UUID?
+        let eventKind: EventKind
+        let endAt: Date?
+        let startAt: Date?
+        let status: EventAction.Status
         var title: String
         var timeRange: String
         var location: String
         var hasConflict: Bool
 
         init(
-            id: UUID = UUID(),
+            id: String,
+            action: EventAction.Kind,
+            actionIndex: Int,
+            allDay: Bool,
+            eventId: UUID?,
+            eventKind: EventKind,
+            endAt: Date?,
+            startAt: Date?,
+            status: EventAction.Status,
             title: String,
             timeRange: String,
             location: String,
             hasConflict: Bool
         ) {
             self.id = id
+            self.action = action
+            self.actionIndex = actionIndex
+            self.allDay = allDay
+            self.eventId = eventId
+            self.eventKind = eventKind
+            self.endAt = endAt
+            self.startAt = startAt
+            self.status = status
             self.title = title
             self.timeRange = timeRange
             self.location = location
             self.hasConflict = hasConflict
         }
 
-        init(action: EventAction) {
-            id = UUID()
+        init(actionIndex: Int, action: EventAction) {
+            let resolvedStartAt = action.payload?.startAt ?? action.eventSnapshot?.startAt
+            let resolvedEndAt = action.payload?.endAt ?? action.eventSnapshot?.endAt
+
+            self.action = action.action
+            self.actionIndex = actionIndex
+            allDay = action.payload?.allDay ?? false
+            eventId = action.eventId
+            eventKind = action.payload?.type ?? .event
+            endAt = resolvedEndAt
+            startAt = resolvedStartAt
+            status = action.status
+            id = Self.stableID(actionIndex: actionIndex, action: action)
             title = Self.title(for: action)
             timeRange = Self.timeRange(for: action)
             location = Self.location(for: action)
@@ -134,6 +172,9 @@ struct ChatSheetState: Equatable {
         private static func title(for action: EventAction) -> String {
             if let title = action.payload?.title, !title.isEmpty {
                 return title
+            }
+            if let snapshotTitle = action.eventSnapshot?.title, !snapshotTitle.isEmpty {
+                return snapshotTitle
             }
 
             switch action.action {
@@ -147,8 +188,8 @@ struct ChatSheetState: Equatable {
         }
 
         private static func timeRange(for action: EventAction) -> String {
-            let start = action.payload?.startAt
-            let end = action.payload?.endAt
+            let start = action.payload?.startAt ?? action.eventSnapshot?.startAt
+            let end = action.payload?.endAt ?? action.eventSnapshot?.endAt
 
             switch (start, end) {
             case let (start?, end?):
@@ -171,10 +212,17 @@ struct ChatSheetState: Equatable {
             case .create:
                 return "Create proposal"
             case .update:
-                return "Update proposal"
+                return action.eventSnapshot?.title ?? "Update proposal"
             case .delete:
-                return "Delete proposal"
+                return action.eventSnapshot?.title ?? "Delete proposal"
             }
+        }
+
+        private static func stableID(actionIndex: Int, action: EventAction) -> String {
+            if let eventId = action.eventId {
+                return "event-\(eventId.uuidString)-\(actionIndex)"
+            }
+            return "proposal-\(actionIndex)"
         }
     }
 
@@ -255,6 +303,10 @@ struct ChatSheetState: Equatable {
 
 private extension ChatSheetState.Message.SuggestionsPayload {
     init(eventActionsContent: EventActionsContent) {
-        self.init(suggestions: eventActionsContent.actions.map(ChatSheetState.Suggestion.init))
+        self.init(
+            suggestions: eventActionsContent.actions.enumerated().map { actionIndex, action in
+                ChatSheetState.Suggestion(actionIndex: actionIndex, action: action)
+            }
+        )
     }
 }
