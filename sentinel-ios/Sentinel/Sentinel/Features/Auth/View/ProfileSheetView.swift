@@ -158,6 +158,30 @@ struct ProfileSheetView: View {
 
     private var signedInActions: some View {
         VStack(alignment: .leading, spacing: AppSpacing.large) {
+            NavigationLink {
+                if let accessToken = store.session?.accessToken {
+                    AchievementsView(
+                        store: Store(
+                            initialState: AchievementsState(accessToken: accessToken)
+                        ) {
+                            AchievementsReducer()
+                        }
+                    )
+                }
+            } label: {
+                HStack {
+                    Label(L10n.Achievements.title, systemImage: "rosette")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+                .font(.body.weight(.semibold))
+                .padding(.vertical, AppSpacing.large)
+            }
+            .buttonStyle(.bordered)
+
             Button(role: .destructive) {
                 store.send(.logoutTapped)
             } label: {

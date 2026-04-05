@@ -123,4 +123,56 @@ enum L10n {
         static let signedOutTitle = String(localized: "profile.signed_out_title")
         static let title = String(localized: "profile.title")
     }
+
+    enum Achievements {
+        static let title = String(localized: "achievements.title")
+        static let summaryTitle = String(localized: "achievements.summary_title")
+        static let loading = String(localized: "achievements.loading")
+        static let errorTitle = String(localized: "achievements.error_title")
+        static let emptyTitle = String(localized: "achievements.empty_title")
+        static let emptyBody = String(localized: "achievements.empty_body")
+        static let completedGroup = String(localized: "achievements.completed_group")
+        static let unlocked = String(localized: "achievements.unlocked")
+        static let eventsCreated = String(localized: "achievements.group.events_created")
+        static let aiAssisted = String(localized: "achievements.group.ai_assisted")
+        static let reminders = String(localized: "achievements.group.reminders")
+        static let activeDays = String(localized: "achievements.group.active_days")
+
+        static func earnedAt(_ date: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.earned_at_format"),
+                date
+            )
+        }
+
+        static func level(_ level: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.level_format"),
+                level
+            )
+        }
+
+        static func progressToLevel(_ current: Int, _ target: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.progress_to_level_format"),
+                current,
+                target
+            )
+        }
+
+        static func summaryBody(_ unlocked: Int, _ total: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.summary_body_format"),
+                unlocked,
+                total
+            )
+        }
+
+        static func target(_ target: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.target_format"),
+                target
+            )
+        }
+    }
 }
