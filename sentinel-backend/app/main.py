@@ -1,3 +1,6 @@
+import logging
+import time
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -7,6 +10,13 @@ from fastapi.encoders import jsonable_encoder
 from app.core.config import settings
 from app.api.v1 import auth, events, chats, achievements
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
@@ -15,6 +25,19 @@ app = FastAPI(
     redoc_url="/redoc",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start) * 1000
+    logger.info(
+        "http method=%s path=%s status=%s duration_ms=%.1f",
+        request.method, request.url.path, response.status_code, duration_ms,
+    )
+    return response
+
 
 _cors_origins = [str(o) for o in settings.BACKEND_CORS_ORIGINS] or ["*"]
 app.add_middleware(
