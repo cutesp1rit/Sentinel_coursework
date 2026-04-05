@@ -192,6 +192,7 @@ struct ChatSheetState: Equatable {
     var isLoadingMoreHistory = false
     var isSending = false
     var messages: [Message] = []
+    var activeSendRequestID: UUID?
     var pendingLocalMessageID: Message.ID?
     var sendStage: SendStage?
     var shouldAutoScrollToBottom = false
@@ -211,6 +212,7 @@ struct ChatSheetState: Equatable {
         isLoadingMoreHistory: Bool = false,
         isSending: Bool = false,
         messages: [Message] = [],
+        activeSendRequestID: UUID? = nil,
         pendingLocalMessageID: Message.ID? = nil,
         sendStage: SendStage? = nil,
         shouldAutoScrollToBottom: Bool = false
@@ -229,6 +231,7 @@ struct ChatSheetState: Equatable {
         self.isLoadingMoreHistory = isLoadingMoreHistory
         self.isSending = isSending
         self.messages = messages
+        self.activeSendRequestID = activeSendRequestID
         self.pendingLocalMessageID = pendingLocalMessageID
         self.sendStage = sendStage
         self.shouldAutoScrollToBottom = shouldAutoScrollToBottom

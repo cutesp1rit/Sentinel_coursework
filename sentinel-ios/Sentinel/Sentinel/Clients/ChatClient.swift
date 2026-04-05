@@ -70,6 +70,7 @@ extension ChatClient: DependencyKey {
             return (dto.items.map(APIModelConverter.convert), dto.hasMore)
         },
         sendMessage: { chatID, role, contentText, bearerToken in
+            debugTrace("ChatClient.sendMessage -> chatID=\(chatID), role=\(role), draft=\(contentText ?? "nil")")
             let body = try await MainActor.run {
                 try AppConfiguration.jsonEncoder.encode(
                     ChatMessageCreateRequestDTO(
@@ -85,12 +86,17 @@ extension ChatClient: DependencyKey {
                     path: "chats/\(chatID.uuidString)/messages",
                     method: .post,
                     body: body,
-                    bearerToken: bearerToken
+                    bearerToken: bearerToken,
+                    timeoutInterval: 180
                 )
             )
             let dto = try await MainActor.run {
                 try AppConfiguration.jsonDecoder.decode(ChatMessageDTO.self, from: data)
             }
+            debugTrace(
+                "ChatClient.sendMessage <- assistant id=\(dto.id), role=\(dto.role), " +
+                "text=\(dto.contentText ?? "nil"), structured=\(dto.contentStructured != nil)"
+            )
             return APIModelConverter.convert(dto)
         }
     )

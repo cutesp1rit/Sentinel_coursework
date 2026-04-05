@@ -7,6 +7,8 @@ struct ChatSheetReducer {
 
     private enum Constants {
         static let pageSize = 100
+        static let recoveryPollAttempts = 6
+        static let recoveryPollDelayNanoseconds: UInt64 = 5_000_000_000
     }
 
     var body: some Reducer<ChatSheetState, ChatSheetAction> {
@@ -23,6 +25,7 @@ struct ChatSheetReducer {
                     state.chatSummaries = []
                     state.draft = ""
                     state.messages = []
+                    state.activeSendRequestID = nil
                     state.pendingLocalMessageID = nil
                     state.sendStage = nil
                     state.hasLoadedChats = false
@@ -196,6 +199,10 @@ struct ChatSheetReducer {
             case let .messagesLoaded(chatID, messages, hasMore, reset, requestToken):
                 guard state.accessToken == requestToken else { return .none }
                 guard state.activeChatID == chatID else { return .none }
+                debugTrace(
+                    "ChatSheetReducer.messagesLoaded -> chatID=\(chatID), reset=\(reset), " +
+                    "count=\(messages.count), last=\(messages.last.map { "\($0.id)|\($0.role)|text:\($0.content.markdownText != nil)|structured:\($0.content.eventActions != nil)" } ?? "nil")"
+                )
 
                 let mappedMessages = messages.map(ChatSheetState.Message.init)
                 if reset {
@@ -226,7 +233,37 @@ struct ChatSheetReducer {
                 }
                 return .none
 
-            case let .sendStageChanged(stage):
+            case let .sendResponseReceived(requestID, activeChatID, assistantMessage, requestToken):
+                guard state.accessToken == requestToken else { return .none }
+                debugTrace(
+                    "ChatSheetReducer.sendResponseReceived[\(requestID)] -> assistant id=\(assistantMessage.id), " +
+                    "role=\(assistantMessage.role), text=\(assistantMessage.content.markdownText ?? "nil"), " +
+                    "structured=\(assistantMessage.content.eventActions != nil)"
+                )
+                guard state.activeSendRequestID == requestID else {
+                    debugTrace("ChatSheetReducer.sendResponseReceived[\(requestID)] ignored; active=\(String(describing: state.activeSendRequestID))")
+                    return .none
+                }
+
+                state.activeChatID = activeChatID
+                state.isSending = false
+                state.sendStage = nil
+
+                if let pendingLocalMessageID = state.pendingLocalMessageID,
+                   let index = state.messages.firstIndex(where: { $0.id == pendingLocalMessageID }) {
+                    state.messages[index].deliveryState = .delivered
+                }
+
+                if !state.messages.contains(where: { $0.id == assistantMessage.id }) {
+                    state.messages.append(.init(chatMessage: assistantMessage))
+                }
+                debugTrace("ChatSheetReducer.sendResponseReceived[\(requestID)] -> state.messages.count=\(state.messages.count)")
+
+                state.shouldAutoScrollToBottom = true
+                return .none
+
+            case let .sendStageChanged(stage, requestID):
+                guard state.activeSendRequestID == requestID else { return .none }
                 state.sendStage = stage
                 return .none
 
@@ -247,9 +284,13 @@ struct ChatSheetReducer {
                 guard !trimmedDraft.isEmpty else { return .none }
 
                 let pendingLocalMessageID = UUID()
+                let requestID = UUID()
                 let existingActiveChatID = state.activeChatID
+                let existingServerMessageCount = state.messages.count
+                debugTrace("ChatSheetReducer.sendButtonTapped[\(requestID)] -> isSending(before)=\(state.isSending), activeChatID=\(String(describing: existingActiveChatID)), draft=\(trimmedDraft)")
                 state.isSending = true
                 state.errorMessage = nil
+                state.activeSendRequestID = requestID
                 state.pendingLocalMessageID = pendingLocalMessageID
                 state.sendStage = .delivering
                 state.messages.append(
@@ -275,13 +316,19 @@ struct ChatSheetReducer {
                             activeChatID = createdChat.id
                         }
 
-                        _ = try await chatClient.sendMessage(
+                        let assistantMessage = try await chatClient.sendMessage(
                             activeChatID!,
                             "user",
                             trimmedDraft,
                             accessToken
                         )
-                        await send(.sendStageChanged(.syncing))
+                        await send(.sendResponseReceived(
+                            requestID: requestID,
+                            activeChatID: activeChatID!,
+                            assistantMessage: assistantMessage,
+                            requestToken: accessToken
+                        ))
+                        await send(.sendStageChanged(.syncing, requestID: requestID))
                         let chats = try await chatClient.listChats(accessToken)
                         let (messages, hasMore) = try await chatClient.listMessages(
                             activeChatID!,
@@ -291,9 +338,11 @@ struct ChatSheetReducer {
                         )
 
                         await send(.sendFlowCompleted(
+                            requestID: requestID,
                             chats: chats,
                             activeChatID: activeChatID!,
                             messages: messages,
+                            assistantMessage: assistantMessage,
                             hasMore: hasMore,
                             requestToken: accessToken
                         ))
@@ -322,7 +371,50 @@ struct ChatSheetReducer {
                             transcript = nil
                             messagePersisted = false
                         }
+
+                        if let activeChatID,
+                           Self.shouldAttemptRecoveryPolling(for: error) {
+                            let recoveryPollAttempts = 6
+                            let recoveryPollDelayNanoseconds: UInt64 = 5_000_000_000
+                            for attempt in 1...recoveryPollAttempts {
+                                try? await Task.sleep(nanoseconds: recoveryPollDelayNanoseconds)
+                                if let recoveredTranscript = try? await chatClient.listMessages(
+                                    activeChatID,
+                                    nil,
+                                    Constants.pageSize,
+                                    accessToken
+                                ),
+                                   recoveredTranscript.0.count > existingServerMessageCount {
+                                    let latestMessageIsAssistant: Bool
+                                    if let lastMessage = recoveredTranscript.0.last {
+                                        switch lastMessage.role {
+                                        case .assistant:
+                                            latestMessageIsAssistant = true
+                                        case .user, .system, .tool:
+                                            latestMessageIsAssistant = false
+                                        }
+                                    } else {
+                                        latestMessageIsAssistant = false
+                                    }
+                                    guard latestMessageIsAssistant else { continue }
+                                    let recoveredChats = (try? await chatClient.listChats(accessToken)) ?? chats ?? []
+                                    await send(.sendFlowCompleted(
+                                        requestID: requestID,
+                                        chats: recoveredChats,
+                                        activeChatID: activeChatID,
+                                        messages: recoveredTranscript.0,
+                                        assistantMessage: recoveredTranscript.0.last!,
+                                        hasMore: recoveredTranscript.1,
+                                        requestToken: accessToken
+                                    ))
+                                    debugTrace("ChatSheetReducer.sendButtonTapped[\(requestID)] -> recovered assistant via poll attempt \(attempt)")
+                                    return
+                                }
+                            }
+                        }
+
                         await send(.sendFlowFailed(
+                            requestID: requestID,
                             message: Self.errorMessage(for: error),
                             restoreDraft: messagePersisted ? nil : trimmedDraft,
                             chats: chats,
@@ -335,23 +427,41 @@ struct ChatSheetReducer {
                     }
                 }
 
-            case let .sendFlowCompleted(chats, activeChatID, messages, hasMore, requestToken):
+            case let .sendFlowCompleted(requestID, chats, activeChatID, messages, assistantMessage, hasMore, requestToken):
                 guard state.accessToken == requestToken else { return .none }
-                state.isSending = false
+                debugTrace("ChatSheetReducer.sendFlowCompleted[\(requestID)] -> active=\(String(describing: state.activeSendRequestID)), fetched=\(messages.count)")
+                guard state.activeSendRequestID == requestID else {
+                    debugTrace("ChatSheetReducer.sendFlowCompleted[\(requestID)] ignored")
+                    return .none
+                }
                 state.chatSummaries = chats.map(ChatSheetState.ChatSummary.init)
                 state.hasLoadedChats = true
                 state.activeChatID = activeChatID
-                state.messages = messages.map(ChatSheetState.Message.init)
+                let mergedMessages = Self.mergingLatestMessages(
+                    fetchedMessages: messages,
+                    assistantMessage: assistantMessage
+                )
+                debugTrace(
+                    "ChatSheetReducer.sendFlowCompleted[\(requestID)] -> fetched=\(messages.count), merged=\(mergedMessages.count), " +
+                    "assistantIncluded=\(mergedMessages.contains(where: { $0.id == assistantMessage.id }))"
+                )
+                state.messages = mergedMessages.map(ChatSheetState.Message.init)
                 state.hasMoreHistory = hasMore
-                state.pendingLocalMessageID = nil
+                state.activeSendRequestID = nil
                 state.sendStage = nil
                 state.shouldAutoScrollToBottom = true
                 return .none
 
-            case let .sendFlowFailed(message, restoreDraft, chats, activeChatID, messages, hasMore, messagePersisted, requestToken):
+            case let .sendFlowFailed(requestID, message, restoreDraft, chats, activeChatID, messages, hasMore, messagePersisted, requestToken):
                 guard state.accessToken == requestToken else { return .none }
+                debugTrace("ChatSheetReducer.sendFlowFailed[\(requestID)] -> active=\(String(describing: state.activeSendRequestID)), message=\(message)")
+                guard state.activeSendRequestID == requestID else {
+                    debugTrace("ChatSheetReducer.sendFlowFailed[\(requestID)] ignored")
+                    return .none
+                }
                 state.isSending = false
                 state.errorMessage = message
+                state.activeSendRequestID = nil
                 state.sendStage = nil
                 if let restoreDraft {
                     state.draft = restoreDraft
@@ -418,7 +528,7 @@ private extension ChatSheetReducer {
         return String(trimmed.prefix(40))
     }
 
-    static func errorMessage(for error: Error) -> String {
+    nonisolated static func errorMessage(for error: Error) -> String {
         if let apiError = error as? APIError {
             return apiError.message
         }
@@ -433,5 +543,23 @@ private extension ChatSheetReducer {
         var seen = Set(existing.map(\.id))
         let uniqueOlder = olderMessages.filter { seen.insert($0.id).inserted }
         return uniqueOlder + existing
+    }
+
+    static func mergingLatestMessages(
+        fetchedMessages: [ChatMessage],
+        assistantMessage: ChatMessage
+    ) -> [ChatMessage] {
+        if fetchedMessages.contains(where: { $0.id == assistantMessage.id }) {
+            return fetchedMessages
+        }
+
+        return fetchedMessages + [assistantMessage]
+    }
+
+    nonisolated static func shouldAttemptRecoveryPolling(for error: Error) -> Bool {
+        let message = errorMessage(for: error).lowercased()
+        return message.contains("timed out")
+            || message.contains("network connection was lost")
+            || message.contains("service unavailable")
     }
 }

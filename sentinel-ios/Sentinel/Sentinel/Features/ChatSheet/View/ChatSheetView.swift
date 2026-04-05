@@ -92,6 +92,11 @@ struct ChatSheetView: View {
                 }
             }
             .onChange(of: store.messages.count) { _, _ in
+                debugTrace(
+                    "ChatSheetView.onChange(messages.count) -> count=\(store.messages.count), " +
+                    "last=\(store.messages.last.map { "\($0.id)|\($0.role)|text:\($0.markdownText != nil)|structured:\($0.suggestionsPayload != nil)" } ?? "nil"), " +
+                    "autoScroll=\(store.shouldAutoScrollToBottom)"
+                )
                 if store.shouldAutoScrollToBottom {
                     scrollTranscriptToBottom(scrollProxy)
                     store.send(.autoScrollCompleted)
@@ -287,15 +292,7 @@ struct ChatSheetView: View {
 
     private var assistantThinkingRow: some View {
         HStack {
-            Text(L10n.ChatSheet.thinking)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .padding(.horizontal, AppSpacing.large)
-                .padding(.vertical, AppSpacing.medium)
-                .background(
-                    Color(uiColor: .secondarySystemFill),
-                    in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                )
+            ShimmeringThinkingText(text: L10n.ChatSheet.thinking)
 
             Spacer(minLength: AppSizing.minimumHitTarget)
         }
@@ -349,5 +346,57 @@ struct ChatSheetView: View {
 
     private func sendMessage() {
         _ = store.send(.sendButtonTapped, animation: detentTransitionAnimation)
+    }
+}
+
+private struct ShimmeringThinkingText: View {
+    let text: String
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var shimmerOffset: CGFloat = -1
+
+    private var baseColor: Color {
+        colorScheme == .dark ? .white.opacity(0.5) : .black.opacity(0.42)
+    }
+
+    private var highlightColor: Color {
+        colorScheme == .dark ? .black.opacity(0.75) : .white.opacity(0.75)
+    }
+
+    var body: some View {
+        Text(text)
+            .font(.body)
+            .foregroundStyle(baseColor)
+            .overlay {
+                GeometryReader { geometry in
+                    let width = geometry.size.width
+
+                    LinearGradient(
+                        stops: [
+                            .init(color: .clear, location: 0),
+                            .init(color: highlightColor.opacity(0.0), location: 0.12),
+                            .init(color: highlightColor.opacity(0.28), location: 0.32),
+                            .init(color: highlightColor.opacity(0.9), location: 0.5),
+                            .init(color: highlightColor.opacity(0.28), location: 0.68),
+                            .init(color: highlightColor.opacity(0.0), location: 0.88),
+                            .init(color: .clear, location: 1)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: width, height: geometry.size.height)
+                    .offset(x: width * shimmerOffset)
+                    .blendMode(.screen)
+                    .clipped()
+                }
+                .allowsHitTesting(false)
+            }
+        .fixedSize(horizontal: true, vertical: true)
+        .onAppear {
+            shimmerOffset = -1
+            withAnimation(.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                shimmerOffset = 1
+            }
+        }
     }
 }

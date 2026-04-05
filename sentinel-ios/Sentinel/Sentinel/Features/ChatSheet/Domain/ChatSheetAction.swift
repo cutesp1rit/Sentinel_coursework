@@ -21,9 +21,24 @@ enum ChatSheetAction: Equatable {
     case onAppear
     case retryTapped
     case sendButtonTapped
-    case sendStageChanged(ChatSheetState.SendStage?)
-    case sendFlowCompleted(chats: [Chat], activeChatID: UUID, messages: [ChatMessage], hasMore: Bool, requestToken: String)
+    case sendResponseReceived(
+        requestID: UUID,
+        activeChatID: UUID,
+        assistantMessage: ChatMessage,
+        requestToken: String
+    )
+    case sendStageChanged(ChatSheetState.SendStage?, requestID: UUID)
+    case sendFlowCompleted(
+        requestID: UUID,
+        chats: [Chat],
+        activeChatID: UUID,
+        messages: [ChatMessage],
+        assistantMessage: ChatMessage,
+        hasMore: Bool,
+        requestToken: String
+    )
     case sendFlowFailed(
+        requestID: UUID,
         message: String,
         restoreDraft: String?,
         chats: [Chat]?,
