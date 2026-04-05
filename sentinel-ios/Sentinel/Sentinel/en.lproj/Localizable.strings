@@ -97,3 +97,21 @@
 "profile.signed_out_body" = "Home stays local-first, but chat history and other protected backend features require authorization.";
 "profile.signed_out_title" = "Signed Out";
 "profile.title" = "Profile";
+
+"achievements.title" = "Achievements";
+"achievements.summary_title" = "Progress";
+"achievements.summary_body_format" = "Unlocked %lld of %lld achievement levels.";
+"achievements.loading" = "Loading achievements…";
+"achievements.error_title" = "Could not load achievements";
+"achievements.empty_title" = "No achievements yet";
+"achievements.empty_body" = "Your milestones and activity badges will appear here as you use Sentinel.";
+"achievements.completed_group" = "All levels unlocked.";
+"achievements.unlocked" = "Unlocked";
+"achievements.earned_at_format" = "Earned %@";
+"achievements.level_format" = "Level %lld";
+"achievements.progress_to_level_format" = "%lld / %lld toward the next level";
+"achievements.target_format" = "Target: %lld";
+"achievements.group.events_created" = "Events Created";
+"achievements.group.ai_assisted" = "AI Assisted";
+"achievements.group.reminders" = "Reminders";
+"achievements.group.active_days" = "Active Days";
