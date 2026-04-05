@@ -2,6 +2,10 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ChatSheetView: View {
+    private enum Route: Hashable {
+        case chat
+    }
+
     private enum ScrollAnchor {
         static let bottom = "chat-bottom"
     }
@@ -14,6 +18,7 @@ struct ChatSheetView: View {
     let store: StoreOf<ChatSheetReducer>
 
     @FocusState private var isComposerFocused: Bool
+    @State private var path: [Route] = [.chat]
     @State private var transcriptOpacity: CGFloat = 1
 
     private var isCollapsed: Bool {
@@ -21,6 +26,60 @@ struct ChatSheetView: View {
     }
 
     var body: some View {
+        NavigationStack {
+            NavigationStack(path: $path) {
+                ChatHistoryPickerView(
+                    chats: store.chatSummaries,
+                    activeChatID: store.activeChatID,
+                    onCreateNewChat: {
+                        store.send(.chatSelected(nil))
+                        if path.isEmpty {
+                            path.append(.chat)
+                        }
+                    },
+                    onSelectChat: { chatID in
+                        store.send(.chatSelected(chatID))
+                        if path.isEmpty {
+                            path.append(.chat)
+                        }
+                    }
+                )
+                .navigationDestination(for: Route.self) { _ in
+                    chatDetailScene
+                }
+                .onAppear {
+                    _ = store.send(.onAppear)
+                    syncPathWithPresentationState(animated: false)
+                }
+                .onChange(of: store.isChatListPresented) { _, _ in
+                    syncPathWithPresentationState(animated: true)
+                }
+            }
+        }
+    }
+
+    private var detentBinding: Binding<PresentationDetent> {
+        Binding(
+            get: { store.detent.presentationDetent },
+            set: { _ = store.send(.detentChanged(.init($0)), animation: detentTransitionAnimation) }
+        )
+    }
+
+    private var draftBinding: Binding<String> {
+        Binding(
+            get: { store.draft },
+            set: { _ = store.send(.draftChanged($0)) }
+        )
+    }
+
+    private var chatListBinding: Binding<Bool> {
+        Binding(
+            get: { store.isChatListPresented },
+            set: { _ = store.send(.chatListPresentationChanged($0)) }
+        )
+    }
+
+    private var chatDetailScene: some View {
         ScrollViewReader { scrollProxy in
             VStack(spacing: 0) {
                 ScrollView {
@@ -42,11 +101,6 @@ struct ChatSheetView: View {
                 .scrollDismissesKeyboard(.interactively)
                 .allowsHitTesting(!isCollapsed)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                if !isCollapsed {
-                    chatHeader
-                }
-            }
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 composerDock
             }
@@ -58,23 +112,51 @@ struct ChatSheetView: View {
             .presentationBackgroundInteraction(.enabled(upThrough: .chatMedium))
             .presentationContentInteraction(.scrolls)
             .presentationDragIndicator(.visible)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(store.detent == .collapsed ? .hidden : .visible, for: .navigationBar)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        store.send(.chatListButtonTapped)
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                            .font(.body.weight(.semibold))
+                    }
+                    .disabled(!store.isSignedIn)
+                    .opacity(store.isSignedIn ? 1 : AppOpacity.disabled)
+                }
+
+                ToolbarItem(placement: .principal) {
+                    VStack(spacing: 0) {
+                        Text("Chat")
+                            .font(.headline.weight(.semibold))
+
+                        Text(store.activeChatTitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        store.send(.chatSelected(nil))
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.body.weight(.semibold))
+                    }
+                    .disabled(!store.isSignedIn)
+                    .opacity(store.isSignedIn ? 1 : AppOpacity.disabled)
+                }
+            }
             .onAppear {
-                _ = store.send(.onAppear)
                 transcriptOpacity = store.detent == .collapsed ? 0 : 1
                 if store.detent == .large {
                     scrollTranscriptToBottom(scrollProxy, retryAfter: detentSettleDelay)
                 }
-            }
-            .sheet(
-                isPresented: chatListBinding
-            ) {
-                ChatHistoryPickerView(
-                    chats: store.chatSummaries,
-                    activeChatID: store.activeChatID,
-                    onClose: { store.send(.chatListPresentationChanged(false)) },
-                    onCreateNewChat: { store.send(.chatSelected(nil)) },
-                    onSelectChat: { store.send(.chatSelected($0)) }
-                )
             }
             .onChange(of: store.detent) { oldValue, newValue in
                 if newValue == .collapsed {
@@ -104,27 +186,6 @@ struct ChatSheetView: View {
                 }
             }
         }
-    }
-
-    private var detentBinding: Binding<PresentationDetent> {
-        Binding(
-            get: { store.detent.presentationDetent },
-            set: { _ = store.send(.detentChanged(.init($0)), animation: detentTransitionAnimation) }
-        )
-    }
-
-    private var draftBinding: Binding<String> {
-        Binding(
-            get: { store.draft },
-            set: { _ = store.send(.draftChanged($0)) }
-        )
-    }
-
-    private var chatListBinding: Binding<Bool> {
-        Binding(
-            get: { store.isChatListPresented },
-            set: { _ = store.send(.chatListPresentationChanged($0)) }
-        )
     }
 
     @ViewBuilder
@@ -194,40 +255,6 @@ struct ChatSheetView: View {
                 : -8
         )
         .animation(detentTransitionAnimation, value: store.detent)
-    }
-
-    private var chatHeader: some View {
-        HStack(spacing: AppSpacing.medium) {
-            Button {
-                store.send(.chatListButtonTapped)
-            } label: {
-                Image(systemName: "sidebar.left")
-                    .font(.body.weight(.semibold))
-                    .frame(width: AppGrid.value(11), height: AppGrid.value(11))
-                    .background(Color(uiColor: .secondarySystemFill))
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.ChatSheet.historyButtonAccessibility)
-            .disabled(!store.isSignedIn)
-            .opacity(store.isSignedIn ? 1 : AppOpacity.disabled)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                Text(store.activeChatTitle)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-
-                Text(store.isSignedIn ? L10n.ChatSheet.historyTitle : L10n.ChatSheet.authRequiredTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-        }
-        .padding(.horizontal, AppSpacing.large)
-        .padding(.top, AppSpacing.small)
-        .padding(.bottom, AppSpacing.medium)
-        .background(.ultraThinMaterial)
     }
 
     @ViewBuilder
@@ -345,6 +372,19 @@ struct ChatSheetView: View {
 
     private func sendMessage() {
         _ = store.send(.sendButtonTapped, animation: detentTransitionAnimation)
+    }
+
+    private func syncPathWithPresentationState(animated: Bool) {
+        let targetPath: [Route] = store.isChatListPresented ? [] : [.chat]
+        guard targetPath != path else { return }
+
+        if animated {
+            withAnimation(.snappy(duration: AppAnimationDuration.standard)) {
+                path = targetPath
+            }
+        } else {
+            path = targetPath
+        }
     }
 }
 

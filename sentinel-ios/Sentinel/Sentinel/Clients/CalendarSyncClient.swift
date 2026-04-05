@@ -316,14 +316,13 @@ private extension CalendarSyncClient {
         }
 
         let eventStore = EKEventStore()
-        let startDate = Date()
-        let endDate = Calendar.current.date(byAdding: .day, value: 14, to: startDate) ?? startDate
+        let startDate = Calendar.current.startOfDay(for: Date())
+        let endDate = Calendar.current.date(byAdding: .day, value: 90, to: startDate) ?? startDate
         let predicate = eventStore.predicateForEvents(withStart: startDate, end: endDate, calendars: nil)
         let items = eventStore.events(matching: predicate)
             .sorted { lhs, rhs in
                 (lhs.startDate ?? .distantFuture) < (rhs.startDate ?? .distantFuture)
             }
-            .prefix(8)
             .map { event in
                 UpcomingItem(
                     id: UUID(),

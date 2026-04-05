@@ -7,9 +7,20 @@ enum L10n {
     }
 
     enum Home {
+        static let achievementsRailTitle = String(localized: "home.achievements_rail_title")
+        static let allEventsBody = String(localized: "home.all_events_body")
+        static let allEventsTitle = String(localized: "home.all_events_title")
         static let subtitle = String(localized: "home.subtitle")
+        static let emptyTodayBody = String(localized: "home.empty_today_body")
+        static let emptyTodayTitle = String(localized: "home.empty_today_title")
+        static let heroTitle = String(localized: "home.hero_title")
         static let localStatus = String(localized: "home.local_status")
+        static let metricBatteryTitle = String(localized: "home.metric_battery_title")
+        static let metricFreeValue = String(localized: "home.metric_free_value")
+        static let metricNextValue = String(localized: "home.metric_next_value")
+        static let metricTodayTitle = String(localized: "home.metric_today_title")
         static let todaySnapshotTitle = String(localized: "home.today_snapshot_title")
+        static let todaySectionTitle = String(localized: "home.today_section_title")
         static let eventsTitle = String(localized: "home.events_title")
         static let calendarTitle = String(localized: "home.calendar_title")
         static let batteryTitle = String(localized: "home.battery_title")
@@ -36,6 +47,30 @@ enum L10n {
         static let chatBody = String(localized: "home.chat_body")
         static let rebalanceTitle = String(localized: "home.rebalance_title")
         static let rebalanceBody = String(localized: "home.rebalance_body")
+        static let rebalanceButton = String(localized: "home.rebalance_button")
+        static let signInButton = String(localized: "home.sign_in_button")
+        static let signedOutCardOneBody = String(localized: "home.signed_out_card_one_body")
+        static let signedOutCardOneTitle = String(localized: "home.signed_out_card_one_title")
+        static let signedOutCardTwoBody = String(localized: "home.signed_out_card_two_body")
+        static let signedOutCardTwoTitle = String(localized: "home.signed_out_card_two_title")
+        static let signedOutHeroBody = String(localized: "home.signed_out_hero_body")
+        static let signedOutHeroEyebrow = String(localized: "home.signed_out_hero_eyebrow")
+        static let signedOutHeroTitle = String(localized: "home.signed_out_hero_title")
+        static let viewAllButton = String(localized: "home.view_all_button")
+
+        static func heroSubtitle(_ name: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "home.hero_subtitle_format"),
+                name
+            )
+        }
+
+        static func todayCount(_ count: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "home.today_count_format"),
+                count
+            )
+        }
     }
 
     enum ChatSheet {

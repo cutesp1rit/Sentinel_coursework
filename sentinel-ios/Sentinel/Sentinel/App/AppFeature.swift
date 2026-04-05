@@ -51,10 +51,14 @@ struct AppFeature: Reducer {
 
             case .auth:
                 let accessToken = state.auth.session?.accessToken
+                let homeEffect: Effect<Action> = .send(.home(.sessionChanged(state.auth.session)))
                 guard state.chatSheet.accessToken != accessToken else {
-                    return .none
+                    return homeEffect
                 }
-                return .send(.chatSheet(.accessTokenChanged(accessToken)))
+                return .merge(
+                    .send(.chatSheet(.accessTokenChanged(accessToken))),
+                    homeEffect
+                )
 
             case .home(.chatTapped):
                 if state.isProfileSheetPresented {

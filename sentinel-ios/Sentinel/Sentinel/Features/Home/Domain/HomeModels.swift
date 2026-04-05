@@ -8,17 +8,23 @@ enum HomeScheduleAccess: Equatable {
 
 struct HomeScheduleItem: Equatable, Identifiable {
     let id: UUID
+    var endDate: Date?
+    var startDate: Date
     var title: String
     var timeText: String
     var subtitle: String
 
     init(
         id: UUID = UUID(),
+        endDate: Date? = nil,
+        startDate: Date = .now,
         title: String,
         timeText: String,
         subtitle: String
     ) {
         self.id = id
+        self.endDate = endDate
+        self.startDate = startDate
         self.title = title
         self.timeText = timeText
         self.subtitle = subtitle
@@ -71,4 +77,20 @@ struct HomeDayMarker: Equatable, Identifiable {
 struct HomeSnapshot: Equatable {
     var title: String
     var detail: String
+}
+
+struct HomeEventDaySection: Equatable, Identifiable {
+    let id: String
+    let date: Date
+    var items: [HomeScheduleItem]
+}
+
+struct HomeAchievementHighlight: Equatable, Identifiable {
+    let id: UUID
+    let groupTitle: String
+    let icon: String
+    let progressFraction: Double
+    let progressText: String
+    let subtitle: String
+    let title: String
 }

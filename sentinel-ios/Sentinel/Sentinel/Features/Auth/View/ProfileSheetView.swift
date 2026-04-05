@@ -26,7 +26,7 @@ struct ProfileSheetView: View {
                 }
             }
             .navigationTitle(L10n.Profile.title)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Profile.closeButton, action: onClose)
@@ -58,9 +58,6 @@ struct ProfileSheetView: View {
 
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text(store.isAuthenticated ? L10n.Profile.signedInTitle : L10n.Profile.signedOutTitle)
-                .font(.headline)
-
             if store.isRestoring {
                 HStack(spacing: AppSpacing.medium) {
                     ProgressView()
@@ -69,13 +66,24 @@ struct ProfileSheetView: View {
                         .foregroundStyle(.secondary)
                 }
             } else if let session = store.session {
-                Text(session.email)
-                    .font(.body.weight(.semibold))
+                HStack(spacing: AppSpacing.medium) {
+                    Image(systemName: "person.crop.circle.fill")
+                        .font(.system(size: 40))
+                        .foregroundStyle(.secondary)
 
-                Text(L10n.Profile.sessionStoredBody)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                        Text(displayName(for: session.email))
+                            .font(.title3.weight(.semibold))
+
+                        Text(session.email)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             } else {
+                Text(L10n.Profile.signedOutTitle)
+                    .font(.headline)
+
                 Text(L10n.Profile.signedOutBody)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -169,40 +177,68 @@ struct ProfileSheetView: View {
                     )
                 }
             } label: {
-                HStack {
-                    Label(L10n.Achievements.title, systemImage: "rosette")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Image(systemName: "chevron.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .font(.body.weight(.semibold))
-                .padding(.vertical, AppSpacing.large)
+                settingsRow(
+                    title: L10n.Achievements.title,
+                    systemImage: "rosette"
+                )
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
 
             Button(role: .destructive) {
                 store.send(.logoutTapped)
             } label: {
-                HStack {
-                    if store.isSubmitting {
-                        ProgressView()
-                    }
-
-                    Text(L10n.Profile.logoutButton)
-                        .frame(maxWidth: .infinity)
-                }
-                .font(.body.weight(.semibold))
-                .padding(.vertical, AppSpacing.large)
+                settingsRow(
+                    title: L10n.Profile.logoutButton,
+                    systemImage: "rectangle.portrait.and.arrow.right",
+                    tint: .red,
+                    trailing: store.isSubmitting ? AnyView(ProgressView()) : AnyView(EmptyView())
+                )
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.plain)
             .disabled(store.isSubmitting)
 
             Text(L10n.Profile.logoutHint)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func displayName(for email: String) -> String {
+        let localPart = email.split(separator: "@").first.map(String.init) ?? email
+        return localPart
+            .replacingOccurrences(of: ".", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+            .capitalized
+    }
+
+    private func settingsRow(
+        title: String,
+        systemImage: String,
+        tint: Color = .primary,
+        trailing: AnyView = AnyView(Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary))
+    ) -> some View {
+        HStack(spacing: AppSpacing.medium) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: AppGrid.value(8), height: AppGrid.value(8))
+                .background(Color(uiColor: .tertiarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous))
+
+            Text(title)
+                .font(.body)
+                .foregroundStyle(tint)
+
+            Spacer()
+
+            trailing
+        }
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.vertical, AppSpacing.large)
+        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 }
 
