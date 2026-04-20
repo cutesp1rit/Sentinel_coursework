@@ -1,10 +1,13 @@
 import json
+import logging
 import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from openai import AsyncOpenAI
 from pydantic import ValidationError
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.core.schemas.chat import EventActionsContent, EventAction, EventSnapshot
@@ -58,7 +61,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "update_event",
-            "description": "Propose updating an existing event. Only include fields that should change.",
+            "description": "Propose updating an existing event. You MUST call search_events first to get the real event id — never invent an id. Only include fields that should change.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -80,7 +83,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "delete_event",
-            "description": "Propose deleting an existing event.",
+            "description": "Propose deleting an existing event. You MUST call search_events first to get the real event id — never invent an id.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -114,7 +117,14 @@ class LLMService:
         - собирает create/update/delete как EventAction (pending, не выполняя)
         Возвращает (text_response, actions).
         """
-        system_prompt = self._build_system_prompt(user_timezone)
+        try:
+            tz = ZoneInfo(user_timezone)
+            tz_label = user_timezone
+        except ZoneInfoNotFoundError:
+            tz = ZoneInfo("UTC")
+            tz_label = "UTC"
+
+        system_prompt = self._build_system_prompt(tz, tz_label)
         messages: list[dict] = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
         messages.append({"role": "user", "content": user_message})
@@ -148,13 +158,19 @@ class LLMService:
                     args = {}
 
                 if name == "search_events":
-                    result = await self._execute_search(args, user_id, event_repo)
+                    result = await self._execute_search(args, user_id, event_repo, tz)
                     tool_result = json.dumps(result, ensure_ascii=False, default=str)
                 elif name in _MUTATION_TOOLS:
-                    action = self._build_action(name, args)
+                    action = self._build_action(name, args, tz)
                     if action:
                         collected_actions.append(action)
-                    tool_result = "Action queued for user confirmation."
+                        tool_result = "Action queued for user confirmation."
+                    else:
+                        tool_result = (
+                            "Error: could not build action — invalid arguments. "
+                            "For update_event and delete_event you must call search_events first "
+                            "to obtain the real event UUID, then pass that exact UUID as event_id."
+                        )
                 else:
                     tool_result = "Unknown tool."
 
@@ -187,17 +203,18 @@ class LLMService:
         args: dict,
         user_id: uuid.UUID,
         event_repo: EventRepository,
+        tz: ZoneInfo | None = None,
     ) -> list[dict]:
-        start_from = self._parse_dt(args.get("start_from"))
-        start_to = self._parse_dt(args.get("start_to"))
+        start_from = self._parse_dt_localized(args.get("start_from"), tz)
+        start_to = self._parse_dt_localized(args.get("start_to"), tz)
         events = await event_repo.search(user_id, start_from, start_to)
         return [
             {
                 "id": str(e.id),
                 "title": e.title,
                 "description": e.description,
-                "start_at": e.start_at.isoformat(),
-                "end_at": e.end_at.isoformat() if e.end_at else None,
+                "start_at": self._to_local_iso(e.start_at, tz),
+                "end_at": self._to_local_iso(e.end_at, tz) if e.end_at else None,
                 "all_day": e.all_day,
                 "type": e.type,
                 "location": e.location,
@@ -206,8 +223,11 @@ class LLMService:
             for e in events
         ]
 
-    def _build_action(self, tool_name: str, args: dict) -> EventAction | None:
+    def _build_action(self, tool_name: str, args: dict, tz: ZoneInfo | None = None) -> EventAction | None:
+        original_args = args.copy()
         try:
+            if tz is not None:
+                args = self._normalize_datetime_args(args, tz)
             if tool_name == "create_event":
                 payload = EventCreate(**args, source="ai")
                 return EventAction(action="create", payload=payload)
@@ -218,8 +238,25 @@ class LLMService:
             elif tool_name == "delete_event":
                 event_id = uuid.UUID(args["event_id"])
                 return EventAction(action="delete", event_id=event_id)
-        except (ValidationError, ValueError, KeyError):
+        except (ValidationError, ValueError, KeyError) as exc:
+            logger.warning("Failed to build action %s: %s | args=%s", tool_name, exc, original_args)
             return None
+
+    @staticmethod
+    def _normalize_datetime_args(args: dict, tz: ZoneInfo) -> dict:
+        """Attach user's timezone to naive datetimes before storing."""
+        args = args.copy()
+        for field in ("start_at", "end_at"):
+            raw = args.get(field)
+            if not raw:
+                continue
+            try:
+                dt = datetime.fromisoformat(raw)
+                if dt.tzinfo is None:
+                    args[field] = dt.replace(tzinfo=tz).isoformat()
+            except (ValueError, TypeError):
+                pass
+        return args
 
     @staticmethod
     def _parse_dt(value: str | None) -> datetime | None:
@@ -231,19 +268,44 @@ class LLMService:
             return None
 
     @staticmethod
-    def _build_system_prompt(timezone: str) -> str:
+    def _parse_dt_localized(value: str | None, tz: ZoneInfo | None) -> datetime | None:
+        """Parse datetime string; attach user's timezone if naive."""
+        if not value:
+            return None
         try:
-            tz = ZoneInfo(timezone)
-            tz_label = timezone
-        except ZoneInfoNotFoundError:
-            tz = ZoneInfo("UTC")
-            tz_label = "UTC"
+            dt = datetime.fromisoformat(value)
+            if dt.tzinfo is None and tz is not None:
+                dt = dt.replace(tzinfo=tz)
+            return dt
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _to_local_iso(dt: datetime, tz: ZoneInfo | None) -> str:
+        """Convert a datetime (possibly UTC from DB) to user's local ISO string."""
+        if tz is None:
+            return dt.isoformat()
+        if dt.tzinfo is None:
+            from datetime import timezone as _tz
+            dt = dt.replace(tzinfo=_tz.utc)
+        return dt.astimezone(tz).isoformat()
+
+    @staticmethod
+    def _build_system_prompt(tz: ZoneInfo, tz_label: str) -> str:
         now = datetime.now(tz)
+        raw_offset = now.strftime('%z')  # e.g. "+0300" or "-0500"
+        utc_offset = f"{raw_offset[:3]}:{raw_offset[3:]}" if len(raw_offset) == 5 else raw_offset
         return (
             f"You are Sentinel, an intelligent time management assistant.\n"
-            f"Current date and time: {now.strftime('%Y-%m-%d %H:%M')} ({tz_label}).\n"
-            f"User's timezone: {tz_label}. All times the user mentions are in this timezone unless they explicitly specify otherwise. "
-            f"Never infer a timezone from a location name or address.\n\n"
+            f"Current date and time: {now.strftime('%A, %Y-%m-%d %H:%M')} ({tz_label}, UTC{utc_offset}).\n"
+            f"User's timezone: {tz_label} (UTC{utc_offset}). "
+            f"All times the user mentions are in this timezone unless they explicitly specify otherwise. "
+            f"Never infer a timezone from a location name or address.\n"
+            f"Event times returned by search_events are already in the user's local timezone (UTC{utc_offset}).\n"
+            f"In create_event and update_event calls always include the timezone offset in start_at/end_at "
+            f"(e.g. 2026-04-20T09:00:00{utc_offset}).\n"
+            f"Before calling update_event or delete_event always call search_events first to get the real event id. "
+            f"Never guess or invent an event id.\n\n"
             "Help users manage their calendar. Use search_events to look up existing events when needed.\n"
             "When the user asks to schedule something, make reasonable assumptions for any unspecified details "
             "(e.g., default duration 1 hour, skip optional fields) and immediately call create_event to propose the event. "
