@@ -41,13 +41,26 @@ class UserRepository:
         return user
     
     async def update_last_login(self, user_id: uuid.UUID) -> None:
-        """Обновить время последнего входа"""
         from sqlalchemy import update
         from datetime import datetime
-        
+
         await self.db.execute(
             update(User)
             .where(User.id == user_id)
             .values(last_login=datetime.utcnow())
         )
         await self.db.commit()
+
+    async def set_verified(self, user_id: uuid.UUID) -> None:
+        from sqlalchemy import update
+
+        await self.db.execute(
+            update(User).where(User.id == user_id).values(is_verified=True)
+        )
+
+    async def update_password(self, user_id: uuid.UUID, password_hash: str) -> None:
+        from sqlalchemy import update
+
+        await self.db.execute(
+            update(User).where(User.id == user_id).values(password_hash=password_hash)
+        )

@@ -50,12 +50,14 @@ async def seed() -> None:
                 email=TEST_EMAIL,
                 password_hash=get_password_hash(TEST_PASSWORD),
                 timezone=TEST_TIMEZONE,
+                is_verified=True,
             )
             db.add(user)
             await db.flush()
         else:
             user.password_hash = get_password_hash(TEST_PASSWORD)
             user.timezone = TEST_TIMEZONE
+            user.is_verified = True
 
         await db.execute(delete(Event).where(Event.user_id == user.id))
         await db.execute(delete(UserAchievement).where(UserAchievement.user_id == user.id))

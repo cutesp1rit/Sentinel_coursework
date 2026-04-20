@@ -5,39 +5,51 @@ import uuid
 
 
 class UserBase(BaseModel):
-    """Базовая схема пользователя"""
     email: EmailStr
 
 
 class UserCreate(UserBase):
-    """Схема для создания пользователя"""
     password: str = Field(..., min_length=8, description="Пароль (минимум 8 символов)")
     timezone: str = Field(default="UTC", max_length=50)
 
 
 class UserLogin(BaseModel):
-    """Схема для входа пользователя"""
     email: EmailStr
     password: str
 
 
 class User(UserBase):
-    """Схема пользователя для ответа"""
     id: uuid.UUID
     timezone: str
     locale: str
+    is_verified: bool
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class Token(BaseModel):
-    """Схема токена доступа"""
     access_token: str
     token_type: str = "bearer"
 
 
 class TokenData(BaseModel):
-    """Данные из токена"""
     user_id: Optional[uuid.UUID] = None
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)

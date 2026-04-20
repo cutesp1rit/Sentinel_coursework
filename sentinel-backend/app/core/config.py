@@ -34,7 +34,19 @@ class Settings(BaseSettings):
     LLM_MODEL: str = ""
     LLM_BASE_URL: str = ""
     LLM_HISTORY_LIMIT: int = 20
-    
+
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    EMAILS_FROM: str = "noreply@sentinel.app"
+    EMAILS_FROM_NAME: str = "Sentinel"
+
+    EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
+    PASSWORD_RESET_EXPIRE_HOURS: int = 1
+
+    FRONTEND_URL: str = "http://localhost:3000"
+
     MAX_FILE_SIZE: int = 10 * 1024 * 1024
     ALLOWED_IMAGE_EXTENSIONS: List[str] = ["png", "jpg", "jpeg", "heic"]
     ALLOWED_DOCUMENT_EXTENSIONS: List[str] = ["pdf", "docx", "txt", "csv", "md", "pptx", "xlsx", "json"]
