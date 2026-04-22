@@ -64,3 +64,7 @@ class UserRepository:
         await self.db.execute(
             update(User).where(User.id == user_id).values(password_hash=password_hash)
         )
+
+    async def delete(self, user: User) -> None:
+        await self.db.delete(user)
+        await self.db.flush()

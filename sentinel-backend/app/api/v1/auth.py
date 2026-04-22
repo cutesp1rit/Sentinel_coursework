@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.dependencies import get_current_user
 from app.core.config import settings
 from app.core.schemas.user import (
+    DeleteAccountRequest,
     ForgotPasswordRequest,
     ResendVerificationRequest,
     ResetPasswordRequest,
@@ -179,3 +180,19 @@ async def reset_password(
 @router.get("/me", response_model=User)
 async def get_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_account(
+    request: DeleteAccountRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not verify_password(request.password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Incorrect password",
+        )
+    user_repo = UserRepository(db)
+    await user_repo.delete(current_user)
+    await db.commit()
