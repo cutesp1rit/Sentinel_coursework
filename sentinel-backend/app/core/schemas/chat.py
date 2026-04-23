@@ -1,9 +1,28 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Literal, Optional, Any
+from typing import Annotated, Literal, Optional, Any, Union
 from datetime import datetime
 import uuid
 
 from app.core.schemas.event import EventCreate, EventUpdate
+
+
+# ─── Image attachments ────────────────────────────────────────────────────────
+
+class ImageAttachment(BaseModel):
+    url: str
+    filename: str
+    mime_type: str
+
+
+class ImageMessageContent(BaseModel):
+    type: Literal["image_message"] = "image_message"
+    images: list[ImageAttachment]
+
+
+class UploadResponse(BaseModel):
+    url: str
+    filename: str
+    mime_type: str
 
 
 # ─── Structured content ───────────────────────────────────────────────────────
@@ -65,10 +84,17 @@ class ChatList(BaseModel):
 
 # ─── Chat messages ────────────────────────────────────────────────────────────
 
+StructuredContent = Annotated[
+    Union[EventActionsContent, ImageMessageContent],
+    Field(discriminator="type"),
+]
+
+
 class ChatMessageCreate(BaseModel):
     role: Literal["user", "assistant", "tool", "system"]
     content_text: Optional[str] = None
-    content_structured: Optional[EventActionsContent] = None
+    content_structured: Optional[StructuredContent] = None
+    images: Optional[list[ImageAttachment]] = None  # для user-сообщений с картинками
     ai_model: Optional[str] = None
 
 

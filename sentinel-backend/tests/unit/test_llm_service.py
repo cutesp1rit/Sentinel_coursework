@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -97,19 +98,23 @@ class TestBuildAction:
 
 class TestBuildSystemPrompt:
     def test_prompt_contains_timezone(self):
-        prompt = LLMService._build_system_prompt("Europe/Moscow")
+        tz = ZoneInfo("Europe/Moscow")
+        prompt = LLMService._build_system_prompt(tz, "Europe/Moscow")
         assert "Europe/Moscow" in prompt
 
-    def test_invalid_timezone_falls_back_to_utc(self):
-        prompt = LLMService._build_system_prompt("Mars/Olympus")
+    def test_prompt_contains_utc_label(self):
+        tz = ZoneInfo("UTC")
+        prompt = LLMService._build_system_prompt(tz, "UTC")
         assert "UTC" in prompt
 
     def test_prompt_contains_current_date(self):
-        prompt = LLMService._build_system_prompt("UTC")
+        tz = ZoneInfo("UTC")
+        prompt = LLMService._build_system_prompt(tz, "UTC")
         year = str(datetime.now(timezone.utc).year)
         assert year in prompt
 
     def test_prompt_mentions_confirmation_required(self):
-        # Критически важно: пользователь должен подтверждать действия
-        prompt = LLMService._build_system_prompt("UTC")
-        assert "confirm" in prompt.lower() or "confirm" in prompt
+        # User must confirm before actions are applied
+        tz = ZoneInfo("UTC")
+        prompt = LLMService._build_system_prompt(tz, "UTC")
+        assert "confirm" in prompt.lower()

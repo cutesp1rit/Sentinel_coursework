@@ -121,7 +121,11 @@ class ChatMessageRepository:
         return message
 
     async def get_recent_for_llm(self, chat_id: uuid.UUID, limit: int) -> list[dict]:
-        """Последние N сообщений чата в формате для передачи в LLM (role/content)."""
+        """Последние N сообщений чата в формате для передачи в LLM.
+
+        Для сообщений с изображениями реконструирует multimodal content array
+        вместо простой текстовой строки.
+        """
         result = await self.db.execute(
             select(ChatMessage)
             .where(ChatMessage.chat_id == chat_id)
@@ -131,7 +135,24 @@ class ChatMessageRepository:
         )
         messages = list(result.scalars().all())
         messages.reverse()
-        return [{"role": m.role, "content": m.content_text or ""} for m in messages]
+
+        history = []
+        for m in messages:
+            if (
+                m.role == "user"
+                and m.content_structured
+                and m.content_structured.get("type") == "image_message"
+            ):
+                content: list[dict] = []
+                if m.content_text:
+                    content.append({"type": "text", "text": m.content_text})
+                for img in m.content_structured.get("images", []):
+                    content.append({"type": "image_url", "image_url": {"url": img["url"]}})
+                history.append({"role": "user", "content": content})
+            else:
+                history.append({"role": m.role, "content": m.content_text or ""})
+
+        return history
 
     async def update_structured(
         self,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import uuid
@@ -12,10 +12,12 @@ from app.core.config import settings
 from app.core.schemas.chat import (
     Chat, ChatCreate, ChatList,
     ChatMessage, ChatMessageCreate, ChatMessageList,
-    EventActionsContent, ApplyActionsRequest,
+    EventActionsContent, ImageAttachment, ImageMessageContent, UploadResponse,
+    ApplyActionsRequest,
 )
 from app.core.services.llm_service import LLMService
 from app.core.services.achievement_service import AchievementService
+from app.core.services.storage_service import upload_image
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
@@ -82,6 +84,43 @@ async def delete_chat(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
 
 
+@router.post("/{chat_id}/upload", response_model=UploadResponse, status_code=status.HTTP_201_CREATED)
+async def upload_chat_image(
+    chat_id: uuid.UUID,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Загрузить изображение для отправки в чат. Возвращает URL для последующей отправки в сообщении."""
+    chat_repo = ChatRepository(db)
+    if not await chat_repo.get_by_id(chat_id, current_user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
+
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else ""
+    if ext not in settings.ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File type not allowed. Allowed: {', '.join(settings.ALLOWED_IMAGE_EXTENSIONS)}",
+        )
+
+    file_bytes = await file.read()
+    if len(file_bytes) > settings.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE // (1024 * 1024)} MB",
+        )
+
+    try:
+        url = await upload_image(file_bytes, file.filename or "image", file.content_type, chat_id)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Storage service unavailable",
+        )
+
+    return UploadResponse(url=url, filename=file.filename or "image", mime_type=file.content_type or "image/jpeg")
+
+
 @router.post("/{chat_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED)
 async def create_message(
     chat_id: uuid.UUID,
@@ -107,7 +146,22 @@ async def create_message(
     # Загружаем историю до сохранения нового сообщения
     history = await msg_repo.get_recent_for_llm(chat_id, limit=settings.LLM_HISTORY_LIMIT)
 
-    await msg_repo.create(chat_id, data)
+    # Если пришли изображения — упаковываем их в content_structured
+    user_msg_data = data
+    if data.images:
+        user_msg_data = ChatMessageCreate(
+            role=data.role,
+            content_text=data.content_text,
+            content_structured=ImageMessageContent(images=data.images),
+            ai_model=data.ai_model,
+        )
+
+    await msg_repo.create(chat_id, user_msg_data)
+
+    images_for_llm = (
+        [img.model_dump() for img in data.images]
+        if data.images else None
+    )
 
     try:
         llm = LLMService(get_llm_client())
@@ -117,6 +171,7 @@ async def create_message(
             user_id=current_user.id,
             user_timezone=current_user.timezone,
             event_repo=EventRepository(db),
+            images=images_for_llm,
         )
     except Exception:
         raise HTTPException(

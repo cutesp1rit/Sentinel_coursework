@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = ""
     LLM_BASE_URL: str = ""
     LLM_HISTORY_LIMIT: int = 20
+    LLM_VISION_ENABLED: bool = True
 
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
@@ -54,7 +55,9 @@ class Settings(BaseSettings):
     S3_BUCKET_NAME: str = ""
     S3_ACCESS_KEY: str = ""
     S3_SECRET_KEY: str = ""
-    S3_REGION: str = "us-east-1"
+    S3_REGION: str = "auto"
+    S3_ENDPOINT_URL: str = ""   # https://<account_id>.r2.cloudflarestorage.com
+    S3_PUBLIC_URL: str = ""     # https://pub-xxx.r2.dev  (public bucket URL, для браузера)
     
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),

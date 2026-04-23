@@ -110,6 +110,7 @@ class LLMService:
         user_id: uuid.UUID,
         user_timezone: str,
         event_repo: EventRepository,
+        images: list[dict] | None = None,
     ) -> tuple[str, list[EventAction]]:
         """
         Обрабатывает сообщение пользователя:
@@ -127,7 +128,16 @@ class LLMService:
         system_prompt = self._build_system_prompt(tz, tz_label)
         messages: list[dict] = [{"role": "system", "content": system_prompt}]
         messages.extend(history)
-        messages.append({"role": "user", "content": user_message})
+
+        if images and settings.LLM_VISION_ENABLED:
+            user_content: list[dict] = []
+            if user_message:
+                user_content.append({"type": "text", "text": user_message})
+            for img in images:
+                user_content.append({"type": "image_url", "image_url": {"url": img["url"]}})
+            messages.append({"role": "user", "content": user_content})
+        else:
+            messages.append({"role": "user", "content": user_message})
 
         collected_actions: list[EventAction] = []
 
@@ -312,6 +322,11 @@ class LLMService:
             "Do not ask clarifying questions before proposing — propose first, the user can adjust afterward.\n"
             "create_event, update_event and delete_event only PROPOSE changes — "
             "they are not applied until the user explicitly confirms.\n"
+            "When the user sends an image, analyze it for scheduling information: conversations planning a meeting, "
+            "screenshots of invites, event posters, schedules, or any content implying a date and time. "
+            "If you find such information, briefly describe what you see and immediately propose the relevant "
+            "calendar events without asking clarifying questions first. "
+            "If the image contains no scheduling information, describe what you see and ask how you can help.\n"
             "If the user's request is not related to calendar management (e.g., asks to write code, "
             "explain concepts, translate text, etc.), politely decline in the user's language and do not use any tools.\n"
             "Always reply in the same language the user writes in."
