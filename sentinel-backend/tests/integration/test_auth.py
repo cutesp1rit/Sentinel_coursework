@@ -82,3 +82,35 @@ class TestProtectedEndpoints:
     def test_invalid_token_returns_401(self, client):
         resp = client.get("/events", headers={"Authorization": "Bearer totally.fake.token"})
         assert resp.status_code == 401
+
+
+class TestDeleteAccount:
+    def _create_and_login(self, client) -> tuple[str, dict]:
+        """Register a fresh user and return (password, auth_headers)."""
+        email = unique_email()
+        password = "DeleteMe1!"
+        client.post("/auth/register", json={"email": email, "password": password})
+        resp = client.post("/auth/login", json={"email": email, "password": password})
+        token = resp.json()["access_token"]
+        return password, {"Authorization": f"Bearer {token}"}
+
+    def test_delete_with_correct_password_returns_204(self, client):
+        password, headers = self._create_and_login(client)
+        resp = client.request("DELETE", "/auth/me", json={"password": password}, headers=headers)
+        assert resp.status_code == 204
+
+    def test_delete_with_wrong_password_returns_400(self, client):
+        _, headers = self._create_and_login(client)
+        resp = client.request("DELETE", "/auth/me", json={"password": "WrongPass999!"}, headers=headers)
+        assert resp.status_code == 400
+
+    def test_delete_without_auth_returns_401(self, client):
+        resp = client.request("DELETE", "/auth/me", json={"password": "anything"})
+        assert resp.status_code == 401
+
+    def test_token_invalid_after_deletion(self, client):
+        password, headers = self._create_and_login(client)
+        client.request("DELETE", "/auth/me", json={"password": password}, headers=headers)
+        # The deleted user's token must no longer grant access
+        resp = client.get("/auth/me", headers=headers)
+        assert resp.status_code == 401

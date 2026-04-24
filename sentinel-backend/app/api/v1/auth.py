@@ -42,13 +42,18 @@ async def register(
         )
     user = await user_repo.create(user_data)
 
-    token = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
-    token_repo = AuthTokenRepository(db)
-    await token_repo.create(user.id, token, EMAIL_VERIFICATION, expires_at)
-    await db.commit()
+    if settings.REQUIRE_EMAIL_VERIFICATION:
+        token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=settings.EMAIL_VERIFICATION_EXPIRE_HOURS)
+        token_repo = AuthTokenRepository(db)
+        await token_repo.create(user.id, token, EMAIL_VERIFICATION, expires_at)
+        await db.commit()
+        background_tasks.add_task(send_verification_email, user.email, token)
+    else:
+        await user_repo.set_verified(user.id)
+        await db.commit()
+        await db.refresh(user)
 
-    background_tasks.add_task(send_verification_email, user.email, token)
     return user
 
 
@@ -64,7 +69,7 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
         )
-    if not user.is_verified:
+    if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Email not verified. Check your inbox or request a new verification email.",

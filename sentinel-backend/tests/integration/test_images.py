@@ -40,7 +40,9 @@ class TestImageUpload:
             headers=auth_headers,
         )
         assert resp.status_code == 400
-        assert "not allowed" in resp.json()["detail"].lower()
+        body = resp.json()
+        error_text = (body.get("detail") or body.get("message") or "").lower()
+        assert "not allowed" in error_text
 
     def test_upload_gif_disallowed(self, client, auth_headers, chat):
         resp = client.post(

@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     EMAILS_FROM: str = "noreply@sentinel.app"
     EMAILS_FROM_NAME: str = "Sentinel"
 
+    REQUIRE_EMAIL_VERIFICATION: bool = True
     EMAIL_VERIFICATION_EXPIRE_HOURS: int = 24
     PASSWORD_RESET_EXPIRE_HOURS: int = 1
 
