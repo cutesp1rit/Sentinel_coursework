@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 from app.infrastructure.database.models import Event
-from app.core.schemas.event import EventCreate, EventUpdate
+from app.core.schemas.event import EventCreate, EventSyncUpsert, EventUpdate
 
 
 class EventRepository:
@@ -92,6 +92,71 @@ class EventRepository:
         )
         result = await self.db.execute(query)
         return list(result.scalars().all())
+
+    async def sync_batch(
+        self,
+        user_id: uuid.UUID,
+        upserts: list[EventSyncUpsert],
+        delete_ids: list[uuid.UUID],
+    ) -> tuple[list[Event], list[Event], list[Event]]:
+        created: list[Event] = []
+        updated: list[Event] = []
+
+        ids_to_check = [u.id for u in upserts if u.id is not None]
+        existing_map: dict[uuid.UUID, Event] = {}
+        if ids_to_check:
+            result = await self.db.execute(
+                select(Event).where(Event.id.in_(ids_to_check), Event.user_id == user_id)
+            )
+            for event in result.scalars().all():
+                existing_map[event.id] = event
+
+        for upsert in upserts:
+            if upsert.id and upsert.id in existing_map:
+                event = existing_map[upsert.id]
+                event.title = upsert.title
+                event.description = upsert.description
+                event.start_at = upsert.start_at
+                event.end_at = upsert.end_at
+                event.all_day = upsert.all_day
+                event.type = upsert.type
+                event.location = upsert.location
+                event.is_fixed = upsert.is_fixed
+                updated.append(event)
+            else:
+                # Ignore provided id to avoid PK conflicts with other users' events.
+                event = Event(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    title=upsert.title,
+                    description=upsert.description,
+                    start_at=upsert.start_at,
+                    end_at=upsert.end_at,
+                    all_day=upsert.all_day,
+                    type=upsert.type,
+                    location=upsert.location,
+                    is_fixed=upsert.is_fixed,
+                    source=upsert.source,
+                )
+                self.db.add(event)
+                created.append(event)
+
+        deleted_events: list[Event] = []
+        if delete_ids:
+            result = await self.db.execute(
+                select(Event).where(Event.id.in_(delete_ids), Event.user_id == user_id)
+            )
+            deleted_events = list(result.scalars().all())
+            await self.db.execute(
+                delete(Event).where(Event.id.in_(delete_ids), Event.user_id == user_id)
+            )
+
+        await self.db.commit()
+
+        for event in created + updated:
+            await self.db.refresh(event)
+
+        return created, updated, deleted_events
 
     async def bulk_update_times(
         self,
