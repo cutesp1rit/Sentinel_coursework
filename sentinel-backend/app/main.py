@@ -8,10 +8,10 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from app.core.config import settings
-from app.api.v1 import auth, events, chats, achievements
+from app.api.v1 import auth, events, chats, achievements, rebalance
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
@@ -84,6 +84,7 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(events.router, prefix=settings.API_V1_STR)
 app.include_router(chats.router, prefix=settings.API_V1_STR)
 app.include_router(achievements.router, prefix=settings.API_V1_STR)
+app.include_router(rebalance.router, prefix=settings.API_V1_STR)
 
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["System"])

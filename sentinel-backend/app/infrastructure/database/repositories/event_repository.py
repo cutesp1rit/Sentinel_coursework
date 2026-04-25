@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import or_, and_, select, delete
 from typing import Optional, List
 from datetime import datetime
 import uuid
@@ -71,3 +71,37 @@ class EventRepository:
         )
         await self.db.commit()
         return result.rowcount > 0
+
+    async def get_events_for_days(
+        self,
+        user_id: uuid.UUID,
+        day_ranges: list[tuple[datetime, datetime]],
+    ) -> List[Event]:
+        """Return events whose start_at falls within any of the given UTC day ranges."""
+        if not day_ranges:
+            return []
+        conditions = [
+            and_(Event.start_at >= start, Event.start_at < end)
+            for start, end in day_ranges
+        ]
+        query = (
+            select(Event)
+            .where(Event.user_id == user_id)
+            .where(or_(*conditions))
+            .order_by(Event.start_at.asc())
+        )
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    async def bulk_update_times(
+        self,
+        user_id: uuid.UUID,
+        changes: list[dict],
+    ) -> None:
+        """Update start_at/end_at for multiple events belonging to the user."""
+        for change in changes:
+            event = await self.get_by_id(change["id"], user_id)
+            if event:
+                event.start_at = change["start_at"]
+                event.end_at = change.get("end_at")
+        await self.db.commit()

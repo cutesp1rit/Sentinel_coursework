@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     
     LLM_API_KEY: str = ""
     LLM_MODEL: str = ""
+    LLM_REBALANCE_MODEL: str = ""  # falls back to LLM_MODEL if not set
     LLM_BASE_URL: str = ""
     LLM_HISTORY_LIMIT: int = 20
     LLM_VISION_ENABLED: bool = True
