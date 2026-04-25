@@ -255,7 +255,7 @@ struct HomeView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
         }
-        .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
     }
@@ -309,10 +309,6 @@ private struct SentinelSurfaceCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 30, style: .continuous)
             .fill(AppPlatformColor.systemBackground)
-            .overlay {
-                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: AppStrokeWidth.standard)
-            }
     }
 }
 

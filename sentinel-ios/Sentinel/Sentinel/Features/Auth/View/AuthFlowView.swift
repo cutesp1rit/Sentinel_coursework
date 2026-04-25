@@ -28,22 +28,18 @@ struct AuthFlowView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                HomeTopGradientBackground()
-                    .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-                        topBar
-                        header
-                        formCard
-                    }
-                    .padding(.horizontal, AppSpacing.large)
-                    .padding(.top, AppSpacing.xLarge)
-                    .padding(.bottom, AppSpacing.xLarge)
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+                    topBar
+                    header
+                    formCard
                 }
-                .scrollIndicators(.hidden)
+                .padding(.horizontal, AppSpacing.large)
+                .padding(.top, AppSpacing.xLarge)
+                .padding(.bottom, AppSpacing.xLarge)
             }
+            .scrollIndicators(.hidden)
+            .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
         }
     }
 
@@ -63,12 +59,6 @@ struct AuthFlowView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text(L10n.App.title)
-                .font(.footnote.weight(.semibold))
-                .padding(.horizontal, AppSpacing.medium)
-                .padding(.vertical, AppSpacing.small)
-                .background(.ultraThinMaterial, in: Capsule())
-
             if let progressLabel = store.progressLabel {
                 Text(progressLabel)
                     .font(.footnote.weight(.semibold))

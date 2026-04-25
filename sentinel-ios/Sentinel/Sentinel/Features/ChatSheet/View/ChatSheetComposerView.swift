@@ -125,7 +125,6 @@ private struct ChatCollapsedBar: View {
                 Image(systemName: "plus")
                     .font(.system(size: 18, weight: .semibold))
                     .frame(width: 36, height: 36)
-                    .background(.ultraThinMaterial, in: Circle())
             }
             .buttonStyle(.plain)
             .disabled(!isComposerEnabled)
@@ -149,7 +148,7 @@ private struct ChatCollapsedBar: View {
                     .frame(width: 32, height: 32)
                     .background {
                         Circle()
-                            .fill(isSendEnabled ? Color.blue : Color.clear)
+                            .fill(isSendEnabled ? Color.black.opacity(0.82) : Color.clear)
                     }
             }
             .buttonStyle(.plain)
@@ -158,10 +157,6 @@ private struct ChatCollapsedBar: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(.ultraThinMaterial, in: Capsule())
-        .overlay {
-            Capsule()
-                .stroke(Color.white.opacity(0.22), lineWidth: AppStrokeWidth.standard)
-        }
         .shadow(color: Color.black.opacity(0.08), radius: 16, y: 8)
     }
 }

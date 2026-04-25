@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import CoreGraphics
 import Foundation
 
 @ObservableState
@@ -118,6 +119,25 @@ struct CalendarState: Equatable {
                     .map(agendaRow(for:))
             )
         }
+    }
+
+    func visibleSectionDate(for offsets: [AgendaSection.ID: CGFloat]) -> Date? {
+        let sortedSections = agendaSections.compactMap { section -> (Date, CGFloat)? in
+            guard let offset = offsets[section.id] else { return nil }
+            return (section.date, offset)
+        }
+
+        let positive = sortedSections
+            .filter { $0.1 >= 0 }
+            .min { $0.1 < $1.1 }
+
+        if let positive {
+            return positive.0
+        }
+
+        return sortedSections
+            .max { $0.1 < $1.1 }?
+            .0
     }
 
     private func agendaRow(for event: Event) -> AgendaRow {

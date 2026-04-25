@@ -83,10 +83,17 @@ struct CalendarView: View {
                                 title: section.title,
                                 subtitle: section.subtitle
                             )
+                            .background(
+                                GeometryReader { proxy in
+                                    Color.clear.preference(
+                                        key: CalendarSectionOffsetKey.self,
+                                        value: [section.id: proxy.frame(in: .named("calendarScroll")).minY]
+                                    )
+                                }
+                            )
                             .padding(.top, AppSpacing.small)
                             .padding(.bottom, AppSpacing.medium)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(AppPlatformColor.systemGroupedBackground.opacity(0.96))
                         }
                     }
                 }
@@ -94,6 +101,7 @@ struct CalendarView: View {
             .padding(.horizontal, AppSpacing.large)
             .padding(.bottom, AppSpacing.xLarge)
         }
+        .coordinateSpace(name: "calendarScroll")
         .background(HomeTopGradientBackground().ignoresSafeArea())
         .navigationTitle(store.navigationTitle)
         .sentinelLargeNavigationTitle()
@@ -119,6 +127,19 @@ struct CalendarView: View {
         .task {
             store.send(.onAppear)
         }
+        .onPreferenceChange(CalendarSectionOffsetKey.self) { offsets in
+            if let visibleDate = store.state.visibleSectionDate(for: offsets) {
+                store.send(.visibleDateChanged(visibleDate))
+            }
+        }
+    }
+}
+
+private struct CalendarSectionOffsetKey: PreferenceKey {
+    static var defaultValue: [String: CGFloat] = [:]
+
+    static func reduce(value: inout [String: CGFloat], nextValue: () -> [String: CGFloat]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 

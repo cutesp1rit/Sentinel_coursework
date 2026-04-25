@@ -34,12 +34,6 @@ struct ProfileSheetView: View {
                     }
                 }
 
-                if let statusMessage = store.statusMessage {
-                    Section {
-                        statusBanner(statusMessage, tint: .secondary.opacity(0.12), foreground: .secondary)
-                    }
-                }
-
                 Section(L10n.Settings.defaultPromptTitle) {
                     TextField(L10n.Settings.defaultPromptTitle, text: promptBinding, axis: .vertical)
                         .textFieldStyle(.plain)
@@ -57,7 +51,7 @@ struct ProfileSheetView: View {
                 }
 
                 if let accessToken = store.accessToken {
-                    Section(L10n.Settings.achievements) {
+                    Section {
                         NavigationLink {
                             AchievementsView(
                                 store: Store(initialState: AchievementsState(accessToken: accessToken)) {
@@ -70,7 +64,7 @@ struct ProfileSheetView: View {
                     }
                 }
 
-                Section(L10n.Profile.accountActionsTitle) {
+                Section {
                     Button(L10n.Profile.logoutButton) {
                         store.send(.logoutTapped)
                     }
@@ -92,7 +86,7 @@ struct ProfileSheetView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(HomeTopGradientBackground().ignoresSafeArea())
+            .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
             .navigationTitle(L10n.Profile.title)
             .sentinelInlineNavigationTitle()
             .toolbar {
@@ -105,6 +99,8 @@ struct ProfileSheetView: View {
                 store.send(.onAppear)
             }
         }
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
     }
 
     private func statusBanner(_ message: String, tint: Color, foreground: Color) -> some View {

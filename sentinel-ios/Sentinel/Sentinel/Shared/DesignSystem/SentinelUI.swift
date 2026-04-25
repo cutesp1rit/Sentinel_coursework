@@ -75,12 +75,8 @@ struct PrimaryButton: View {
                 .frame(height: 54)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.32), lineWidth: AppStrokeWidth.standard)
-        }
+        .foregroundStyle(.white)
+        .background(Color.black.opacity(isEnabled ? 0.82 : 0.24), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .opacity(isEnabled ? 1 : AppOpacity.disabled)
         .disabled(!isEnabled)
     }
@@ -346,7 +342,7 @@ struct ChatListRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, AppSpacing.large)
-            .padding(.vertical, AppSpacing.medium)
+            .padding(.vertical, AppSpacing.small + 2)
             .background(rowBackground)
         }
         .buttonStyle(.plain)
@@ -357,11 +353,7 @@ struct ChatListRow: View {
         switch state {
         case .selected:
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay {
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: AppStrokeWidth.standard)
-                }
+                .fill(AppPlatformColor.secondaryGroupedBackground)
         case .regular:
             RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color.clear)
@@ -530,10 +522,6 @@ private struct SentinelCardBackground: View {
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(AppPlatformColor.systemBackground)
-            .overlay {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.primary.opacity(0.06), lineWidth: AppStrokeWidth.standard)
-            }
     }
 }
 

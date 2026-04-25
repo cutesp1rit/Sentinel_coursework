@@ -52,7 +52,6 @@ struct ChatThreadScreenView: View {
             .navigationBarBackButtonHidden(true)
             .sentinelInlineNavigationTitle()
             .sentinelNavigationBarToolbarVisibility(detent == .collapsed ? .hidden : .visible)
-            .sentinelNavigationBarMaterialBackground()
             .toolbar {
                 ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
                     Button(action: onOpenChatList) {
@@ -84,6 +83,7 @@ struct ChatThreadScreenView: View {
                 store.send(.onAppear)
                 transcriptOpacity = detent == .collapsed ? 0 : 1
             }
+            .background(AppPlatformColor.systemBackground)
             .onChange(of: detent) { _, newValue in
                 withAnimation(.easeOut(duration: AppAnimationDuration.quick)) {
                     transcriptOpacity = newValue == .collapsed ? 0 : 1

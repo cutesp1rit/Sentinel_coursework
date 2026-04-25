@@ -30,7 +30,7 @@ struct AppView: View {
                     store: store.scope(state: \.auth, action: \.auth)
                 )
             }
-            .fullScreenCover(
+            .sheet(
                 isPresented: Binding(
                     get: { store.isProfileSheetPresented },
                     set: { store.send(.profileSheetPresentationChanged($0)) }

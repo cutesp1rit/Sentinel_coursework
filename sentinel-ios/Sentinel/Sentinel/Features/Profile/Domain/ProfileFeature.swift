@@ -17,7 +17,6 @@ struct ProfileFeature {
         var isDeletingAccount = false
         var isLoading = false
         var isSavingPrompt = false
-        var statusMessage: String?
         var userEmail: String?
 
         var displayName: String {
@@ -93,7 +92,6 @@ struct ProfileFeature {
 
             case let .defaultPromptChanged(value):
                 state.defaultPromptTemplate = value
-                state.statusMessage = nil
                 return .none
 
             case let .loaded(settings):
@@ -124,12 +122,10 @@ struct ProfileFeature {
 
             case .promptSaved:
                 state.isSavingPrompt = false
-                state.statusMessage = L10n.Settings.savedStatus
                 return .none
 
             case .savePromptTapped:
                 state.isSavingPrompt = true
-                state.statusMessage = nil
                 let prompt = state.defaultPromptTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
                 return .run { [appSettingsClient] send in
                     var settings = await appSettingsClient.load()

@@ -36,9 +36,9 @@ struct ChatHistoryPickerView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.large)
-            .padding(.vertical, AppSpacing.large)
+            .padding(.vertical, AppSpacing.medium)
         }
-        .background(HomeTopGradientBackground().ignoresSafeArea())
+        .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
         .navigationTitle(L10n.ChatSheet.chatsTitle)
         .sentinelInlineNavigationTitle()
         .toolbar {
