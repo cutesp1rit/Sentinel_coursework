@@ -120,44 +120,45 @@ private struct ChatCollapsedBar: View {
     let onSendTap: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onAttachmentTap) {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .frame(width: 36, height: 36)
-            }
-            .buttonStyle(.plain)
-            .disabled(!isComposerEnabled)
-            .opacity(isComposerEnabled ? 1 : AppOpacity.disabled)
+        GlassEffectContainer(spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
+                Button(action: onAttachmentTap) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(.primary)
+                        .frame(width: 42, height: 42)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .disabled(!isComposerEnabled)
+                .opacity(isComposerEnabled ? 1 : AppOpacity.disabled)
 
-            Button(action: onComposerTap) {
-                Text(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? L10n.ChatSheet.composerPlaceholder : draft)
-                    .font(.callout)
-                    .foregroundStyle(draft.isEmpty ? .secondary : .primary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 10)
-            }
-            .buttonStyle(.plain)
-            .disabled(!isComposerEnabled)
+                Button(action: onComposerTap) {
+                    Text(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? L10n.ChatSheet.composerPlaceholder : draft)
+                        .font(.callout)
+                        .foregroundStyle(draft.isEmpty ? .secondary : .primary)
+                        .lineLimit(1)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(minHeight: 20)
+                }
+                .buttonStyle(.plain)
+                .disabled(!isComposerEnabled)
 
-            Button(action: onSendTap) {
-                Image(systemName: "arrow.up")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.white.opacity(isSendEnabled ? 1 : 0))
-                    .frame(width: 32, height: 32)
-                    .background {
-                        Circle()
-                            .fill(isSendEnabled ? Color.black.opacity(0.82) : Color.clear)
-                    }
+                Button(action: onSendTap) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(.white.opacity(isSendEnabled ? 1 : 0))
+                        .frame(width: 38, height: 30)
+                        .background {
+                            Capsule()
+                                .fill(isSendEnabled ? Color.blue : Color.clear)
+                        }
+                }
+                .buttonStyle(.plain)
+                .allowsHitTesting(isSendEnabled && isComposerEnabled)
             }
-            .buttonStyle(.plain)
-            .allowsHitTesting(isSendEnabled && isComposerEnabled)
+            .padding(.vertical, 2)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: Capsule())
-        .shadow(color: Color.black.opacity(0.08), radius: 16, y: 8)
     }
 }
 
