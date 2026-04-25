@@ -3,6 +3,7 @@ import SwiftUI
 
 struct HomeView: View {
     let bottomOverlayInset: CGFloat
+    let showsChatLauncher: Bool
     let store: StoreOf<HomeReducer>
 
     var body: some View {
@@ -25,6 +26,7 @@ struct HomeView: View {
                 }
                 .scrollIndicators(.hidden)
             }
+            .sentinelHiddenNavigationBar()
         }
         .onAppear {
             store.send(.onAppear)
@@ -34,74 +36,78 @@ struct HomeView: View {
     private var signedOutContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
             HStack {
-                glassBadge(title: L10n.App.title)
+                brandBadge
                 Spacer()
-                Button {
-                    store.send(.profileTapped)
-                } label: {
-                    Image(systemName: "person.crop.circle")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: AppGrid.value(12), height: AppGrid.value(12))
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
+                profileButton
+            }
+
+            HeroCard(
+                eyebrow: L10n.Home.signedOutHeroEyebrow,
+                title: L10n.Home.signedOutHeroTitle,
+                subtitle: L10n.Home.signedOutHeroBody
+            )
+
+            HStack(alignment: .top, spacing: AppSpacing.medium) {
+                FeatureCard(
+                    title: L10n.Home.signedOutCardOneTitle,
+                    bodyText: L10n.Home.signedOutCardOneBody,
+                    systemImage: "bubble.left.and.text.bubble.right"
+                )
+
+                FeatureCard(
+                    title: L10n.Home.signedOutCardTwoTitle,
+                    bodyText: L10n.Home.signedOutCardTwoBody,
+                    systemImage: "calendar.badge.clock"
+                )
             }
 
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Home.signedOutHeroEyebrow)
-                    .font(.subheadline.weight(.semibold))
+                Text(L10n.Home.signedOutCTAHeadline)
+                    .font(.headline)
+
+                Text(L10n.Home.signedOutCTABody)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                Text(L10n.Home.signedOutHeroTitle)
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.leading)
-
-                Text(L10n.Home.signedOutHeroBody)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-
-                Button {
-                    store.send(.profileTapped)
-                } label: {
-                    Label(L10n.Home.signInButton, systemImage: "sparkles")
-                        .frame(maxWidth: .infinity)
+                PrimaryButton(L10n.Home.signInButton) {
+                    store.send(.signInTapped)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.black.opacity(0.82))
-            }
-            .padding(AppSpacing.xLarge)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 36, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 36, style: .continuous)
-                    .stroke(Color.white.opacity(0.35), lineWidth: AppStrokeWidth.standard)
-            }
 
-            HStack(spacing: AppSpacing.medium) {
-                SignedOutFeatureCard(
-                    title: L10n.Home.signedOutCardOneTitle,
-                    bodyText: L10n.Home.signedOutCardOneBody,
-                    systemImage: "calendar.badge.plus"
-                )
-
-                SignedOutFeatureCard(
-                    title: L10n.Home.signedOutCardTwoTitle,
-                    bodyText: L10n.Home.signedOutCardTwoBody,
-                    systemImage: "brain.head.profile"
-                )
+                SecondaryTextAction(L10n.Home.createAccountButton) {
+                    store.send(.createAccountTapped)
+                }
             }
+            .padding(AppSpacing.large)
+            .background(SentinelSurfaceCard())
         }
     }
 
     private var signedInContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-            signedInHero
+            HStack(alignment: .top, spacing: AppSpacing.medium) {
+                VStack(alignment: .leading, spacing: AppSpacing.small) {
+                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    Text(L10n.Home.heroTitle)
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+
+                    Text(L10n.Home.heroSubtitle(store.displayName))
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                profileButton
+            }
 
             HStack(spacing: AppSpacing.medium) {
                 metricCard(
                     title: L10n.Home.metricTodayTitle,
                     value: "\(store.todayItems.count)",
-                    detail: L10n.Home.todayCount(store.todayItems.count),
+                    detail: store.todayTitle,
                     tint: .primary
                 )
 
@@ -116,136 +122,90 @@ struct HomeView: View {
 
             todaySection
 
-            allEventsSlot
+            if showsChatLauncher {
+                PrimaryButton(L10n.Home.openChatButton) {
+                    store.send(.chatTapped)
+                }
+            }
+
+            allEventsCard
 
             achievementsRail
         }
     }
 
-    private var signedInHero: some View {
-        HStack(alignment: .top, spacing: AppSpacing.large) {
-            VStack(alignment: .leading, spacing: AppSpacing.small) {
-                Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Text(L10n.Home.heroTitle)
-                    .font(.system(size: 50, weight: .bold, design: .rounded))
-
-                Text(L10n.Home.heroSubtitle(store.displayName))
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                store.send(.profileTapped)
-            } label: {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 24, weight: .semibold))
-                    .frame(width: AppGrid.value(13), height: AppGrid.value(13))
-                    .background(.ultraThinMaterial, in: Circle())
-                    .overlay {
-                        Circle()
-                            .stroke(Color.white.opacity(0.25), lineWidth: AppStrokeWidth.standard)
-                    }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            HStack(alignment: .center, spacing: AppSpacing.medium) {
+            HStack {
                 Text(L10n.Home.todaySectionTitle)
-                    .font(.title2.weight(.bold))
+                    .font(.title3.weight(.bold))
 
                 Spacer()
 
-                Button(L10n.Home.rebalanceButton) {}
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, AppSpacing.medium)
-                    .padding(.vertical, AppSpacing.small)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .overlay {
-                        Capsule()
-                            .stroke(Color.white.opacity(0.25), lineWidth: AppStrokeWidth.standard)
-                    }
-                    .disabled(true)
-                    .opacity(AppOpacity.disabled)
-
-                if !store.allEventSections.isEmpty {
-                    NavigationLink {
-                        if let accessToken = store.accessToken {
-                            CalendarView(
-                                store: Store(initialState: CalendarState(accessToken: accessToken)) {
-                                    CalendarReducer()
-                                }
-                            )
-                        }
-                    } label: {
-                        HStack(spacing: AppSpacing.xSmall) {
-                            Text(L10n.Home.viewAllButton)
-                            Image(systemName: "chevron.right")
-                        }
-                        .font(.subheadline.weight(.semibold))
-                    }
-                    .buttonStyle(.plain)
+                Button(L10n.Home.rebalanceButton) {
+                    store.send(.rebalanceTapped)
                 }
+                .buttonStyle(.plain)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
             }
 
             if store.todayPreviewItems.isEmpty {
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(L10n.Home.emptyTodayTitle)
-                        .font(.headline)
-                    Text(L10n.Home.emptyTodayBody)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-                .modifier(FrostedCardModifier())
+                EmptyStateCard(
+                    title: L10n.Home.emptyTodayTitle,
+                    bodyText: L10n.Home.emptyTodayBody
+                )
             } else {
                 VStack(spacing: AppSpacing.medium) {
                     ForEach(store.todayPreviewItems) { item in
-                        HomeHeroEventRow(item: item)
+                        EventRowCard(
+                            title: item.title,
+                            badge: L10n.Calendar.eventTag,
+                            time: item.timeText,
+                            location: item.subtitle == "Calendar" ? nil : item.subtitle,
+                            conflictTitle: nil,
+                            action: nil
+                        )
                     }
                 }
             }
         }
     }
 
-    private var allEventsSlot: some View {
-        NavigationLink {
+    private var allEventsCard: some View {
+        Group {
             if let accessToken = store.accessToken {
-                CalendarView(
-                    store: Store(initialState: CalendarState(accessToken: accessToken)) {
-                        CalendarReducer()
+                NavigationLink {
+                    CalendarView(
+                        store: Store(initialState: CalendarState(accessToken: accessToken)) {
+                            CalendarReducer()
+                        }
+                    )
+                } label: {
+                    HStack(spacing: AppSpacing.medium) {
+                        VStack(alignment: .leading, spacing: AppSpacing.small) {
+                            Text(L10n.Home.allEventsTitle)
+                                .font(.headline)
+                            Text(L10n.Home.allEventsBody)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "calendar")
+                            .font(.title3.weight(.semibold))
+
+                        Image(systemName: "chevron.right")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
-                )
-            }
-        } label: {
-            HStack(spacing: AppSpacing.medium) {
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(L10n.Home.allEventsTitle)
-                        .font(.headline)
-                    Text(L10n.Home.allEventsBody)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                 }
-
-                Spacer()
-
-                Image(systemName: "calendar")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
             }
         }
-        .buttonStyle(.plain)
-        .modifier(FrostedCardModifier())
+        .padding(AppSpacing.large)
+        .background(SentinelSurfaceCard())
     }
 
     private var achievementsRail: some View {
@@ -263,11 +223,8 @@ struct HomeView: View {
                             }
                         )
                     } label: {
-                        HStack(spacing: AppSpacing.xSmall) {
-                            Text(L10n.Home.viewAllButton)
-                            Image(systemName: "chevron.right")
-                        }
-                        .font(.subheadline.weight(.semibold))
+                        Text(L10n.Home.viewAllButton)
+                            .font(.subheadline.weight(.semibold))
                     }
                     .buttonStyle(.plain)
                 }
@@ -284,21 +241,24 @@ struct HomeView: View {
         }
     }
 
-    private func frostedCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .modifier(FrostedCardModifier())
-    }
-
-    private func glassBadge(title: String) -> some View {
-        Text(title)
+    private var brandBadge: some View {
+        Text(L10n.App.title)
             .font(.footnote.weight(.semibold))
             .padding(.horizontal, AppSpacing.medium)
             .padding(.vertical, AppSpacing.small)
             .background(.ultraThinMaterial, in: Capsule())
-            .overlay {
-                Capsule()
-                    .stroke(Color.white.opacity(0.28), lineWidth: AppStrokeWidth.standard)
-            }
+    }
+
+    private var profileButton: some View {
+        Button {
+            store.send(.profileTapped)
+        } label: {
+            Image(systemName: store.isAuthenticated ? "person.crop.circle.fill" : "person.crop.circle")
+                .font(.system(size: 22, weight: .semibold))
+                .frame(width: 44, height: 44)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
     }
 
     private var batterySymbolName: String {
@@ -348,17 +308,14 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
         .padding(AppSpacing.large)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color.white.opacity(0.28), lineWidth: AppStrokeWidth.standard)
-        }
+        .background(SentinelSurfaceCard())
     }
 }
 
 #Preview {
     HomeView(
         bottomOverlayInset: 200,
+        showsChatLauncher: false,
         store: Store(initialState: HomeState()) {
             HomeReducer()
         }
@@ -372,9 +329,9 @@ struct HomeTopGradientBackground: View {
 
             LinearGradient(
                 colors: [
-                    Color(red: 0.80, green: 0.90, blue: 1.0),
-                    Color(red: 0.92, green: 0.85, blue: 1.0),
-                    Color(red: 0.95, green: 0.96, blue: 1.0),
+                    Color(red: 0.82, green: 0.90, blue: 1.0),
+                    Color(red: 0.90, green: 0.93, blue: 0.98),
+                    Color(red: 0.98, green: 0.96, blue: 0.92),
                     AppPlatformColor.systemGroupedBackground
                 ],
                 startPoint: .topLeading,
@@ -386,87 +343,28 @@ struct HomeTopGradientBackground: View {
             }
 
             Circle()
-                .fill(Color.cyan.opacity(0.24))
-                .frame(width: 260, height: 260)
-                .blur(radius: 32)
-                .offset(x: -110, y: -60)
+                .fill(Color.cyan.opacity(0.18))
+                .frame(width: 280, height: 280)
+                .blur(radius: 34)
+                .offset(x: -110, y: -40)
 
             Circle()
-                .fill(Color.pink.opacity(0.20))
-                .frame(width: 280, height: 280)
-                .blur(radius: 40)
-                .offset(x: 120, y: -40)
+                .fill(Color.orange.opacity(0.14))
+                .frame(width: 300, height: 300)
+                .blur(radius: 42)
+                .offset(x: 120, y: -30)
         }
     }
 }
 
-private struct FrostedCardModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(AppSpacing.large)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
+private struct SentinelSurfaceCard: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 30, style: .continuous)
+            .fill(.regularMaterial)
             .overlay {
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(Color.white.opacity(0.28), lineWidth: AppStrokeWidth.standard)
+                    .stroke(Color.white.opacity(0.26), lineWidth: AppStrokeWidth.standard)
             }
-    }
-}
-
-private struct SignedOutFeatureCard: View {
-    let title: String
-    let bodyText: String
-    let systemImage: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Image(systemName: systemImage)
-                .font(.title3.weight(.semibold))
-                .frame(width: AppGrid.value(11), height: AppGrid.value(11))
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous))
-
-            Text(title)
-                .font(.headline)
-
-            Text(bodyText)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 170, alignment: .topLeading)
-        .padding(AppSpacing.large)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 30, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .stroke(Color.white.opacity(0.28), lineWidth: AppStrokeWidth.standard)
-        }
-    }
-}
-
-private struct HomeHeroEventRow: View {
-    let item: HomeScheduleItem
-
-    var body: some View {
-        HStack(spacing: AppSpacing.medium) {
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                Text(item.title)
-                    .font(.body.weight(.semibold))
-                Text(item.subtitle)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Text(item.timeText)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, AppSpacing.large)
-        .padding(.vertical, AppSpacing.medium)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(Color.white.opacity(0.22), lineWidth: AppStrokeWidth.standard)
-        }
     }
 }
 
@@ -497,10 +395,6 @@ private struct HomeAchievementCard: View {
         }
         .frame(width: 180, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Color.white.opacity(0.28), lineWidth: AppStrokeWidth.standard)
-        }
+        .background(SentinelSurfaceCard())
     }
 }

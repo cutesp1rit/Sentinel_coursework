@@ -45,10 +45,14 @@ enum L10n {
         static let batteryUnavailableBody = String(localized: "home.battery_unavailable_body")
         static let chatTitle = String(localized: "home.chat_title")
         static let chatBody = String(localized: "home.chat_body")
+        static let createAccountButton = String(localized: "home.create_account_button")
+        static let openChatButton = String(localized: "home.open_chat_button")
         static let rebalanceTitle = String(localized: "home.rebalance_title")
         static let rebalanceBody = String(localized: "home.rebalance_body")
         static let rebalanceButton = String(localized: "home.rebalance_button")
         static let signInButton = String(localized: "home.sign_in_button")
+        static let signedOutCTABody = String(localized: "home.signed_out_cta_body")
+        static let signedOutCTAHeadline = String(localized: "home.signed_out_cta_headline")
         static let signedOutCardOneBody = String(localized: "home.signed_out_card_one_body")
         static let signedOutCardOneTitle = String(localized: "home.signed_out_card_one_title")
         static let signedOutCardTwoBody = String(localized: "home.signed_out_card_two_body")
@@ -77,6 +81,8 @@ enum L10n {
         static let addAttachmentAccessibility = String(localized: "chat_sheet.add_attachment_accessibility")
         static let attachmentLimitReached = String(localized: "chat_sheet.attachment_limit_reached")
         static let attachmentTooLarge = String(localized: "chat_sheet.attachment_too_large")
+        static let chatTitle = String(localized: "chat_sheet.chat_title")
+        static let chatsTitle = String(localized: "chat_sheet.chats_title")
         static let composerPlaceholder = String(localized: "chat_sheet.composer_placeholder")
         static let deleteChat = String(localized: "chat_sheet.delete_chat")
         static let authRequiredBody = String(localized: "chat_sheet.auth_required_body")
@@ -140,6 +146,7 @@ enum L10n {
 
     enum Profile {
         static let accountDeletedStatus = String(localized: "profile.account_deleted_status")
+        static let accountActionsTitle = String(localized: "profile.account_actions_title")
         static let alreadyHaveAccountPrompt = String(localized: "profile.already_have_account_prompt")
         static let authHint = String(localized: "profile.auth_hint")
         static let backToSignInButton = String(localized: "profile.back_to_sign_in_button")
@@ -231,6 +238,14 @@ enum L10n {
                 email
             )
         }
+
+        static func stepProgress(_ current: Int, _ total: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "profile.step_progress_format"),
+                current,
+                total
+            )
+        }
     }
 
     enum Settings {
@@ -251,6 +266,8 @@ enum L10n {
         static let allDay = String(localized: "calendar.all_day")
         static let deleteEvent = String(localized: "calendar.delete_event")
         static let descriptionPlaceholder = String(localized: "calendar.description_placeholder")
+        static let emptySelectedDayBody = String(localized: "calendar.empty_selected_day_body")
+        static let emptySelectedDayTitle = String(localized: "calendar.empty_selected_day_title")
         static let editorDetails = String(localized: "calendar.editor_details")
         static let editorTiming = String(localized: "calendar.editor_timing")
         static let editEvent = String(localized: "calendar.edit_event")
@@ -264,10 +281,15 @@ enum L10n {
         static let newEvent = String(localized: "calendar.new_event")
         static let reminderTag = String(localized: "calendar.reminder_tag")
         static let saveEvent = String(localized: "calendar.save_event")
+        static let selectMonth = String(localized: "calendar.select_month")
         static let startDate = String(localized: "calendar.start_date")
+        static let title = String(localized: "calendar.title")
         static let titlePlaceholder = String(localized: "calendar.title_placeholder")
         static let titleRequired = String(localized: "calendar.title_required")
+        static let today = String(localized: "calendar.today")
+        static let tomorrow = String(localized: "calendar.tomorrow")
         static let typePicker = String(localized: "calendar.type_picker")
+        static let upcomingTitle = String(localized: "calendar.upcoming_title")
         static let weekMode = String(localized: "calendar.week_mode")
         static let weekTitle = String(localized: "calendar.week_title")
     }

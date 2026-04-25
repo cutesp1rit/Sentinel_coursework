@@ -2,10 +2,10 @@
 "app.title" = "Sentinel";
 "home.subtitle" = "Local-first home foundation for schedule, battery, and chat entry points.";
 "home.achievements_rail_title" = "Next achievements";
-"home.all_events_body" = "Open your full schedule grouped by day.";
+"home.all_events_body" = "See your full agenda and jump to any day.";
 "home.all_events_title" = "All events";
 "home.local_status" = "Local MVP";
-"home.empty_today_body" = "Your next accepted events will land here.";
+"home.empty_today_body" = "When your schedule opens up, this section stays calm and focused.";
 "home.empty_today_title" = "Nothing else today";
 "home.hero_subtitle_format" = "Welcome back, %@.";
 "home.hero_title" = "Sentinel";
@@ -41,8 +41,12 @@
 "home.chat_body" = "Chat sheet arrives in the next slice, but the home screen already reserves its entry point.";
 "home.rebalance_title" = "Rebalance";
 "home.rebalance_body" = "Disabled for MVP until the backend contract is ready.";
+"home.create_account_button" = "Create Account";
+"home.open_chat_button" = "Open Chat";
 "home.rebalance_button" = "Rebalance";
-"home.sign_in_button" = "Continue";
+"home.sign_in_button" = "Log In";
+"home.signed_out_cta_body" = "Sign in to start planning in chat, review suggestions, and keep everything in sync with your calendar.";
+"home.signed_out_cta_headline" = "Ready to begin?";
 "home.signed_out_card_one_body" = "Turn rough ideas into structured plans that can be reviewed before saving.";
 "home.signed_out_card_one_title" = "Plan in chat";
 "home.signed_out_card_two_body" = "Keep AI suggestions and native calendar events in one calm daily view.";
@@ -56,6 +60,8 @@
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
 "chat_sheet.attachment_limit_reached" = "You can attach up to 5 images to one message.";
 "chat_sheet.attachment_too_large" = "Each image must be 10 MB or smaller.";
+"chat_sheet.chat_title" = "Chat";
+"chat_sheet.chats_title" = "Chats";
 "chat_sheet.composer_placeholder" = "Ask Sentinel to plan your day...";
 "chat_sheet.delete_chat" = "Delete Chat";
 "chat_sheet.auth_required_body" = "Sign in from the profile screen to load chat history and send messages to the assistant.";
@@ -103,6 +109,7 @@
 "chat_sheet.mock.message_three" = "Yes, and keep focus time after 15:00.";
 
 "profile.account_deleted_status" = "Account deleted. This device is signed out.";
+"profile.account_actions_title" = "Account Actions";
 "profile.already_have_account_prompt" = "Already have an account?";
 "profile.auth_hint" = "Keep account actions on one screen: sign in, register, verify the email, save a default prompt, and manage the session.";
 "profile.back_to_sign_in_button" = "Back to Sign In";
@@ -182,10 +189,11 @@
 "profile.verification_token_required" = "Verification token is required.";
 "profile.verify_email_button" = "Verify Email";
 "profile.no_account_prompt" = "No account yet?";
+"profile.step_progress_format" = "Step %lld of %lld";
 
 "settings.achievements" = "Achievements";
 "settings.auth_status" = "Account";
-"settings.default_prompt_footer" = "This text is saved locally for future preference support. It is not sent with chat requests yet.";
+"settings.default_prompt_footer" = "This text is automatically added to every chat message and Rebalance request.";
 "settings.default_prompt_title" = "Default Prompt Template";
 "settings.logout" = "Log Out";
 "settings.notifications_denied" = "Notifications are disabled because the system permission was denied.";
@@ -198,6 +206,8 @@
 "calendar.all_day" = "All Day";
 "calendar.delete_event" = "Delete Event";
 "calendar.description_placeholder" = "Notes";
+"calendar.empty_selected_day_body" = "No events are planned for the selected day yet.";
+"calendar.empty_selected_day_title" = "Nothing scheduled";
 "calendar.editor_details" = "Details";
 "calendar.editor_timing" = "Timing";
 "calendar.edit_event" = "Edit Event";
@@ -211,10 +221,15 @@
 "calendar.new_event" = "New Event";
 "calendar.reminder_tag" = "Reminder";
 "calendar.save_event" = "Save";
+"calendar.select_month" = "Choose a Date";
 "calendar.start_date" = "Start";
+"calendar.title" = "Calendar";
 "calendar.title_placeholder" = "Title";
 "calendar.title_required" = "Title is required.";
+"calendar.today" = "Today";
+"calendar.tomorrow" = "Tomorrow";
 "calendar.type_picker" = "Type";
+"calendar.upcoming_title" = "Coming Up";
 "calendar.week_mode" = "Week";
 "calendar.week_title" = "Week";
 

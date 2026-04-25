@@ -14,16 +14,6 @@ struct CalendarReducer {
                 state.editor = .init()
                 return .none
 
-            case let .anchorDateChanged(date):
-                state.anchorDate = date
-                return .send(.reloadRequested)
-
-            case let .anchorDateAdvanced(direction):
-                let calendar = Calendar.current
-                let component: Calendar.Component = state.displayMode == .week ? .day : .month
-                state.anchorDate = calendar.date(byAdding: component, value: direction * (state.displayMode == .week ? 7 : 1), to: state.anchorDate) ?? state.anchorDate
-                return .send(.reloadRequested)
-
             case let .deleteFailed(message), let .eventsFailed(message), let .saveFailed(message):
                 state.errorMessage = message
                 state.isLoading = false
@@ -32,7 +22,7 @@ struct CalendarReducer {
             case let .deleteTapped(eventID):
                 state.errorMessage = nil
                 state.isLoading = true
-                let range = Self.visibleRange(for: state.anchorDate, mode: state.displayMode)
+                let range = Self.visibleRange(for: state.selectedDate)
                 let accessToken = state.accessToken
                 return .run { [calendarSyncClient, eventsClient, localNotificationsClient] send in
                     do {
@@ -45,10 +35,6 @@ struct CalendarReducer {
                         await send(.deleteFailed(Self.errorMessage(for: error)))
                     }
                 }
-
-            case let .displayModeChanged(mode):
-                state.displayMode = mode
-                return .send(.reloadRequested)
 
             case let .editorAllDayChanged(value):
                 state.editor?.allDay = value
@@ -98,6 +84,10 @@ struct CalendarReducer {
                 state.isLoading = false
                 return .none
 
+            case let .monthPickerPresentationChanged(isPresented):
+                state.isMonthPickerPresented = isPresented
+                return .none
+
             case .onAppear:
                 if state.events.isEmpty && !state.isLoading {
                     return .send(.reloadRequested)
@@ -108,7 +98,7 @@ struct CalendarReducer {
                 guard !state.isLoading else { return .none }
                 state.errorMessage = nil
                 state.isLoading = true
-                let range = Self.visibleRange(for: state.anchorDate, mode: state.displayMode)
+                let range = Self.visibleRange(for: state.selectedDate)
                 let accessToken = state.accessToken
                 return .run { [eventsClient] send in
                     do {
@@ -133,7 +123,7 @@ struct CalendarReducer {
                 state.isLoading = true
                 let editorEventID = editor.eventID
                 let payload = editor.payload
-                let range = Self.visibleRange(for: state.anchorDate, mode: state.displayMode)
+                let range = Self.visibleRange(for: state.selectedDate)
                 let accessToken = state.accessToken
                 return .run { [calendarSyncClient, eventsClient, localNotificationsClient] send in
                     do {
@@ -151,6 +141,16 @@ struct CalendarReducer {
                         await send(.saveFailed(Self.errorMessage(for: error)))
                     }
                 }
+
+            case let .selectedDateChanged(date):
+                state.selectedDate = date
+                state.isMonthPickerPresented = false
+                return .send(.reloadRequested)
+
+            case let .weekAdvanced(direction):
+                let calendar = Calendar.current
+                state.selectedDate = calendar.date(byAdding: .day, value: direction * 7, to: state.selectedDate) ?? state.selectedDate
+                return .send(.reloadRequested)
             }
         }
     }
@@ -164,16 +164,12 @@ private extension CalendarReducer {
         return error.localizedDescription
     }
 
-    static func visibleRange(for anchorDate: Date, mode: CalendarState.DisplayMode) -> ClosedRange<Date> {
+    static func visibleRange(for selectedDate: Date) -> ClosedRange<Date> {
         let calendar = Calendar.current
-
-        switch mode {
-        case .week:
-            let interval = calendar.dateInterval(of: .weekOfYear, for: anchorDate) ?? DateInterval(start: anchorDate, duration: 7 * 24 * 60 * 60)
-            return interval.start ... interval.end
-        case .month:
-            let interval = calendar.dateInterval(of: .month, for: anchorDate) ?? DateInterval(start: anchorDate, duration: 31 * 24 * 60 * 60)
-            return interval.start ... interval.end
-        }
+        let startOfMonth = calendar.dateInterval(of: .month, for: selectedDate)?.start ?? selectedDate
+        let rangeStart = calendar.date(byAdding: .day, value: -7, to: startOfMonth) ?? startOfMonth
+        let rangeEndBase = calendar.date(byAdding: .month, value: 1, to: startOfMonth) ?? selectedDate
+        let rangeEnd = calendar.date(byAdding: .day, value: 14, to: rangeEndBase) ?? rangeEndBase
+        return rangeStart ... rangeEnd
     }
 }

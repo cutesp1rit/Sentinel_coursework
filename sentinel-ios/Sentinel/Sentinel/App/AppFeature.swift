@@ -6,21 +6,17 @@ struct AppFeature: Reducer {
         var auth = AuthState()
         var home = HomeState()
         var chatSheet = ChatSheetState.initial
-        var isChatSheetPresented = true
+        var isAuthFlowPresented = false
+        var isChatSheetPresented = false
         var isProfileSheetPresented = false
-        var pendingSheet: PendingSheet?
-        var shouldRestoreChatSheetAfterProfile = false
-    }
-
-    enum PendingSheet: Equatable {
-        case chat
-        case profile
     }
 
     @CasePathable
     enum Action: Equatable {
         case chatSheetDismissed
         case auth(AuthAction)
+        case authFlowDismissed
+        case authFlowPresentationChanged(Bool)
         case chatSheetPresentationChanged(Bool)
         case home(HomeAction)
         case profileSheetDismissed
@@ -52,74 +48,92 @@ struct AppFeature: Reducer {
             case .auth:
                 let accessToken = state.auth.session?.accessToken
                 let homeEffect: Effect<Action> = .send(.home(.sessionChanged(state.auth.session)))
-                guard state.chatSheet.accessToken != accessToken else {
-                    return homeEffect
+                let chatEffect: Effect<Action> = state.chatSheet.accessToken == accessToken
+                    ? .none
+                    : .send(.chatSheet(.accessTokenChanged(accessToken)))
+
+                switch action {
+                case .auth(.restoredSession(nil)), .auth(.logoutCompleted), .auth(.deleteAccountCompleted):
+                    state.isAuthFlowPresented = false
+                    state.isProfileSheetPresented = false
+                    state.isChatSheetPresented = false
+
+                case .auth(.restoredSession(.some)), .auth(.submitSucceeded(_)):
+                    state.isAuthFlowPresented = false
+                    if !state.isProfileSheetPresented {
+                        state.isChatSheetPresented = true
+                    }
+
+                default:
+                    break
                 }
-                return .merge(
-                    .send(.chatSheet(.accessTokenChanged(accessToken))),
-                    homeEffect
-                )
+
+                return .merge(chatEffect, homeEffect)
+
+            case .authFlowDismissed:
+                state.isAuthFlowPresented = false
+                return .none
+
+            case let .authFlowPresentationChanged(isPresented):
+                state.isAuthFlowPresented = isPresented
+                return .none
 
             case .home(.chatTapped):
-                if state.isProfileSheetPresented {
-                    state.pendingSheet = .chat
-                    state.shouldRestoreChatSheetAfterProfile = false
-                    state.isProfileSheetPresented = false
-                } else {
+                guard state.auth.session != nil else { return .none }
+                if !state.isProfileSheetPresented && !state.isAuthFlowPresented {
                     state.isChatSheetPresented = true
                 }
                 return .none
 
             case .home(.profileTapped):
-                guard !state.isProfileSheetPresented else {
+                guard !state.isProfileSheetPresented && !state.isAuthFlowPresented else {
                     return .none
                 }
-
-                state.shouldRestoreChatSheetAfterProfile = state.isChatSheetPresented
-
-                if state.isChatSheetPresented {
-                    state.pendingSheet = .profile
-                    state.isChatSheetPresented = false
+                guard state.auth.session != nil else {
+                    state.auth.flow = .auth
+                    state.auth.mode = .login
+                    state.auth.registerStep = .email
+                    state.isAuthFlowPresented = true
                     return .none
                 }
-
+                state.isChatSheetPresented = false
                 state.isProfileSheetPresented = true
+                return .none
+
+            case .home(.signInTapped):
+                state.auth.flow = .auth
+                state.auth.mode = .login
+                state.auth.registerStep = .email
+                state.isAuthFlowPresented = true
+                return .none
+
+            case .home(.createAccountTapped):
+                state.auth.flow = .auth
+                state.auth.mode = .register
+                state.auth.registerStep = .email
+                state.isAuthFlowPresented = true
                 return .none
 
             case .chatSheetDismissed:
-                guard state.pendingSheet == .profile else {
-                    return .none
-                }
-                state.pendingSheet = nil
-                state.isProfileSheetPresented = true
+                state.isChatSheetPresented = false
                 return .none
 
             case let .chatSheetPresentationChanged(isPresented):
-                state.isChatSheetPresented = isPresented
+                state.isChatSheetPresented = isPresented && state.auth.session != nil
                 return .none
 
             case .profileSheetDismissed:
                 state.isProfileSheetPresented = false
-
-                if state.pendingSheet == .chat {
-                    state.pendingSheet = nil
+                if state.auth.session != nil {
                     state.isChatSheetPresented = true
-                    return .none
                 }
-
-                guard state.shouldRestoreChatSheetAfterProfile else {
-                    return .none
-                }
-
-                state.shouldRestoreChatSheetAfterProfile = false
-                state.isChatSheetPresented = true
                 return .none
 
             case let .profileSheetPresentationChanged(isPresented):
                 state.isProfileSheetPresented = isPresented
                 return .none
 
-            case .chatSheet(.suggestionApplyCompleted):
+            case .chatSheet(.suggestionApplyCompleted(_, _, _)):
                 return .send(.home(.onAppear))
 
             case .chatSheet, .home:

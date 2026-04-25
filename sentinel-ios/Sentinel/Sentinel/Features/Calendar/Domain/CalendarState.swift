@@ -3,13 +3,6 @@ import Foundation
 
 @ObservableState
 struct CalendarState: Equatable {
-    enum DisplayMode: String, CaseIterable, Equatable, Identifiable {
-        case week
-        case month
-
-        var id: Self { self }
-    }
-
     @ObservableState
     struct Editor: Equatable {
         var allDay = false
@@ -48,15 +41,19 @@ struct CalendarState: Equatable {
     }
 
     let accessToken: String
-    var anchorDate = Date()
-    var displayMode: DisplayMode = .week
     var editor: Editor?
     var errorMessage: String?
     var events: [Event] = []
     var isLoading = false
+    var isMonthPickerPresented = false
+    var selectedDate = Date()
 
     var navigationTitle: String {
-        displayMode == .week ? L10n.Calendar.weekTitle : L10n.Calendar.monthTitle
+        L10n.Calendar.title
+    }
+
+    var selectedMonthLabel: String {
+        selectedDate.formatted(.dateTime.month(.wide).year())
     }
 }
 

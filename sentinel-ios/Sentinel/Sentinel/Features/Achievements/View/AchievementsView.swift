@@ -16,7 +16,7 @@ struct AchievementsView: View {
         }
         .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
         .navigationTitle(L10n.Achievements.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .sentinelInlineNavigationTitle()
         .task {
             store.send(.onAppear)
         }

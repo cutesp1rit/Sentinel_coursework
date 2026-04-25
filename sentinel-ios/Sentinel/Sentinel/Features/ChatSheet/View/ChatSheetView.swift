@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 struct ChatSheetView: View {
     private enum Route: Hashable {
-        case chat
+        case chats
     }
 
     private enum ScrollAnchor {
@@ -21,7 +21,7 @@ struct ChatSheetView: View {
 
     @FocusState private var isComposerFocused: Bool
     @State private var isPhotosPickerPresented = false
-    @State private var path: [Route] = [.chat]
+    @State private var path: [Route] = []
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var transcriptOpacity: CGFloat = 1
 
@@ -30,29 +30,25 @@ struct ChatSheetView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            NavigationStack(path: $path) {
-                ChatHistoryPickerView(
-                    chats: store.chatSummaries,
-                    activeChatID: store.activeChatID,
-                    onCreateNewChat: {
-                        store.send(.chatSelected(nil))
-                        if path.isEmpty {
-                            path.append(.chat)
-                        }
-                    },
-                    onDeleteChat: { chatID in
-                        store.send(.chatDeleteRequested(chatID))
-                    },
-                    onSelectChat: { chatID in
-                        store.send(.chatSelected(chatID))
-                        if path.isEmpty {
-                            path.append(.chat)
-                        }
+        NavigationStack(path: $path) {
+            chatDetailScene
+                .navigationDestination(for: Route.self) { route in
+                    switch route {
+                    case .chats:
+                        ChatHistoryPickerView(
+                            chats: store.chatSummaries,
+                            activeChatID: store.activeChatID,
+                            onCreateNewChat: {
+                                store.send(.chatSelected(nil))
+                            },
+                            onDeleteChat: { chatID in
+                                store.send(.chatDeleteRequested(chatID))
+                            },
+                            onSelectChat: { chatID in
+                                store.send(.chatSelected(chatID))
+                            }
+                        )
                     }
-                )
-                .navigationDestination(for: Route.self) { _ in
-                    chatDetailScene
                 }
                 .onAppear {
                     _ = store.send(.onAppear)
@@ -61,7 +57,6 @@ struct ChatSheetView: View {
                 .onChange(of: store.isChatListPresented) { _, _ in
                     syncPathWithPresentationState(animated: true)
                 }
-            }
         }
         .photosPicker(
             isPresented: $isPhotosPickerPresented,
@@ -96,13 +91,6 @@ struct ChatSheetView: View {
         )
     }
 
-    private var chatListBinding: Binding<Bool> {
-        Binding(
-            get: { store.isChatListPresented },
-            set: { _ = store.send(.chatListPresentationChanged($0)) }
-        )
-    }
-
     private var chatDetailScene: some View {
         ScrollViewReader { scrollProxy in
             VStack(spacing: 0) {
@@ -129,20 +117,17 @@ struct ChatSheetView: View {
                 composerDock
             }
             .background(.clear)
-            .presentationDetents(
-                [.chatCollapsed, .chatMedium, .large],
-                selection: detentBinding
-            )
+            .presentationDetents([.chatCollapsed, .chatMedium, .large], selection: detentBinding)
             .presentationBackgroundInteraction(.enabled(upThrough: .chatMedium))
             .presentationContentInteraction(.scrolls)
             .presentationDragIndicator(.visible)
             .navigationBarBackButtonHidden(true)
-            .navigationBarTitleDisplayMode(.inline)
+            .sentinelInlineNavigationTitle()
             .toolbar(store.detent == .collapsed ? .hidden : .visible, for: .navigationBar)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
                     Button {
                         store.send(.chatListButtonTapped)
                     } label: {
@@ -155,7 +140,7 @@ struct ChatSheetView: View {
 
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
-                        Text("Chat")
+                        Text(L10n.ChatSheet.chatTitle)
                             .font(.headline.weight(.semibold))
 
                         Text(store.activeChatTitle)
@@ -165,7 +150,7 @@ struct ChatSheetView: View {
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
                     Button {
                         store.send(.chatSelected(nil))
                     } label: {
@@ -258,6 +243,7 @@ struct ChatSheetView: View {
         ChatSheetComposerView(
             draft: draftBinding,
             attachments: store.composerAttachments,
+            isCollapsed: isCollapsed,
             isComposerEnabled: store.isSignedIn,
             isSendEnabled: store.isSignedIn
                 && !store.isSending
@@ -271,18 +257,8 @@ struct ChatSheetView: View {
             onComposerTap: expandComposerIfNeeded,
             onSendTap: sendMessage
         )
-        .padding(
-            .horizontal,
-            isCollapsed
-                ? 16
-                : 24
-        )
-        .padding(
-            .bottom,
-            isCollapsed
-                ? 16
-                : -8
-        )
+        .padding(.horizontal, isCollapsed ? 16 : 24)
+        .padding(.bottom, isCollapsed ? 16 : -8)
         .animation(detentTransitionAnimation, value: store.detent)
     }
 
@@ -411,7 +387,7 @@ struct ChatSheetView: View {
     }
 
     private func syncPathWithPresentationState(animated: Bool) {
-        let targetPath: [Route] = store.isChatListPresented ? [] : [.chat]
+        let targetPath: [Route] = store.isChatListPresented ? [.chats] : []
         guard targetPath != path else { return }
 
         if animated {

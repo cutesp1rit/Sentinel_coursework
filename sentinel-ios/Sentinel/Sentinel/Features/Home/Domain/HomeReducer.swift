@@ -12,7 +12,7 @@ struct HomeReducer: Reducer {
     var body: some Reducer<HomeState, HomeAction> {
         Reduce { state, action in
             switch action {
-            case .chatTapped, .profileTapped, .rebalanceTapped:
+            case .chatTapped, .createAccountTapped, .profileTapped, .rebalanceTapped, .signInTapped:
                 return .none
 
             case .achievementsFailed:

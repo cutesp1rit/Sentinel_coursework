@@ -3,7 +3,7 @@ import SwiftUI
 struct AssistantAvatarView: View {
     var body: some View {
         Circle()
-            .fill(Color(uiColor: .secondarySystemFill))
+            .fill(AppPlatformColor.tertiaryGroupedBackground)
             .frame(
                 width: AppGrid.value(7),
                 height: AppGrid.value(7)

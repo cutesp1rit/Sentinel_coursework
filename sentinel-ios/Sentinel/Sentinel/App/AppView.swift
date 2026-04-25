@@ -8,12 +8,28 @@ struct AppView: View {
         GeometryReader { proxy in
             HomeView(
                 bottomOverlayInset: chatSheetInsetHeight(containerHeight: proxy.size.height),
+                showsChatLauncher: store.home.isAuthenticated
+                    && !store.isChatSheetPresented
+                    && !store.isProfileSheetPresented
+                    && !store.isAuthFlowPresented,
                 store: store.scope(state: \.home, action: \.home)
             )
             .task {
                 await store.send(.task).finish()
             }
             .fullScreenCover(
+                isPresented: Binding(
+                    get: { store.isAuthFlowPresented },
+                    set: { store.send(.authFlowPresentationChanged($0)) }
+                ),
+                onDismiss: { store.send(.authFlowDismissed) }
+            ) {
+                AuthFlowView(
+                    onClose: { store.send(.authFlowPresentationChanged(false)) },
+                    store: store.scope(state: \.auth, action: \.auth)
+                )
+            }
+            .sheet(
                 isPresented: Binding(
                     get: { store.isProfileSheetPresented },
                     set: { store.send(.profileSheetPresentationChanged($0)) }
@@ -35,7 +51,6 @@ struct AppView: View {
                 ChatSheetView(
                     store: store.scope(state: \.chatSheet, action: \.chatSheet)
                 )
-                .interactiveDismissDisabled()
             }
         }
     }

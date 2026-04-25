@@ -8,54 +8,16 @@ struct ChatHistoryPickerView: View {
     let onSelectChat: (UUID) -> Void
 
     var body: some View {
-        List {
-            Section {
-                Button(action: onCreateNewChat) {
-                    HStack(spacing: AppSpacing.medium) {
-                        Label(L10n.ChatSheet.newChat, systemImage: "square.and.pencil")
-                            .foregroundStyle(.primary)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 ForEach(chats) { chat in
-                    Button {
+                    ChatListRow(
+                        title: chat.title,
+                        subtitle: subtitle(for: chat),
+                        state: chat.id == activeChatID ? .selected : .regular
+                    ) {
                         onSelectChat(chat.id)
-                    } label: {
-                        HStack(spacing: AppSpacing.medium) {
-                            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                                Text(chat.title)
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(.primary)
-
-                                if let lastMessageAt = chat.lastMessageAt {
-                                    Text(lastMessageAt.formatted(date: .abbreviated, time: .shortened))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Spacer()
-
-                            if chat.id == activeChatID {
-                                Image(systemName: "checkmark")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(Color.accentColor)
-                            }
-
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                        }
                     }
-                    .buttonStyle(.plain)
                     .swipeActions {
                         Button(role: .destructive) {
                             onDeleteChat(chat.id)
@@ -64,16 +26,31 @@ struct ChatHistoryPickerView: View {
                         }
                     }
                 }
-            } header: {
-                Text(L10n.ChatSheet.historyTitle)
+
+                if chats.isEmpty {
+                    EmptyStateCard(
+                        title: L10n.ChatSheet.noChatsTitle,
+                        bodyText: L10n.ChatSheet.noChatsBody
+                    )
+                }
+            }
+            .padding(.horizontal, AppSpacing.large)
+            .padding(.vertical, AppSpacing.large)
+        }
+        .background(HomeTopGradientBackground().ignoresSafeArea())
+        .navigationTitle(L10n.ChatSheet.chatsTitle)
+        .sentinelInlineNavigationTitle()
+        .toolbar {
+            ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
+                Button(L10n.ChatSheet.newChat, action: onCreateNewChat)
+                    .buttonStyle(.plain)
+                    .font(.subheadline.weight(.semibold))
             }
         }
-        #if os(iOS)
-        .listStyle(.insetGrouped)
-        #endif
-        .navigationTitle(L10n.ChatSheet.historyTitle)
-        #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
-        #endif
+    }
+
+    private func subtitle(for chat: ChatSheetState.ChatSummary) -> String? {
+        guard let lastMessageAt = chat.lastMessageAt else { return nil }
+        return lastMessageAt.formatted(date: .abbreviated, time: .shortened)
     }
 }

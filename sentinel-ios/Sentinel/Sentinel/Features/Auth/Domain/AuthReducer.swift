@@ -18,7 +18,7 @@ struct AuthReducer: Reducer {
                     return .none
 
                 case .deleteAccountCompleted:
-                    state = clearedState(statusMessage: L10n.Profile.accountDeletedStatus)
+                    state = clearedState()
                     return .none
 
                 case let .deleteAccountFailed(message):
@@ -94,7 +94,7 @@ struct AuthReducer: Reducer {
                     return .none
 
                 case .logoutCompleted:
-                    state = clearedState(statusMessage: L10n.Profile.loggedOutStatus)
+                    state = clearedState()
                     return .none
 
                 case let .logoutFailed(message):
@@ -321,7 +321,7 @@ struct AuthReducer: Reducer {
                     state.isSubmitting = false
                     state.confirmPassword = ""
                     state.verificationRequiredEmail = email
-                    state.statusMessage = L10n.Profile.verificationRequiredStatus
+                    state.statusMessage = nil
                     return .none
 
                 case let .submitSucceeded(session):
@@ -340,7 +340,7 @@ struct AuthReducer: Reducer {
                     state.session = session
                     state.settings.accessToken = session.accessToken
                     state.settings.userEmail = session.email
-                    state.statusMessage = L10n.Profile.signedInStatus
+                    state.statusMessage = nil
                     state.verificationRequiredEmail = nil
                     return .none
 
@@ -507,9 +507,8 @@ private extension AuthReducer {
     }
 }
 
-private func clearedState(statusMessage: String) -> AuthState {
+private func clearedState() -> AuthState {
     var state = AuthState()
-    state.statusMessage = statusMessage
     return state
 }
 

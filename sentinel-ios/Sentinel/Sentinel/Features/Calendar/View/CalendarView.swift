@@ -7,22 +7,38 @@ struct CalendarView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
-                pickerRow
+                WeekStrip(
+                    days: weekStripDays,
+                    onSelect: { store.send(.selectedDateChanged($0)) },
+                    onSwipe: { store.send(.weekAdvanced($0)) }
+                )
 
-                datePickerCard
+                Button {
+                    store.send(.monthPickerPresentationChanged(true))
+                } label: {
+                    HStack {
+                        Text(store.selectedMonthLabel.capitalized)
+                            .font(.headline.weight(.semibold))
+
+                        Image(systemName: "chevron.down")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
 
                 if let errorMessage = store.errorMessage {
-                    errorCard(message: errorMessage)
+                    EmptyStateCard(title: L10n.Calendar.errorTitle, bodyText: errorMessage)
                 }
 
                 if store.isLoading && store.events.isEmpty {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.top, AppSpacing.xLarge)
-                } else if store.events.isEmpty {
-                    emptyState
                 } else {
-                    eventSections
+                    agendaContent
                 }
             }
             .padding(.horizontal, AppSpacing.large)
@@ -30,27 +46,28 @@ struct CalendarView: View {
         }
         .background(HomeTopGradientBackground().ignoresSafeArea())
         .navigationTitle(store.navigationTitle)
-        .navigationBarTitleDisplayMode(.inline)
+        .sentinelLargeNavigationTitle()
         .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                Button {
-                    store.send(.anchorDateAdvanced(-1))
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-
-                Button {
-                    store.send(.anchorDateAdvanced(1))
-                } label: {
-                    Image(systemName: "chevron.right")
-                }
-
+            ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
                 Button {
                     store.send(.addTapped)
                 } label: {
                     Image(systemName: "plus")
                 }
             }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { store.isMonthPickerPresented },
+                set: { store.send(.monthPickerPresentationChanged($0)) }
+            )
+        ) {
+            MonthPicker(
+                selectedDate: Binding(
+                    get: { store.selectedDate },
+                    set: { store.send(.selectedDateChanged($0)) }
+                )
+            )
         }
         .sheet(
             isPresented: Binding(
@@ -67,48 +84,32 @@ struct CalendarView: View {
         }
     }
 
-    private var pickerRow: some View {
-        Picker(
-            L10n.Calendar.modePickerTitle,
-            selection: Binding(
-                get: { store.displayMode },
-                set: { store.send(.displayModeChanged($0)) }
-            )
-        ) {
-            Text(L10n.Calendar.weekMode).tag(CalendarState.DisplayMode.week)
-            Text(L10n.Calendar.monthMode).tag(CalendarState.DisplayMode.month)
-        }
-        .pickerStyle(.segmented)
-    }
-
-    private var datePickerCard: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            DatePicker(
-                "",
-                selection: Binding(
-                    get: { store.anchorDate },
-                    set: { store.send(.anchorDateChanged($0)) }
-                ),
-                displayedComponents: .date
-            )
-            .datePickerStyle(.graphical)
-
-            Text(rangeDescription)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .padding(AppSpacing.large)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
-    }
-
-    private var eventSections: some View {
+    private var agendaContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.large) {
-            ForEach(groupedEvents, id: \.0) { date, events in
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    Text(date.formatted(.dateTime.day().month(.wide)))
-                        .font(.title3.weight(.semibold))
+            AgendaDayHeader(
+                title: dayHeaderTitle(for: store.selectedDate),
+                subtitle: store.selectedDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+            )
 
-                    ForEach(events) { event in
+            if selectedDayEvents.isEmpty {
+                EmptyStateCard(
+                    title: L10n.Calendar.emptySelectedDayTitle,
+                    bodyText: L10n.Calendar.emptySelectedDayBody
+                )
+            } else {
+                VStack(spacing: AppSpacing.medium) {
+                    ForEach(selectedDayEvents) { event in
+                        eventRow(event)
+                    }
+                }
+            }
+
+            if !upcomingEvents.isEmpty {
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    Text(L10n.Calendar.upcomingTitle)
+                        .font(.headline)
+
+                    ForEach(upcomingEvents) { event in
                         eventRow(event)
                     }
                 }
@@ -117,37 +118,15 @@ struct CalendarView: View {
     }
 
     private func eventRow(_ event: Event) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.medium) {
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                HStack(spacing: AppSpacing.small) {
-                    Text(event.title)
-                        .font(.body.weight(.semibold))
-                    Text(event.type == .reminder ? L10n.Calendar.reminderTag : L10n.Calendar.eventTag)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-
-                Text(timeText(for: event))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                if let location = event.location, !location.isEmpty {
-                    Text(location)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Spacer()
-
-            if hasConflict(for: event) {
-                Label(L10n.ChatSheet.conflict, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.orange)
-            }
+        EventRowCard(
+            title: event.title,
+            badge: event.type == .reminder ? L10n.Calendar.reminderTag : L10n.Calendar.eventTag,
+            time: timeText(for: event),
+            location: event.location,
+            conflictTitle: hasConflict(for: event) ? L10n.ChatSheet.conflict : nil
+        ) {
+            store.send(.editTapped(event.id))
         }
-        .padding(AppSpacing.large)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
         .contextMenu {
             Button(L10n.Calendar.editEvent) {
                 store.send(.editTapped(event.id))
@@ -158,36 +137,44 @@ struct CalendarView: View {
         }
     }
 
-    private func errorCard(message: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(L10n.Calendar.errorTitle)
-                .font(.headline)
-            Text(message)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+    private var weekStripDays: [WeekStripDay] {
+        let calendar = Calendar.current
+        let weekInterval = calendar.dateInterval(of: .weekOfYear, for: store.selectedDate)
+        let startOfWeek = weekInterval?.start ?? store.selectedDate
+
+        return (0 ..< 7).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: startOfWeek) else {
+                return nil
+            }
+
+            return WeekStripDay(
+                id: date.formatted(.iso8601.year().month().day()),
+                date: date,
+                weekday: date.formatted(.dateTime.weekday(.abbreviated)),
+                dayNumber: date.formatted(.dateTime.day()),
+                isSelected: calendar.isDate(date, inSameDayAs: store.selectedDate),
+                isToday: calendar.isDateInToday(date)
+            )
         }
-        .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 
-    private var emptyState: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(L10n.Home.emptyTodayTitle)
-                .font(.headline)
-
-            Text(L10n.Home.emptyTodayBody)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-        .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
+    private var selectedDayEvents: [Event] {
+        let calendar = Calendar.current
+        return store.events
+            .filter { calendar.isDate($0.startAt, inSameDayAs: store.selectedDate) }
+            .sorted { $0.startAt < $1.startAt }
     }
 
-    private var groupedEvents: [(Date, [Event])] {
-        let grouped = Dictionary(grouping: store.events) { Calendar.current.startOfDay(for: $0.startAt) }
-        return grouped.keys.sorted().map { ($0, grouped[$0, default: []].sorted { $0.startAt < $1.startAt }) }
+    private var upcomingEvents: [Event] {
+        let calendar = Calendar.current
+        let selectedStart = calendar.startOfDay(for: store.selectedDate)
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: selectedStart) ?? selectedStart
+
+        return store.events
+            .filter { $0.startAt >= nextDay }
+            .sorted { $0.startAt < $1.startAt }
+            .prefix(4)
+            .map { $0 }
     }
 
     private func hasConflict(for event: Event) -> Bool {
@@ -200,6 +187,17 @@ struct CalendarView: View {
         }
     }
 
+    private func dayHeaderTitle(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return L10n.Calendar.today
+        }
+        if calendar.isDateInTomorrow(date) {
+            return L10n.Calendar.tomorrow
+        }
+        return date.formatted(.dateTime.day().month(.wide))
+    }
+
     private func timeText(for event: Event) -> String {
         if event.allDay {
             return L10n.Calendar.allDay
@@ -207,21 +205,37 @@ struct CalendarView: View {
         if let endAt = event.endAt {
             return "\(event.startAt.formatted(date: .omitted, time: .shortened)) - \(endAt.formatted(date: .omitted, time: .shortened))"
         }
+        if event.type == .reminder {
+            return event.startAt.formatted(date: .omitted, time: .shortened)
+        }
         return event.startAt.formatted(date: .abbreviated, time: .shortened)
     }
+}
 
-    private var rangeDescription: String {
-        let calendar = Calendar.current
+private struct MonthPicker: View {
+    @Binding var selectedDate: Date
+    @Environment(\.dismiss) private var dismiss
 
-        switch store.displayMode {
-        case .week:
-            let interval = calendar.dateInterval(of: .weekOfYear, for: store.anchorDate)
-            let start = interval?.start ?? store.anchorDate
-            let end = calendar.date(byAdding: .day, value: 6, to: start) ?? start
-            return "\(start.formatted(.dateTime.day().month(.abbreviated))) - \(end.formatted(.dateTime.day().month(.abbreviated)))"
-        case .month:
-            return store.anchorDate.formatted(.dateTime.month(.wide).year())
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: AppSpacing.large) {
+                DatePicker(
+                    "",
+                    selection: $selectedDate,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .labelsHidden()
+
+                PrimaryButton(L10n.Profile.closeButton) {
+                    dismiss()
+                }
+            }
+            .padding(AppSpacing.large)
+            .navigationTitle(L10n.Calendar.selectMonth)
+            .sentinelInlineNavigationTitle()
         }
+        .presentationDetents([.medium])
     }
 }
 
@@ -299,15 +313,15 @@ private struct CalendarEditorView: View {
                 }
             }
             .navigationTitle(editor.eventID == nil ? L10n.Calendar.newEvent : L10n.Calendar.editEvent)
-            .navigationBarTitleDisplayMode(.inline)
+            .sentinelInlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
                     Button(L10n.Profile.closeButton) {
                         store.send(.editorDismissed)
                     }
                 }
 
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
                     Button(L10n.Calendar.saveEvent) {
                         store.send(.saveTapped)
                     }
