@@ -55,7 +55,7 @@ struct ChatBubbleRow: View {
         VStack(spacing: AppSpacing.small) {
             ForEach(message.images) { attachment in
                 attachmentView(attachment)
-                    .frame(maxWidth: bubbleMaxWidth - (AppSpacing.large * 2))
+                    .frame(maxWidth: AppGrid.value(68) - (AppSpacing.large * 2))
                     .frame(height: 180)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous))
             }

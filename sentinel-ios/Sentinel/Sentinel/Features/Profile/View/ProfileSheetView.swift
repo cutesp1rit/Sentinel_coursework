@@ -21,26 +21,77 @@ struct ProfileSheetView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+            List {
+                Section {
                     ProfileHeader(displayName: store.displayName, email: store.userEmail ?? "")
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
 
-                    if let errorMessage = store.errorMessage {
+                if let errorMessage = store.errorMessage {
+                    Section {
                         statusBanner(errorMessage, tint: .red.opacity(0.12), foreground: .red)
                     }
+                }
 
-                    if let statusMessage = store.statusMessage {
+                if let statusMessage = store.statusMessage {
+                    Section {
                         statusBanner(statusMessage, tint: .secondary.opacity(0.12), foreground: .secondary)
                     }
-
-                    promptSection
-                    achievementsSection
-                    accountSection
                 }
-                .padding(.horizontal, AppSpacing.large)
-                .padding(.top, AppSpacing.large)
-                .padding(.bottom, AppSpacing.xLarge)
+
+                Section(L10n.Settings.defaultPromptTitle) {
+                    TextField(L10n.Settings.defaultPromptTitle, text: promptBinding, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .padding(.vertical, AppSpacing.small)
+
+                    Text(L10n.Settings.defaultPromptFooter)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    PrimaryButton(L10n.Settings.savePromptButton, isEnabled: !store.isSavingPrompt) {
+                        store.send(.savePromptTapped)
+                    }
+                    .listRowInsets(EdgeInsets(top: AppSpacing.small, leading: AppSpacing.medium, bottom: AppSpacing.small, trailing: AppSpacing.medium))
+                    .listRowBackground(Color.clear)
+                }
+
+                if let accessToken = store.accessToken {
+                    Section(L10n.Settings.achievements) {
+                        NavigationLink {
+                            AchievementsView(
+                                store: Store(initialState: AchievementsState(accessToken: accessToken)) {
+                                    AchievementsReducer()
+                                }
+                            )
+                        } label: {
+                            Text(L10n.Settings.achievements)
+                        }
+                    }
+                }
+
+                Section(L10n.Profile.accountActionsTitle) {
+                    Button(L10n.Profile.logoutButton) {
+                        store.send(.logoutTapped)
+                    }
+                    .foregroundStyle(.primary)
+
+                    Button(L10n.Profile.deleteAccountButton, role: .destructive) {
+                        store.send(.deletePromptVisibilityChanged(!store.isDeletePromptVisible))
+                    }
+
+                    if store.isDeletePromptVisible {
+                        SecureField(L10n.Profile.deleteAccountPasswordPlaceholder, text: deletePasswordBinding)
+                        Button(L10n.Profile.deleteAccountConfirmButton, role: .destructive) {
+                            store.send(.deleteAccountTapped)
+                        }
+                        Button(L10n.Profile.cancelButton) {
+                            store.send(.deletePromptVisibilityChanged(false))
+                        }
+                    }
+                }
             }
+            .scrollContentBackground(.hidden)
             .background(HomeTopGradientBackground().ignoresSafeArea())
             .navigationTitle(L10n.Profile.title)
             .sentinelInlineNavigationTitle()
@@ -52,113 +103,6 @@ struct ProfileSheetView: View {
             }
             .task {
                 store.send(.onAppear)
-            }
-        }
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-    }
-
-    private var promptSection: some View {
-        SettingsSectionCard(
-            title: L10n.Settings.defaultPromptTitle,
-            footer: L10n.Settings.defaultPromptFooter
-        ) {
-            TextField(L10n.Settings.defaultPromptTitle, text: promptBinding, axis: .vertical)
-                .textFieldStyle(.plain)
-                .padding(AppSpacing.large)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(AppPlatformColor.systemGroupedBackground)
-                )
-
-            Divider()
-                .padding(.horizontal, AppSpacing.large)
-
-            PrimaryButton(L10n.Settings.savePromptButton, isEnabled: !store.isSavingPrompt) {
-                store.send(.savePromptTapped)
-            }
-            .padding(AppSpacing.large)
-        }
-    }
-
-    private var achievementsSection: some View {
-        SettingsSectionCard(title: L10n.Settings.achievements) {
-            if let accessToken = store.accessToken {
-                NavigationLink {
-                    AchievementsView(
-                        store: Store(initialState: AchievementsState(accessToken: accessToken)) {
-                            AchievementsReducer()
-                        }
-                    )
-                } label: {
-                    SettingsRow(systemImage: "rosette", title: L10n.Settings.achievements) {
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var accountSection: some View {
-        SettingsSectionCard(title: L10n.Profile.accountActionsTitle) {
-            AccountActionRow(
-                title: L10n.Profile.logoutButton,
-                systemImage: "rectangle.portrait.and.arrow.right",
-                role: nil,
-                tint: .primary
-            ) {
-                store.send(.logoutTapped)
-            }
-
-            Divider()
-                .padding(.horizontal, AppSpacing.large)
-
-            AccountActionRow(
-                title: L10n.Profile.deleteAccountButton,
-                systemImage: "trash",
-                role: .destructive,
-                tint: .red
-            ) {
-                store.send(.deletePromptVisibilityChanged(!store.isDeletePromptVisible))
-            }
-
-            if store.isDeletePromptVisible {
-                Divider()
-                    .padding(.horizontal, AppSpacing.large)
-
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    Text(L10n.Profile.deleteAccountBody)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-
-                    SecureField(L10n.Profile.deleteAccountPasswordPlaceholder, text: deletePasswordBinding)
-                        .padding(.horizontal, AppSpacing.large)
-                        .frame(height: 50)
-                        .background(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(AppPlatformColor.systemGroupedBackground)
-                        )
-
-                    HStack(spacing: AppSpacing.medium) {
-                        Button(L10n.Profile.cancelButton) {
-                            store.send(.deletePromptVisibilityChanged(false))
-                        }
-                        .buttonStyle(.plain)
-                        .font(.subheadline.weight(.semibold))
-
-                        Spacer()
-
-                        Button(L10n.Profile.deleteAccountConfirmButton, role: .destructive) {
-                            store.send(.deleteAccountTapped)
-                        }
-                        .buttonStyle(.plain)
-                        .font(.subheadline.weight(.semibold))
-                    }
-                }
-                .padding(AppSpacing.large)
             }
         }
     }

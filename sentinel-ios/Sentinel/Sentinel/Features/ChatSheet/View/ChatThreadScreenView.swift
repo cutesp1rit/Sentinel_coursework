@@ -51,9 +51,8 @@ struct ChatThreadScreenView: View {
             .presentationDragIndicator(.visible)
             .navigationBarBackButtonHidden(true)
             .sentinelInlineNavigationTitle()
-            .toolbar(detent == .collapsed ? .hidden : .visible, for: .navigationBar)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .sentinelNavigationBarToolbarVisibility(detent == .collapsed ? .hidden : .visible)
+            .sentinelNavigationBarMaterialBackground()
             .toolbar {
                 ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
                     Button(action: onOpenChatList) {

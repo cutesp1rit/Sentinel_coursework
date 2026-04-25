@@ -1,5 +1,7 @@
+import ComposableArchitecture
 import Foundation
 
+@CasePathable
 enum ChatSheetAction: Equatable {
     case accessTokenChanged(String?)
     case chatListButtonTapped

@@ -7,6 +7,14 @@ import AppKit
 #endif
 
 enum AppPlatformColor {
+    static var systemBackground: Color {
+        #if canImport(UIKit)
+        Color(uiColor: .systemBackground)
+        #else
+        Color(nsColor: .windowBackgroundColor)
+        #endif
+    }
+
     static var secondaryGroupedBackground: Color {
         #if canImport(UIKit)
         Color(uiColor: .secondarySystemGroupedBackground)

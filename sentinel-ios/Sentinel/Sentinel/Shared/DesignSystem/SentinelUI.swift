@@ -75,11 +75,12 @@ struct PrimaryButton: View {
                 .frame(height: 54)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .background(
+        .foregroundStyle(.primary)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(isEnabled ? Color.primary.opacity(0.88) : Color.secondary.opacity(0.22))
-        )
+                .stroke(Color.white.opacity(0.32), lineWidth: AppStrokeWidth.standard)
+        }
         .opacity(isEnabled ? 1 : AppOpacity.disabled)
         .disabled(!isEnabled)
     }
@@ -528,10 +529,10 @@ private struct SentinelCardBackground: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(.regularMaterial)
+            .fill(AppPlatformColor.systemBackground)
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.26), lineWidth: AppStrokeWidth.standard)
+                    .stroke(Color.primary.opacity(0.06), lineWidth: AppStrokeWidth.standard)
             }
     }
 }
@@ -567,6 +568,26 @@ extension View {
     func sentinelHiddenNavigationBar() -> some View {
         #if os(iOS)
         self.navigationBarHidden(true)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func sentinelNavigationBarToolbarVisibility(_ visibility: Visibility) -> some View {
+        #if os(iOS)
+        self.toolbar(visibility, for: .navigationBar)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func sentinelNavigationBarMaterialBackground() -> some View {
+        #if os(iOS)
+        self
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         #else
         self
         #endif

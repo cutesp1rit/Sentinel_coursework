@@ -12,6 +12,20 @@ struct CalendarState: Equatable {
         let title: String
     }
 
+    struct AgendaSection: Equatable, Identifiable {
+        let id: String
+        let date: Date
+        let rows: [AgendaRow]
+
+        var title: String {
+            date.formatted(.dateTime.day().month(.wide))
+        }
+
+        var subtitle: String {
+            date.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+        }
+    }
+
     @ObservableState
     struct Editor: Equatable {
         var allDay = false
@@ -53,8 +67,8 @@ struct CalendarState: Equatable {
     var editor: Editor?
     var errorMessage: String?
     var events: [Event] = []
+    var isInlineMonthPickerVisible = false
     var isLoading = false
-    var isMonthPickerPresented = false
     var selectedDate = Date()
 
     var navigationTitle: String {
@@ -63,21 +77,6 @@ struct CalendarState: Equatable {
 
     var selectedMonthLabel: String {
         selectedDate.formatted(.dateTime.month(.wide).year())
-    }
-
-    var selectedDateHeaderTitle: String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(selectedDate) {
-            return L10n.Calendar.today
-        }
-        if calendar.isDateInTomorrow(selectedDate) {
-            return L10n.Calendar.tomorrow
-        }
-        return selectedDate.formatted(.dateTime.day().month(.wide))
-    }
-
-    var selectedDateHeaderSubtitle: String {
-        selectedDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
     }
 
     var weekStripDays: [WeekStripDay] {
@@ -108,16 +107,17 @@ struct CalendarState: Equatable {
             .map(agendaRow(for:))
     }
 
-    var upcomingRows: [AgendaRow] {
-        let calendar = Calendar.current
-        let selectedStart = calendar.startOfDay(for: selectedDate)
-        let nextDay = calendar.date(byAdding: .day, value: 1, to: selectedStart) ?? selectedStart
-
-        return events
-            .filter { $0.startAt >= nextDay }
-            .sorted { $0.startAt < $1.startAt }
-            .prefix(4)
-            .map(agendaRow(for:))
+    var agendaSections: [AgendaSection] {
+        let grouped = Dictionary(grouping: events) { Calendar.current.startOfDay(for: $0.startAt) }
+        return grouped.keys.sorted().map { date in
+            AgendaSection(
+                id: date.formatted(.iso8601.year().month().day()),
+                date: date,
+                rows: grouped[date, default: []]
+                    .sorted { $0.startAt < $1.startAt }
+                    .map(agendaRow(for:))
+            )
+        }
     }
 
     private func agendaRow(for event: Event) -> AgendaRow {

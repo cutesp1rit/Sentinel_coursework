@@ -265,6 +265,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription[sdk=iphoneos*]" = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription[sdk=iphonesimulator*]" = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -311,6 +312,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription[sdk=iphoneos*]" = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription[sdk=iphonesimulator*]" = "Sentinel needs calendar access to read your schedule and save accepted event suggestions.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;

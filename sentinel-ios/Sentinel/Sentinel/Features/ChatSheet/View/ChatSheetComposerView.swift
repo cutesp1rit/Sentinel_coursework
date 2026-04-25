@@ -20,17 +20,17 @@ struct ChatSheetComposerView: View {
     let onSendTap: () -> Void
 
     var body: some View {
-        GlassEffectContainer(spacing: 10) {
-            if isCollapsed {
-                ChatCollapsedBar(
-                    draft: draft,
-                    isComposerEnabled: isComposerEnabled,
-                    isSendEnabled: isSendEnabled,
-                    onAttachmentTap: onAttachmentTap,
-                    onComposerTap: onComposerTap,
-                    onSendTap: onSendTap
-                )
-            } else {
+        if isCollapsed {
+            ChatCollapsedBar(
+                draft: draft,
+                isComposerEnabled: isComposerEnabled,
+                isSendEnabled: isSendEnabled,
+                onAttachmentTap: onAttachmentTap,
+                onComposerTap: onComposerTap,
+                onSendTap: onSendTap
+            )
+        } else {
+            GlassEffectContainer(spacing: 10) {
                 VStack(alignment: .leading, spacing: 10) {
                     if !attachments.isEmpty {
                         attachmentStrip
@@ -157,7 +157,7 @@ private struct ChatCollapsedBar: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: Capsule())
+        .background(.ultraThinMaterial, in: Capsule())
         .overlay {
             Capsule()
                 .stroke(Color.white.opacity(0.22), lineWidth: AppStrokeWidth.standard)

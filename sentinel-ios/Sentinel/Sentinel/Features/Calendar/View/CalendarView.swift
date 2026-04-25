@@ -6,28 +6,42 @@ struct CalendarView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.large) {
+            LazyVStack(alignment: .leading, spacing: AppSpacing.large, pinnedViews: [.sectionHeaders]) {
                 WeekStrip(
                     days: store.weekStripDays,
                     onSelect: { store.send(.selectedDateChanged($0)) },
                     onSwipe: { store.send(.weekAdvanced($0)) }
                 )
+                .padding(.top, AppSpacing.xLarge)
 
-                Button {
-                    store.send(.monthPickerPresentationChanged(true))
-                } label: {
-                    HStack {
-                        Text(store.selectedMonthLabel.capitalized)
-                            .font(.headline.weight(.semibold))
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    Button {
+                        store.send(.inlineMonthPickerVisibilityChanged(!store.isInlineMonthPickerVisible))
+                    } label: {
+                        HStack {
+                            Text(store.selectedMonthLabel.capitalized)
+                                .font(.headline.weight(.semibold))
+                            Image(systemName: store.isInlineMonthPickerVisible ? "chevron.up" : "chevron.down")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
 
-                        Image(systemName: "chevron.down")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        Spacer()
+                    if store.isInlineMonthPickerVisible {
+                        DatePicker(
+                            "",
+                            selection: Binding(
+                                get: { store.selectedDate },
+                                set: { store.send(.selectedDateChanged($0)) }
+                            ),
+                            displayedComponents: .date
+                        )
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
                     }
                 }
-                .buttonStyle(.plain)
 
                 if let errorMessage = store.errorMessage {
                     EmptyStateCard(title: L10n.Calendar.errorTitle, bodyText: errorMessage)
@@ -38,11 +52,47 @@ struct CalendarView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, AppSpacing.xLarge)
                 } else {
-                    agendaContent
+                    ForEach(store.agendaSections) { section in
+                        Section {
+                            VStack(spacing: AppSpacing.medium) {
+                                ForEach(section.rows) { row in
+                                    EventRowCard(
+                                        title: row.title,
+                                        badge: row.badge,
+                                        time: row.time,
+                                        location: row.location,
+                                        conflictTitle: row.conflictTitle
+                                    ) {
+                                        store.send(.editTapped(row.id))
+                                    }
+                                    .contextMenu {
+                                        Button(L10n.Calendar.editEvent) {
+                                            store.send(.editTapped(row.id))
+                                        }
+                                        Button(L10n.Calendar.deleteEvent, role: .destructive) {
+                                            store.send(.deleteTapped(row.id))
+                                        }
+                                    }
+                                }
+                            }
+                            .onAppear {
+                                store.send(.visibleDateChanged(section.date))
+                            }
+                        } header: {
+                            AgendaDayHeader(
+                                title: section.title,
+                                subtitle: section.subtitle
+                            )
+                            .padding(.top, AppSpacing.small)
+                            .padding(.bottom, AppSpacing.medium)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(AppPlatformColor.systemGroupedBackground.opacity(0.96))
+                        }
+                    }
                 }
             }
             .padding(.horizontal, AppSpacing.large)
-            .padding(.vertical, AppSpacing.xLarge)
+            .padding(.bottom, AppSpacing.xLarge)
         }
         .background(HomeTopGradientBackground().ignoresSafeArea())
         .navigationTitle(store.navigationTitle)
@@ -58,19 +108,6 @@ struct CalendarView: View {
         }
         .sheet(
             isPresented: Binding(
-                get: { store.isMonthPickerPresented },
-                set: { store.send(.monthPickerPresentationChanged($0)) }
-            )
-        ) {
-            MonthPicker(
-                selectedDate: Binding(
-                    get: { store.selectedDate },
-                    set: { store.send(.selectedDateChanged($0)) }
-                )
-            )
-        }
-        .sheet(
-            isPresented: Binding(
                 get: { store.editor != nil },
                 set: { if !$0 { store.send(.editorDismissed) } }
             )
@@ -82,86 +119,6 @@ struct CalendarView: View {
         .task {
             store.send(.onAppear)
         }
-    }
-
-    private var agendaContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            AgendaDayHeader(
-                title: store.selectedDateHeaderTitle,
-                subtitle: store.selectedDateHeaderSubtitle
-            )
-
-            if store.selectedDayRows.isEmpty {
-                EmptyStateCard(
-                    title: L10n.Calendar.emptySelectedDayTitle,
-                    bodyText: L10n.Calendar.emptySelectedDayBody
-                )
-            } else {
-                VStack(spacing: AppSpacing.medium) {
-                    ForEach(store.selectedDayRows) { row in
-                        eventRow(row)
-                    }
-                }
-            }
-
-            if !store.upcomingRows.isEmpty {
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    Text(L10n.Calendar.upcomingTitle)
-                        .font(.headline)
-
-                    ForEach(store.upcomingRows) { row in
-                        eventRow(row)
-                    }
-                }
-            }
-        }
-    }
-
-    private func eventRow(_ row: CalendarState.AgendaRow) -> some View {
-        EventRowCard(
-            title: row.title,
-            badge: row.badge,
-            time: row.time,
-            location: row.location,
-            conflictTitle: row.conflictTitle
-        ) {
-            store.send(.editTapped(row.id))
-        }
-        .contextMenu {
-            Button(L10n.Calendar.editEvent) {
-                store.send(.editTapped(row.id))
-            }
-            Button(L10n.Calendar.deleteEvent, role: .destructive) {
-                store.send(.deleteTapped(row.id))
-            }
-        }
-    }
-}
-
-private struct MonthPicker: View {
-    @Binding var selectedDate: Date
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: AppSpacing.large) {
-                DatePicker(
-                    "",
-                    selection: $selectedDate,
-                    displayedComponents: .date
-                )
-                .datePickerStyle(.graphical)
-                .labelsHidden()
-
-                PrimaryButton(L10n.Profile.closeButton) {
-                    dismiss()
-                }
-            }
-            .padding(AppSpacing.large)
-            .navigationTitle(L10n.Calendar.selectMonth)
-            .sentinelInlineNavigationTitle()
-        }
-        .presentationDetents([.medium])
     }
 }
 

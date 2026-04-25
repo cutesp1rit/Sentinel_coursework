@@ -3,7 +3,6 @@ import SwiftUI
 
 struct HomeView: View {
     let bottomOverlayInset: CGFloat
-    let showsChatLauncher: Bool
     let store: StoreOf<HomeReducer>
 
     var body: some View {
@@ -28,6 +27,11 @@ struct HomeView: View {
             }
             .sentinelHiddenNavigationBar()
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !store.isAuthenticated {
+                signedOutCTA
+            }
+        }
         .onAppear {
             store.send(.onAppear)
         }
@@ -35,12 +39,6 @@ struct HomeView: View {
 
     private var signedOutContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
-            HStack {
-                brandBadge
-                Spacer()
-                profileButton
-            }
-
             HeroCard(
                 eyebrow: L10n.Home.signedOutHeroEyebrow,
                 title: L10n.Home.signedOutHeroTitle,
@@ -60,26 +58,23 @@ struct HomeView: View {
                     systemImage: "calendar.badge.clock"
                 )
             }
-
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Home.signedOutCTAHeadline)
-                    .font(.headline)
-
-                Text(L10n.Home.signedOutCTABody)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                PrimaryButton(L10n.Home.signInButton) {
-                    store.send(.signInTapped)
-                }
-
-                SecondaryTextAction(L10n.Home.createAccountButton) {
-                    store.send(.createAccountTapped)
-                }
-            }
-            .padding(AppSpacing.large)
-            .background(SentinelSurfaceCard())
         }
+    }
+
+    private var signedOutCTA: some View {
+        HStack(spacing: AppSpacing.medium) {
+            PrimaryButton(L10n.Home.signInButton) {
+                store.send(.signInTapped)
+            }
+
+            PrimaryButton(L10n.Home.createAccountButton) {
+                store.send(.createAccountTapped)
+            }
+        }
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.top, AppSpacing.medium)
+        .padding(.bottom, AppSpacing.large)
+        .background(.ultraThinMaterial)
     }
 
     private var signedInContent: some View {
@@ -114,13 +109,6 @@ struct HomeView: View {
             }
 
             todaySection
-
-            if showsChatLauncher {
-                PrimaryButton(L10n.Home.openChatButton) {
-                    store.send(.chatTapped)
-                }
-            }
-
             allEventsCard
 
             achievementsRail
@@ -233,15 +221,6 @@ struct HomeView: View {
             }
         }
     }
-
-    private var brandBadge: some View {
-        Text(L10n.App.title)
-            .font(.footnote.weight(.semibold))
-            .padding(.horizontal, AppSpacing.medium)
-            .padding(.vertical, AppSpacing.small)
-            .background(.ultraThinMaterial, in: Capsule())
-    }
-
     private var profileButton: some View {
         Button {
             store.send(.profileTapped)
@@ -285,7 +264,6 @@ struct HomeView: View {
 #Preview {
     HomeView(
         bottomOverlayInset: 200,
-        showsChatLauncher: false,
         store: Store(initialState: HomeState()) {
             HomeReducer()
         }
@@ -299,9 +277,9 @@ struct HomeTopGradientBackground: View {
 
             LinearGradient(
                 colors: [
-                    Color(red: 0.82, green: 0.90, blue: 1.0),
-                    Color(red: 0.90, green: 0.93, blue: 0.98),
-                    Color(red: 0.98, green: 0.96, blue: 0.92),
+                    Color(red: 0.78, green: 0.90, blue: 1.0),
+                    Color(red: 0.90, green: 0.88, blue: 1.0),
+                    Color(red: 0.93, green: 0.97, blue: 1.0),
                     AppPlatformColor.systemGroupedBackground
                 ],
                 startPoint: .topLeading,
@@ -319,7 +297,7 @@ struct HomeTopGradientBackground: View {
                 .offset(x: -110, y: -40)
 
             Circle()
-                .fill(Color.orange.opacity(0.14))
+                .fill(Color.pink.opacity(0.14))
                 .frame(width: 300, height: 300)
                 .blur(radius: 42)
                 .offset(x: 120, y: -30)
@@ -330,10 +308,10 @@ struct HomeTopGradientBackground: View {
 private struct SentinelSurfaceCard: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 30, style: .continuous)
-            .fill(.regularMaterial)
+            .fill(AppPlatformColor.systemBackground)
             .overlay {
                 RoundedRectangle(cornerRadius: 30, style: .continuous)
-                    .stroke(Color.white.opacity(0.26), lineWidth: AppStrokeWidth.standard)
+                    .stroke(Color.primary.opacity(0.06), lineWidth: AppStrokeWidth.standard)
             }
     }
 }

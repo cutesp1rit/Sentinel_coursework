@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import CoreGraphics
 
+@Reducer
 struct AppFeature: Reducer {
     @ObservableState
     struct State: Equatable {
@@ -41,26 +42,8 @@ struct AppFeature: Reducer {
         case chatSheet(ChatSheetAction)
     }
 
-    var body: some Reducer<State, Action> {
-        CombineReducers {
-            Scope(state: \.auth, action: \.auth) {
-                AuthReducer()
-            }
-
-            Scope(state: \.home, action: \.home) {
-                HomeReducer()
-            }
-
-            Scope(state: \.chatSheet, action: \.chatSheet) {
-                ChatSheetReducer()
-            }
-
-            Scope(state: \.profile, action: \.profile) {
-                ProfileFeature()
-            }
-        }
-
-        Reduce { state, action in
+    struct Coordinator: Reducer {
+        func reduce(into state: inout State, action: Action) -> Effect<Action> {
             switch action {
             case .task:
                 return .send(.auth(.restoreRequested))
@@ -74,7 +57,7 @@ struct AppFeature: Reducer {
                     : .send(.chatSheet(.accessTokenChanged(accessToken)))
 
                 switch action {
-                case .auth(.restoredSession(nil)), .auth(.logoutCompleted), .auth(.deleteAccountCompleted):
+                case .auth(.restoredSession(nil)):
                     state.isAuthFlowPresented = false
                     state.isProfileSheetPresented = false
                     state.isChatSheetPresented = false
@@ -165,6 +148,28 @@ struct AppFeature: Reducer {
             case .chatSheet, .home, .profile:
                 return .none
             }
+        }
+    }
+
+    var body: some Reducer<State, Action> {
+        CombineReducers {
+            Scope(state: \.auth, action: \.auth) {
+                AuthReducer()
+            }
+
+            Scope(state: \.home, action: \.home) {
+                HomeReducer()
+            }
+
+            Scope(state: \.chatSheet, action: \.chatSheet) {
+                ChatSheetReducer()
+            }
+
+            Scope(state: \.profile, action: \.profile) {
+                ProfileFeature()
+            }
+
+            Coordinator()
         }
     }
 }

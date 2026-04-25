@@ -126,7 +126,7 @@ private struct SuggestionsMessageRowView: View {
             }
             .padding(AppSpacing.large)
             .background(
-                Color(uiColor: .secondarySystemFill),
+                AppPlatformColor.tertiaryGroupedBackground,
                 in: RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous)
             )
 

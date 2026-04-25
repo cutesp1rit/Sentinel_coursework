@@ -84,8 +84,8 @@ struct CalendarReducer {
                 state.isLoading = false
                 return .none
 
-            case let .monthPickerPresentationChanged(isPresented):
-                state.isMonthPickerPresented = isPresented
+            case let .inlineMonthPickerVisibilityChanged(isPresented):
+                state.isInlineMonthPickerVisible = isPresented
                 return .none
 
             case .onAppear:
@@ -143,9 +143,15 @@ struct CalendarReducer {
                 }
 
             case let .selectedDateChanged(date):
+                let previousMonth = Calendar.current.component(.month, from: state.selectedDate)
+                let nextMonth = Calendar.current.component(.month, from: date)
                 state.selectedDate = date
-                state.isMonthPickerPresented = false
-                return .send(.reloadRequested)
+                state.isInlineMonthPickerVisible = false
+                return previousMonth == nextMonth ? .none : .send(.reloadRequested)
+
+            case let .visibleDateChanged(date):
+                state.selectedDate = date
+                return .none
 
             case let .weekAdvanced(direction):
                 let calendar = Calendar.current
