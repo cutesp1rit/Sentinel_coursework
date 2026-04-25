@@ -10,25 +10,16 @@ struct ProfileSheetView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                AppPlatformColor.systemGroupedBackground
+                authBackground
                     .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.large) {
-                        statusCard
-
-                        if store.isAuthenticated {
-                            signedInActions
-                        } else {
-                            authForm
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.large)
-                    .padding(.vertical, AppSpacing.xLarge)
+                if store.isAuthenticated {
+                    signedInContent
+                } else {
+                    authContent
                 }
             }
-            .navigationTitle(L10n.Profile.title)
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Profile.closeButton, action: onClose)
@@ -75,20 +66,6 @@ struct ProfileSheetView: View {
         )
     }
 
-    private var deleteAccountPasswordBinding: Binding<String> {
-        Binding(
-            get: { store.deleteAccountPassword },
-            set: { store.send(.deleteAccountPasswordChanged($0)) }
-        )
-    }
-
-    private var modeBinding: Binding<AuthState.Mode> {
-        Binding(
-            get: { store.mode },
-            set: { store.send(.modeChanged($0)) }
-        )
-    }
-
     private var notificationsBinding: Binding<Bool> {
         Binding(
             get: { store.settings.notificationsEnabled },
@@ -96,37 +73,374 @@ struct ProfileSheetView: View {
         )
     }
 
-    private var statusCard: some View {
+    private var deleteAccountPasswordBinding: Binding<String> {
+        Binding(
+            get: { store.deleteAccountPassword },
+            set: { store.send(.deleteAccountPasswordChanged($0)) }
+        )
+    }
+
+    private var authBackground: some View {
+        LinearGradient(
+            colors: [
+                Color(red: 0.94, green: 0.97, blue: 1.0),
+                Color(red: 0.96, green: 0.93, blue: 0.99),
+                AppPlatformColor.systemGroupedBackground
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottom
+        )
+    }
+
+    private var signedInContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.large) {
+                signedInHeader
+                signedInActions
+            }
+            .padding(.horizontal, AppSpacing.large)
+            .padding(.top, AppSpacing.xLarge)
+            .padding(.bottom, AppSpacing.xLarge)
+        }
+    }
+
+    private var authContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
+                authHero
+
+                switch store.flow {
+                case .auth:
+                    if store.mode == .login {
+                        loginCard
+                    } else {
+                        registerCard
+                    }
+                case .forgotPassword:
+                    forgotPasswordCard
+                case .verificationPending:
+                    verificationPendingCard
+                }
+
+                if let errorMessage = store.errorMessage {
+                    statusBanner(
+                        message: errorMessage,
+                        tint: .red
+                    )
+                } else if let statusMessage = store.statusMessage {
+                    statusBanner(
+                        message: statusMessage,
+                        tint: Color.accentColor
+                    )
+                }
+            }
+            .padding(.horizontal, AppSpacing.large)
+            .padding(.top, AppSpacing.xLarge)
+            .padding(.bottom, AppSpacing.xLarge)
+        }
+    }
+
+    private var authHero: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            if store.isRestoring {
-                HStack(spacing: AppSpacing.medium) {
-                    ProgressView()
-                    Text(L10n.Profile.restoringStatus)
+            Text("Sentinel")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Text(heroTitle)
+                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.leading)
+
+            Text(heroBody)
+                .font(.body)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var loginCard: some View {
+        authCard {
+            VStack(alignment: .leading, spacing: AppSpacing.large) {
+                sectionTitle(
+                    title: L10n.Profile.loginTitle,
+                    body: L10n.Profile.loginBody
+                )
+
+                authFieldGroup {
+                    authField(
+                        title: L10n.Profile.emailPlaceholder,
+                        content: AnyView(
+                            TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
+                                .appNeverAutocapitalized()
+                                .appUsernameContentType()
+                                .autocorrectionDisabled()
+                        )
+                    )
+
+                    authField(
+                        title: L10n.Profile.passwordPlaceholder,
+                        content: AnyView(
+                            SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
+                                .appPasswordContentType()
+                        )
+                    )
+                }
+
+                primaryButton(
+                    title: L10n.Profile.loginButton,
+                    isLoading: store.isSubmitting
+                ) {
+                    store.send(.submitTapped)
+                }
+
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    inlineActionRow(
+                        prompt: L10n.Profile.noAccountPrompt,
+                        actionTitle: L10n.Profile.registerInlineButton
+                    ) {
+                        store.send(.modeChanged(.register))
+                    }
+
+                    inlineActionRow(
+                        prompt: L10n.Profile.forgotPasswordPrompt,
+                        actionTitle: L10n.Profile.forgotPasswordButton
+                    ) {
+                        store.send(.forgotPasswordTapped)
+                    }
+                }
+            }
+        }
+    }
+
+    private var registerCard: some View {
+        authCard {
+            VStack(alignment: .leading, spacing: AppSpacing.large) {
+                stepHeader(
+                    current: store.registerStep == .email ? 1 : 2,
+                    total: 2,
+                    title: store.registerStep == .email
+                        ? L10n.Profile.registerEmailStepTitle
+                        : L10n.Profile.registerPasswordStepTitle,
+                    body: store.registerStep == .email
+                        ? L10n.Profile.registerEmailStepBody
+                        : L10n.Profile.registerPasswordStepBody
+                )
+
+                if store.registerStep == .email {
+                    authFieldGroup {
+                        authField(
+                            title: L10n.Profile.emailPlaceholder,
+                            content: AnyView(
+                                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
+                                    .appNeverAutocapitalized()
+                                    .appEmailContentType()
+                                    .autocorrectionDisabled()
+                            )
+                        )
+                    }
+
+                    primaryButton(title: L10n.Profile.continueButton) {
+                        store.send(.submitTapped)
+                    }
+                } else {
+                    authFieldGroup {
+                        authField(
+                            title: L10n.Profile.passwordPlaceholder,
+                            content: AnyView(
+                                SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
+                                    .appNewPasswordContentType()
+                            )
+                        )
+
+                        authField(
+                            title: L10n.Profile.confirmPasswordPlaceholder,
+                            content: AnyView(
+                                SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
+                                    .appNewPasswordContentType()
+                            )
+                        )
+                    }
+
+                    HStack(spacing: AppSpacing.medium) {
+                        secondaryButton(title: L10n.Profile.backToEmailButton) {
+                            store.send(.registerStepChanged(.email))
+                        }
+
+                        primaryButton(
+                            title: L10n.Profile.registerButton,
+                            isLoading: store.isSubmitting
+                        ) {
+                            store.send(.submitTapped)
+                        }
+                    }
+                }
+
+                inlineActionRow(
+                    prompt: L10n.Profile.alreadyHaveAccountPrompt,
+                    actionTitle: L10n.Profile.loginInlineButton
+                ) {
+                    store.send(.modeChanged(.login))
+                }
+            }
+        }
+    }
+
+    private var forgotPasswordCard: some View {
+        authCard {
+            VStack(alignment: .leading, spacing: AppSpacing.large) {
+                sectionTitle(
+                    title: L10n.Profile.forgotPasswordTitle,
+                    body: L10n.Profile.forgotPasswordBody
+                )
+
+                authFieldGroup {
+                    authField(
+                        title: L10n.Profile.emailPlaceholder,
+                        content: AnyView(
+                            TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
+                                .appNeverAutocapitalized()
+                                .appEmailContentType()
+                                .autocorrectionDisabled()
+                        )
+                    )
+                }
+
+                primaryButton(
+                    title: L10n.Profile.sendResetLinkButton,
+                    isLoading: store.isSubmitting
+                ) {
+                    store.send(.sendPasswordResetEmailTapped)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    Text(L10n.Profile.manualResetHint)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    authFieldGroup {
+                        authField(
+                            title: L10n.Profile.resetTokenPlaceholder,
+                            content: AnyView(
+                                TextField(L10n.Profile.resetTokenPlaceholder, text: resetTokenBinding)
+                                    .appNeverAutocapitalized()
+                                    .autocorrectionDisabled()
+                            )
+                        )
+
+                        authField(
+                            title: L10n.Profile.newPasswordPlaceholder,
+                            content: AnyView(
+                                SecureField(L10n.Profile.newPasswordPlaceholder, text: passwordBinding)
+                                    .appNewPasswordContentType()
+                            )
+                        )
+
+                        authField(
+                            title: L10n.Profile.confirmPasswordPlaceholder,
+                            content: AnyView(
+                                SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
+                                    .appNewPasswordContentType()
+                            )
+                        )
+                    }
+
+                    primaryButton(
+                        title: L10n.Profile.resetPasswordButton,
+                        isLoading: store.isSubmitting
+                    ) {
+                        store.send(.resetPasswordTapped)
+                    }
+                }
+
+                inlineActionRow(
+                    prompt: L10n.Profile.backToSignInPrompt,
+                    actionTitle: L10n.Profile.backToSignInButton
+                ) {
+                    store.send(.flowChanged(.auth))
+                }
+            }
+        }
+    }
+
+    private var verificationPendingCard: some View {
+        authCard {
+            VStack(alignment: .leading, spacing: AppSpacing.large) {
+                stepHeader(
+                    current: 3,
+                    total: 3,
+                    title: L10n.Profile.verificationRequiredTitle,
+                    body: L10n.Profile.verificationPendingBody(
+                        store.verificationRequiredEmail ?? store.email
+                    )
+                )
+
+                primaryButton(
+                    title: L10n.Profile.trySignInAgainButton,
+                    isLoading: store.isSubmitting
+                ) {
+                    store.send(.retryVerificationLoginTapped)
+                }
+
+                secondaryButton(
+                    title: L10n.Profile.resendVerificationButton,
+                    isLoading: store.isResendingVerification
+                ) {
+                    store.send(.resendVerificationTapped)
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    Text(L10n.Profile.manualVerificationHint)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    authFieldGroup {
+                        authField(
+                            title: L10n.Profile.verificationTokenPlaceholder,
+                            content: AnyView(
+                                TextField(
+                                    L10n.Profile.verificationTokenPlaceholder,
+                                    text: verificationTokenBinding
+                                )
+                                .appNeverAutocapitalized()
+                                .autocorrectionDisabled()
+                            )
+                        )
+                    }
+
+                    primaryButton(
+                        title: L10n.Profile.verifyEmailButton,
+                        isLoading: store.isSubmitting
+                    ) {
+                        store.send(.verifyEmailTapped)
+                    }
+                }
+
+                inlineActionRow(
+                    prompt: L10n.Profile.backToSignInPrompt,
+                    actionTitle: L10n.Profile.backToSignInButton
+                ) {
+                    store.send(.flowChanged(.auth))
+                }
+            }
+        }
+    }
+
+    private var signedInHeader: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            Text(L10n.Profile.title)
+                .font(.system(size: 38, weight: .bold, design: .rounded))
+
+            if let session = store.session {
+                VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                    Text(displayName(for: session.email))
+                        .font(.title3.weight(.semibold))
+                    Text(session.email)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-            } else if let session = store.session {
-                HStack(spacing: AppSpacing.medium) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 42))
-                        .foregroundStyle(.secondary)
-
-                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                        Text(displayName(for: session.email))
-                            .font(.title3.weight(.semibold))
-
-                        Text(session.email)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } else {
-                Text(L10n.Profile.signedOutTitle)
-                    .font(.headline)
-
-                Text(L10n.Profile.signedOutBody)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
             }
 
             if let statusMessage = store.statusMessage {
@@ -139,268 +453,6 @@ struct ProfileSheetView: View {
                 Text(errorMessage)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.red)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.large)
-        .background(AppPlatformColor.secondaryGroupedBackground)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
-    }
-
-    @ViewBuilder
-    private var authForm: some View {
-        switch store.flow {
-        case .auth:
-            authCredentialsForm
-        case .forgotPassword:
-            forgotPasswordForm
-        case .verificationPending:
-            verificationPendingForm
-        }
-    }
-
-    private var authCredentialsForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            Picker(
-                L10n.Profile.modePickerLabel,
-                selection: modeBinding
-            ) {
-                Text(L10n.Profile.loginMode).tag(AuthState.Mode.login)
-                Text(L10n.Profile.registerMode).tag(AuthState.Mode.register)
-            }
-            .pickerStyle(.segmented)
-
-            if store.mode == .login {
-                loginForm
-            } else {
-                registerForm
-            }
-
-            Text(L10n.Profile.authHint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var loginForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            formField(
-                title: L10n.Profile.emailPlaceholder
-            ) {
-                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                    .appNeverAutocapitalized()
-                    .appUsernameContentType()
-                    .autocorrectionDisabled()
-            }
-
-            formField(
-                title: L10n.Profile.passwordPlaceholder
-            ) {
-                SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
-                    .appPasswordContentType()
-            }
-
-            primaryButton(
-                title: L10n.Profile.loginButton,
-                isLoading: store.isSubmitting
-            ) {
-                store.send(.submitTapped)
-            }
-            .disabled(store.isSubmitting || store.isRestoring)
-
-            Button(L10n.Profile.forgotPasswordButton) {
-                store.send(.forgotPasswordTapped)
-            }
-            .buttonStyle(.plain)
-            .font(.footnote.weight(.semibold))
-        }
-    }
-
-    @ViewBuilder
-    private var registerForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            if store.registerStep == .email {
-                Text(L10n.Profile.registerEmailStepTitle)
-                    .font(.headline)
-
-                Text(L10n.Profile.registerEmailStepBody)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                formField(title: L10n.Profile.emailPlaceholder) {
-                    TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                        .appNeverAutocapitalized()
-                        .appEmailContentType()
-                        .autocorrectionDisabled()
-                }
-
-                primaryButton(title: L10n.Profile.continueButton) {
-                    store.send(.submitTapped)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(L10n.Profile.registerPasswordStepTitle)
-                        .font(.headline)
-
-                    Text(store.email)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                formField(title: L10n.Profile.passwordPlaceholder) {
-                    SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
-                        .appNewPasswordContentType()
-                }
-
-                formField(title: L10n.Profile.confirmPasswordPlaceholder) {
-                    SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
-                        .appNewPasswordContentType()
-                }
-
-                HStack(spacing: AppSpacing.medium) {
-                    secondaryButton(title: L10n.Profile.backToEmailButton) {
-                        store.send(.registerStepChanged(.email))
-                    }
-
-                    primaryButton(
-                        title: L10n.Profile.registerButton,
-                        isLoading: store.isSubmitting
-                    ) {
-                        store.send(.submitTapped)
-                    }
-                }
-            }
-        }
-    }
-
-    private var verificationPendingForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Profile.verificationRequiredTitle)
-                    .font(.headline)
-
-                Text(
-                    L10n.Profile.verificationPendingBody(
-                        store.verificationRequiredEmail ?? store.email
-                    )
-                )
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            }
-            .padding(AppSpacing.large)
-            .background(AppPlatformColor.secondaryGroupedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
-
-            primaryButton(
-                title: L10n.Profile.trySignInAgainButton,
-                isLoading: store.isSubmitting
-            ) {
-                store.send(.retryVerificationLoginTapped)
-            }
-
-            secondaryButton(
-                title: L10n.Profile.resendVerificationButton,
-                isLoading: store.isResendingVerification
-            ) {
-                store.send(.resendVerificationTapped)
-            }
-
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Profile.manualVerificationHint)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                formField(title: L10n.Profile.verificationTokenPlaceholder) {
-                    TextField(
-                        L10n.Profile.verificationTokenPlaceholder,
-                        text: verificationTokenBinding
-                    )
-                    .appNeverAutocapitalized()
-                    .autocorrectionDisabled()
-                }
-
-                primaryButton(
-                    title: L10n.Profile.verifyEmailButton,
-                    isLoading: store.isSubmitting
-                ) {
-                    store.send(.verifyEmailTapped)
-                }
-            }
-
-            secondaryButton(title: L10n.Profile.backToSignInButton) {
-                store.send(.flowChanged(.auth))
-            }
-        }
-    }
-
-    private var forgotPasswordForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Profile.forgotPasswordTitle)
-                    .font(.headline)
-
-                Text(L10n.Profile.forgotPasswordBody)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(AppSpacing.large)
-            .background(AppPlatformColor.secondaryGroupedBackground)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
-
-            formField(title: L10n.Profile.emailPlaceholder) {
-                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                    .appNeverAutocapitalized()
-                    .appEmailContentType()
-                    .autocorrectionDisabled()
-            }
-
-            primaryButton(
-                title: L10n.Profile.sendResetLinkButton,
-                isLoading: store.isSubmitting
-            ) {
-                store.send(.sendPasswordResetEmailTapped)
-            }
-
-            VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                Text(L10n.Profile.manualResetHint)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-
-                formField(title: L10n.Profile.resetTokenPlaceholder) {
-                    TextField(
-                        L10n.Profile.resetTokenPlaceholder,
-                        text: resetTokenBinding
-                    )
-                    .appNeverAutocapitalized()
-                    .autocorrectionDisabled()
-                }
-
-                formField(title: L10n.Profile.newPasswordPlaceholder) {
-                    SecureField(
-                        L10n.Profile.newPasswordPlaceholder,
-                        text: passwordBinding
-                    )
-                    .appNewPasswordContentType()
-                }
-
-                formField(title: L10n.Profile.confirmPasswordPlaceholder) {
-                    SecureField(
-                        L10n.Profile.confirmPasswordPlaceholder,
-                        text: confirmPasswordBinding
-                    )
-                    .appNewPasswordContentType()
-                }
-
-                primaryButton(
-                    title: L10n.Profile.resetPasswordButton,
-                    isLoading: store.isSubmitting
-                ) {
-                    store.send(.resetPasswordTapped)
-                }
-            }
-
-            secondaryButton(title: L10n.Profile.backToSignInButton) {
-                store.send(.flowChanged(.auth))
             }
         }
     }
@@ -440,18 +492,7 @@ struct ProfileSheetView: View {
                 settingsRow(
                     title: L10n.Profile.logoutButton,
                     systemImage: "rectangle.portrait.and.arrow.right",
-                    tint: .red,
-                    trailing: AnyView(
-                        Group {
-                            if store.isSubmitting {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.footnote.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    )
+                    tint: .red
                 )
             }
             .buttonStyle(.plain)
@@ -551,17 +592,86 @@ struct ProfileSheetView: View {
         }
     }
 
-    private func formField<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func authCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.large) {
+            content()
+        }
+        .padding(AppSpacing.xLarge)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 34, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 34, style: .continuous)
+                .stroke(Color.white.opacity(0.24), lineWidth: AppStrokeWidth.standard)
+        }
+    }
+
+    private func sectionTitle(title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            Text(title)
+                .font(.title3.weight(.semibold))
+
+            Text(body)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func stepHeader(current: Int, total: Int, title: String, body: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            HStack(spacing: AppSpacing.small) {
+                ForEach(0..<total, id: \.self) { index in
+                    Capsule()
+                        .fill(index < current ? Color.accentColor : Color.secondary.opacity(0.18))
+                        .frame(height: 6)
+                }
+            }
+
+            sectionTitle(title: title, body: body)
+        }
+    }
+
+    private func authFieldGroup<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            content()
+        }
+    }
+
+    private func authField(title: String, content: AnyView) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.small) {
             Text(title)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            content()
+            content
                 .padding(AppSpacing.large)
-                .background(AppPlatformColor.secondaryGroupedBackground)
+                .background(Color.white.opacity(0.82))
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
         }
+    }
+
+    private func inlineActionRow(
+        prompt: String,
+        actionTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: AppSpacing.small) {
+            Text(prompt)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Button(actionTitle, action: action)
+                .buttonStyle(.plain)
+                .font(.footnote.weight(.semibold))
+        }
+    }
+
+    private func statusBanner(message: String, tint: Color) -> some View {
+        Text(message)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(tint)
+            .padding(AppSpacing.large)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.white.opacity(0.72))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 
     private func settingsSectionCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -617,23 +727,10 @@ struct ProfileSheetView: View {
         .buttonStyle(.bordered)
     }
 
-    private func displayName(for email: String) -> String {
-        let localPart = email.split(separator: "@").first.map(String.init) ?? email
-        return localPart
-            .replacingOccurrences(of: ".", with: " ")
-            .replacingOccurrences(of: "_", with: " ")
-            .capitalized
-    }
-
     private func settingsRow(
         title: String,
         systemImage: String,
-        tint: Color = .primary,
-        trailing: AnyView = AnyView(
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-        )
+        tint: Color = .primary
     ) -> some View {
         HStack(spacing: AppSpacing.medium) {
             Image(systemName: systemImage)
@@ -649,12 +746,48 @@ struct ProfileSheetView: View {
 
             Spacer()
 
-            trailing
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal, AppSpacing.large)
         .padding(.vertical, AppSpacing.large)
         .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
+    }
+
+    private var heroTitle: String {
+        switch (store.flow, store.mode) {
+        case (.auth, .login):
+            return L10n.Profile.loginHeroTitle
+        case (.auth, .register):
+            return L10n.Profile.registerHeroTitle
+        case (.forgotPassword, _):
+            return L10n.Profile.forgotPasswordHeroTitle
+        case (.verificationPending, _):
+            return L10n.Profile.verifyHeroTitle
+        }
+    }
+
+    private var heroBody: String {
+        switch (store.flow, store.mode) {
+        case (.auth, .login):
+            return L10n.Profile.loginHeroBody
+        case (.auth, .register):
+            return L10n.Profile.registerHeroBody
+        case (.forgotPassword, _):
+            return L10n.Profile.forgotPasswordHeroBody
+        case (.verificationPending, _):
+            return L10n.Profile.verifyHeroBody
+        }
+    }
+
+    private func displayName(for email: String) -> String {
+        let localPart = email.split(separator: "@").first.map(String.init) ?? email
+        return localPart
+            .replacingOccurrences(of: ".", with: " ")
+            .replacingOccurrences(of: "_", with: " ")
+            .capitalized
     }
 }
 
@@ -705,26 +838,10 @@ private extension View {
     }
 }
 
-#Preview("Signed Out") {
+#Preview("Auth") {
     ProfileSheetView(
         onClose: {},
         store: Store(initialState: AuthState()) {
-            AuthReducer()
-        }
-    )
-}
-
-#Preview("Signed In") {
-    ProfileSheetView(
-        onClose: {},
-        store: Store(
-            initialState: AuthState(
-                session: AuthenticatedSession(
-                    session: Session(accessToken: "token", tokenType: "Bearer"),
-                    email: "person@example.com"
-                )
-            )
-        ) {
             AuthReducer()
         }
     )

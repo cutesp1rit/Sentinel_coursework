@@ -103,8 +103,10 @@
 "chat_sheet.mock.message_three" = "Yes, and keep focus time after 15:00.";
 
 "profile.account_deleted_status" = "Account deleted. This device is signed out.";
+"profile.already_have_account_prompt" = "Already have an account?";
 "profile.auth_hint" = "Keep account actions on one screen: sign in, register, verify the email, save a default prompt, and manage the session.";
 "profile.back_to_sign_in_button" = "Back to Sign In";
+"profile.back_to_sign_in_prompt" = "Want to return to sign in?";
 "profile.back_to_email_button" = "Back";
 "profile.cancel_button" = "Cancel";
 "profile.close_button" = "Done";
@@ -122,10 +124,18 @@
 "profile.email_verified_status" = "Email verified. You can sign in now.";
 "profile.forgot_password_button" = "Forgot Password?";
 "profile.forgot_password_body" = "Request a reset link by email. For local testing, you can also paste the token from the reset URL below.";
+"profile.forgot_password_hero_body" = "Reset access in one calm flow. Ask for the email link first, then finish the password update here if needed.";
+"profile.forgot_password_hero_title" = "Reset Your Password";
+"profile.forgot_password_prompt" = "Forgot your password?";
 "profile.forgot_password_title" = "Reset Password";
 "profile.logged_out_status" = "Session cleared on this device.";
+"profile.login_body" = "Use your Sentinel account email and password to continue.";
 "profile.login_button" = "Log In";
+"profile.login_hero_body" = "Plan, review, and save your schedule with one account across chat, calendar, and achievements.";
+"profile.login_hero_title" = "Welcome Back";
+"profile.login_inline_button" = "Log In";
 "profile.login_mode" = "Log In";
+"profile.login_title" = "Sign In";
 "profile.logout_button" = "Log Out";
 "profile.logout_hint" = "Logout only clears the local session for now. Home remains available without backend access.";
 "profile.manual_reset_hint" = "If your email opened a URL with `reset_token`, paste that token here and set a new password.";
@@ -139,10 +149,14 @@
 "profile.passwords_do_not_match" = "Passwords do not match.";
 "profile.password_required" = "Password is required.";
 "profile.password_too_short" = "Password must be at least 8 characters.";
+"profile.register_hero_body" = "Create a Sentinel account in a few clear steps and confirm the email before the first sign in.";
+"profile.register_hero_title" = "Create Your Account";
+"profile.register_inline_button" = "Register";
 "profile.register_email_step_body" = "Start with your email. The password step comes next.";
 "profile.register_email_step_title" = "Create Your Account";
 "profile.register_button" = "Create Account";
 "profile.register_mode" = "Register";
+"profile.register_password_step_body" = "Set a secure password for this account.";
 "profile.register_password_step_title" = "Create A Password";
 "profile.resend_verification_button" = "Resend Verification Email";
 "profile.reset_password_button" = "Reset Password";
@@ -157,6 +171,8 @@
 "profile.signed_out_title" = "Signed Out";
 "profile.title" = "Profile";
 "profile.try_sign_in_again_button" = "I've Verified, Continue";
+"profile.verify_hero_body" = "Open the verification email, confirm the address, then come back here to continue into the app.";
+"profile.verify_hero_title" = "Verify Your Email";
 "profile.verification_pending_body_format" = "We sent a verification link to %@. Open that email, confirm the address, then come back here and continue.";
 "profile.verification_token_placeholder" = "Verification Token";
 "profile.verification_email_resent" = "If this address is pending verification, a fresh email is on the way.";
@@ -165,6 +181,7 @@
 "profile.verification_required_title" = "Email Verification Required";
 "profile.verification_token_required" = "Verification token is required.";
 "profile.verify_email_button" = "Verify Email";
+"profile.no_account_prompt" = "No account yet?";
 
 "settings.achievements" = "Achievements";
 "settings.auth_status" = "Account";

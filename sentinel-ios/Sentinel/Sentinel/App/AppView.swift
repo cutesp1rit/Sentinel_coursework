@@ -13,7 +13,7 @@ struct AppView: View {
             .task {
                 await store.send(.task).finish()
             }
-            .sheet(
+            .fullScreenCover(
                 isPresented: Binding(
                     get: { store.isProfileSheetPresented },
                     set: { store.send(.profileSheetPresentationChanged($0)) }
