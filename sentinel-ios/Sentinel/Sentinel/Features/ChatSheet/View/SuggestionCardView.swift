@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SuggestionCardView: View {
-    let suggestion: ChatSheetState.Suggestion
+    let suggestion: ChatSuggestion
     let isSelected: Bool
     let showsSelectionControl: Bool
     let isInteractive: Bool

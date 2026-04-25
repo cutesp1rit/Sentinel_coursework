@@ -9,13 +9,13 @@ import AppKit
 struct ChatSheetComposerView: View {
     @Binding var draft: String
 
-    let attachments: [ChatSheetState.ComposerAttachment]
+    let attachments: [ChatComposerAttachment]
     let isCollapsed: Bool
     let isComposerEnabled: Bool
     let isSendEnabled: Bool
     let composerFocus: FocusState<Bool>.Binding
     let onAttachmentTap: () -> Void
-    let onRemoveAttachment: (ChatSheetState.ComposerAttachment.ID) -> Void
+    let onRemoveAttachment: (ChatComposerAttachment.ID) -> Void
     let onComposerTap: () -> Void
     let onSendTap: () -> Void
 
@@ -167,7 +167,7 @@ private struct ChatCollapsedBar: View {
 }
 
 private struct ComposerAttachmentPreview: View {
-    let attachment: ChatSheetState.ComposerAttachment
+    let attachment: ChatComposerAttachment
     let onRemove: () -> Void
 
     var body: some View {

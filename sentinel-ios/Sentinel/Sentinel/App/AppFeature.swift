@@ -6,6 +6,7 @@ struct AppFeature: Reducer {
         var auth = AuthState()
         var home = HomeState()
         var chatSheet = ChatSheetState.initial
+        var profile = ProfileFeature.State()
         var isAuthFlowPresented = false
         var isChatSheetPresented = false
         var isProfileSheetPresented = false
@@ -19,6 +20,7 @@ struct AppFeature: Reducer {
         case authFlowPresentationChanged(Bool)
         case chatSheetPresentationChanged(Bool)
         case home(HomeAction)
+        case profile(ProfileFeature.Action)
         case profileSheetDismissed
         case profileSheetPresentationChanged(Bool)
         case task
@@ -38,6 +40,10 @@ struct AppFeature: Reducer {
             Scope(state: \.chatSheet, action: \.chatSheet) {
                 ChatSheetReducer()
             }
+
+            Scope(state: \.profile, action: \.profile) {
+                ProfileFeature()
+            }
         }
 
         Reduce { state, action in
@@ -48,7 +54,8 @@ struct AppFeature: Reducer {
             case .auth:
                 let accessToken = state.auth.session?.accessToken
                 let homeEffect: Effect<Action> = .send(.home(.sessionChanged(state.auth.session)))
-                let chatEffect: Effect<Action> = state.chatSheet.accessToken == accessToken
+                let profileEffect: Effect<Action> = .send(.profile(.sessionChanged(state.auth.session)))
+                let chatEffect: Effect<Action> = state.chatSheet.thread.accessToken == accessToken
                     ? .none
                     : .send(.chatSheet(.accessTokenChanged(accessToken)))
 
@@ -68,7 +75,7 @@ struct AppFeature: Reducer {
                     break
                 }
 
-                return .merge(chatEffect, homeEffect)
+                return .merge(chatEffect, homeEffect, profileEffect)
 
             case .authFlowDismissed:
                 state.isAuthFlowPresented = false
@@ -133,10 +140,15 @@ struct AppFeature: Reducer {
                 state.isProfileSheetPresented = isPresented
                 return .none
 
-            case .chatSheet(.suggestionApplyCompleted(_, _, _)):
+            case .profile(.delegate(.sessionEnded)):
+                state.isProfileSheetPresented = false
+                state.isChatSheetPresented = false
+                return .send(.auth(.restoredSession(nil)))
+
+            case .chatSheet(.delegate(.suggestionApplyCompleted)):
                 return .send(.home(.onAppear))
 
-            case .chatSheet, .home:
+            case .chatSheet, .home, .profile:
                 return .none
             }
         }

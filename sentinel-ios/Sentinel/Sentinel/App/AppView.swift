@@ -38,7 +38,7 @@ struct AppView: View {
             ) {
                 ProfileSheetView(
                     onClose: { store.send(.profileSheetPresentationChanged(false)) },
-                    store: store.scope(state: \.auth, action: \.auth)
+                    store: store.scope(state: \.profile, action: \.profile)
                 )
             }
             .sheet(

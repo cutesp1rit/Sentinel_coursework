@@ -1,33 +1,34 @@
+import ComposableArchitecture
 import SwiftUI
 
 struct ChatHistoryPickerView: View {
-    let chats: [ChatSheetState.ChatSummary]
-    let activeChatID: UUID?
-    let onCreateNewChat: () -> Void
-    let onDeleteChat: (UUID) -> Void
-    let onSelectChat: (UUID) -> Void
+    let store: StoreOf<ChatListFeature>
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                ForEach(chats) { chat in
+                if let errorMessage = store.errorMessage {
+                    EmptyStateCard(title: L10n.ChatSheet.errorTitle, bodyText: errorMessage)
+                }
+
+                ForEach(store.chats) { chat in
                     ChatListRow(
                         title: chat.title,
                         subtitle: subtitle(for: chat),
-                        state: chat.id == activeChatID ? .selected : .regular
+                        state: chat.id == store.activeChatID ? .selected : .regular
                     ) {
-                        onSelectChat(chat.id)
+                        store.send(.rowTapped(chat.id))
                     }
                     .swipeActions {
                         Button(role: .destructive) {
-                            onDeleteChat(chat.id)
+                            store.send(.chatDeleteRequested(chat.id))
                         } label: {
                             Label(L10n.ChatSheet.deleteChat, systemImage: "trash")
                         }
                     }
                 }
 
-                if chats.isEmpty {
+                if store.chats.isEmpty && !store.isLoading {
                     EmptyStateCard(
                         title: L10n.ChatSheet.noChatsTitle,
                         bodyText: L10n.ChatSheet.noChatsBody
@@ -42,14 +43,24 @@ struct ChatHistoryPickerView: View {
         .sentinelInlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
-                Button(L10n.ChatSheet.newChat, action: onCreateNewChat)
-                    .buttonStyle(.plain)
-                    .font(.subheadline.weight(.semibold))
+                Button(L10n.ChatSheet.newChat) {
+                    store.send(.newChatTapped)
+                }
+                .buttonStyle(.plain)
+                .font(.subheadline.weight(.semibold))
             }
+        }
+        .overlay {
+            if store.isLoading {
+                ProgressView()
+            }
+        }
+        .task {
+            store.send(.onAppear)
         }
     }
 
-    private func subtitle(for chat: ChatSheetState.ChatSummary) -> String? {
+    private func subtitle(for chat: ChatListItem) -> String? {
         guard let lastMessageAt = chat.lastMessageAt else { return nil }
         return lastMessageAt.formatted(date: .abbreviated, time: .shortened)
     }

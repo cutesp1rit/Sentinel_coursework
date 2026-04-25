@@ -29,15 +29,12 @@ struct AuthState: Equatable {
     var confirmPassword = ""
     var resetToken = ""
     var verificationToken = ""
-    var deleteAccountPassword = ""
     var errorMessage: String?
     var hasAttemptedRestore = false
-    var isDeletingAccount = false
     var isRestoring = false
     var isResendingVerification = false
     var isSubmitting = false
     var session: AuthenticatedSession?
-    var settings = SettingsState()
     var statusMessage: String?
     var verificationRequiredEmail: String?
 

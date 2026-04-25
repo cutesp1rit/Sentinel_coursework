@@ -2,10 +2,10 @@ import SwiftUI
 
 struct ChatSheetTranscriptView: View {
     let detent: ChatSheetState.Detent
-    let messages: [ChatSheetState.Message]
-    let onToggleSuggestionExpansion: (ChatSheetState.Message.ID) -> Void
-    let onToggleSuggestionSelection: (ChatSheetState.Message.ID, ChatSheetState.Suggestion.ID) -> Void
-    let onAddSelectedSuggestions: (ChatSheetState.Message.ID) -> Void
+    let messages: [ChatThreadMessage]
+    let onToggleSuggestionExpansion: (ChatThreadMessage.ID) -> Void
+    let onToggleSuggestionSelection: (ChatThreadMessage.ID, ChatSuggestion.ID) -> Void
+    let onAddSelectedSuggestions: (ChatThreadMessage.ID) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -25,7 +25,7 @@ struct ChatSheetTranscriptView: View {
     }
 
     @ViewBuilder
-    private func messageRow(for message: ChatSheetState.Message) -> some View {
+    private func messageRow(for message: ChatThreadMessage) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             if message.markdownText != nil || !message.images.isEmpty {
                 ChatBubbleRow(message: message)
@@ -50,11 +50,11 @@ struct ChatSheetTranscriptView: View {
 }
 
 private struct SuggestionsMessageRowView: View {
-    let messageID: ChatSheetState.Message.ID
-    let payload: ChatSheetState.Message.SuggestionsPayload
-    let onToggleExpansion: (ChatSheetState.Message.ID) -> Void
-    let onToggleSuggestionSelection: (ChatSheetState.Message.ID, ChatSheetState.Suggestion.ID) -> Void
-    let onAddSelectedSuggestions: (ChatSheetState.Message.ID) -> Void
+    let messageID: ChatThreadMessage.ID
+    let payload: ChatThreadMessage.SuggestionsPayload
+    let onToggleExpansion: (ChatThreadMessage.ID) -> Void
+    let onToggleSuggestionSelection: (ChatThreadMessage.ID, ChatSuggestion.ID) -> Void
+    let onAddSelectedSuggestions: (ChatThreadMessage.ID) -> Void
 
     private var addToCalendarTitle: String {
         if payload.isApplying {

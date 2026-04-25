@@ -8,7 +8,7 @@ import AppKit
 #endif
 
 struct ChatBubbleRow: View {
-    let message: ChatSheetState.Message
+    let message: ChatThreadMessage
 
     private var attributedText: AttributedString {
         guard let markdownText = message.markdownText, !markdownText.isEmpty else {
