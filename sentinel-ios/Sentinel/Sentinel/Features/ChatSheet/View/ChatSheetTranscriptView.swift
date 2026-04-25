@@ -27,7 +27,7 @@ struct ChatSheetTranscriptView: View {
     @ViewBuilder
     private func messageRow(for message: ChatSheetState.Message) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            if message.markdownText != nil {
+            if message.markdownText != nil || !message.images.isEmpty {
                 ChatBubbleRow(message: message)
             }
 

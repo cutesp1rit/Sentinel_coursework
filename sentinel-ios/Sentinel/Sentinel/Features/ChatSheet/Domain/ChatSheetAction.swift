@@ -3,8 +3,13 @@ import Foundation
 enum ChatSheetAction: Equatable {
     case accessTokenChanged(String?)
     case addAttachmentTapped
+    case attachmentsAdded([ChatSheetState.ComposerAttachment])
+    case attachmentRemoved(ChatSheetState.ComposerAttachment.ID)
     case addSelectedSuggestionsTapped(ChatSheetState.Message.ID)
     case autoScrollCompleted
+    case chatDeleteFailed(String, requestToken: String)
+    case chatDeleteRequested(UUID)
+    case chatDeleted(UUID, requestToken: String)
     case chatListButtonTapped
     case chatListPresentationChanged(Bool)
     case chatSelected(UUID?)

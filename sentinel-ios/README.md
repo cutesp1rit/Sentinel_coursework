@@ -1,80 +1,44 @@
-# Текст песни «Покинула чат»
+# Sentinel iOS
 
-[Интро]
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Твоя песенка спета, колонки молчат
-Я сделала больно и покинула чат
-Вокруг тебя много нормальных девчат
-Но лишь я сделала больно и покинула чат
+Sentinel is an AI-assisted personal scheduling app for iPhone.
 
-[Припев]
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
+This repository contains the iOS client. The app turns free-form chat requests into structured event suggestions, lets the user review them, and then saves accepted events into Apple Calendar through EventKit.
 
-[Куплет 1]
-Заливаешь боль, боль на своих тусовках
-Ты по мне скучаешь, а я не особо
-Просишься назад, но я же знаю кто ты
-Больше не пришлю тебе запретные фото
+## Core flow
 
-[Переход]
-Отпусти, не держи меня
-Не ищи меня, не люби меня
-Разошлись наши линии
-Хоть и шипперят с твоим именем
-You might also like
+1. User opens Chat
+2. Sends a natural-language scheduling request
+3. Backend returns assistant text and event proposals
+4. User reviews and selectively accepts proposals
+5. Accepted events are synchronized into the `Sentinel` calendar
 
-[Припев]
-Твоя песенка спета, колонки молчат
-Я сделала больно и покинула чат
-Вокруг тебя много нормальных девчат
-Но лишь я сделала больно и покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
+## Current product surfaces
 
-[Куплет 2]
-Я больше не ангел, что скучает дома
-Ты в нашем сикрет-чате научил меня плохому
-Хочешь поговорить, но я нажимаю крестик
-Пой теперь с друзьями эти грустные песни (Ла-ла-ла-ла)
+- Home / Today
+- Chat with history
+- Event proposal review and apply
+- Calendar synchronization
+- Profile
+- Achievements
 
-[Переход]
-Отпусти, не держи меня
-Не ищи меня, не люби меня
-Разошлись наши линии
-Хоть и шипперят с твоим именем (Ха-а-а-а)
+## iOS stack
 
-[Припев]
-Твоя песенка спета, колонки молчат
-Я сделала больно и покинула чат
-Вокруг тебя много нормальных девчат
-Но лишь я сделала больно и покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула чат
-Чат, чат, чат, ч-ч-ч-чат
-Чат, чат, чат, чат
-Покинула
+- Swift 6
+- SwiftUI
+- TCA
+- SwiftData
+- EventKit
+- Keychain-backed session storage
 
-[Аутро]
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
-Ла-ла-ла-ла
+## Project structure
+
+- `Sentinel/Sentinel/` — application source
+- `Sentinel/Sentinel/Features/` — feature modules
+- `Sentinel/Sentinel/Clients/` — API and platform clients
+- `Sentinel/Sentinel/Models/` — transport and domain models
+
+## Notes
+
+- The app uses a dedicated calendar named `Sentinel` for synchronized events.
+- Backend contracts are English-centric at payload level even when user-facing copy changes.
+- Product and API reference docs live under `docs/sentinel/`.

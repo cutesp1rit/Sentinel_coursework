@@ -22,7 +22,7 @@ struct HomeHeaderView: View {
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, AppSpacing.medium)
                 .padding(.vertical, AppSpacing.small)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .background(AppPlatformColor.secondaryGroupedBackground)
                 .clipShape(Capsule())
         }
     }

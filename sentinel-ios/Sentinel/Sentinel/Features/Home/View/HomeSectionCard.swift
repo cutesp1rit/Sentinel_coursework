@@ -21,7 +21,7 @@ struct HomeSectionCard<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 }

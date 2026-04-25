@@ -14,7 +14,7 @@ struct AchievementsView: View {
             .padding(.horizontal, AppSpacing.large)
             .padding(.vertical, AppSpacing.xLarge)
         }
-        .background(Color(uiColor: .systemGroupedBackground).ignoresSafeArea())
+        .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
         .navigationTitle(L10n.Achievements.title)
         .navigationBarTitleDisplayMode(.inline)
         .task {
@@ -33,7 +33,7 @@ struct AchievementsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 
@@ -81,7 +81,7 @@ struct AchievementsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 
@@ -96,7 +96,7 @@ struct AchievementsView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 }
@@ -141,7 +141,7 @@ private struct AchievementGroupCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 

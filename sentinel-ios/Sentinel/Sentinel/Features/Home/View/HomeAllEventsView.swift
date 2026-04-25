@@ -45,7 +45,9 @@ struct HomeAllEventsView: View {
         }
         .background(HomeTopGradientBackground().ignoresSafeArea())
         .navigationTitle(L10n.Home.allEventsTitle)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.large)
+        #endif
     }
 }
 

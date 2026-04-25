@@ -61,7 +61,7 @@ struct HomeQuickActionsSectionView: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(AppSpacing.large)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
+        .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
 }

@@ -4,6 +4,7 @@ struct ChatHistoryPickerView: View {
     let chats: [ChatSheetState.ChatSummary]
     let activeChatID: UUID?
     let onCreateNewChat: () -> Void
+    let onDeleteChat: (UUID) -> Void
     let onSelectChat: (UUID) -> Void
 
     var body: some View {
@@ -55,13 +56,24 @@ struct ChatHistoryPickerView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            onDeleteChat(chat.id)
+                        } label: {
+                            Label(L10n.ChatSheet.deleteChat, systemImage: "trash")
+                        }
+                    }
                 }
             } header: {
                 Text(L10n.ChatSheet.historyTitle)
             }
         }
+        #if os(iOS)
         .listStyle(.insetGrouped)
+        #endif
         .navigationTitle(L10n.ChatSheet.historyTitle)
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }

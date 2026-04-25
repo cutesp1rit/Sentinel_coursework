@@ -52,15 +52,40 @@ nonisolated func liveAPISend(_ request: APIRequest) async throws -> Data {
     }
 
     guard (200..<300).contains(httpResponse.statusCode) else {
-        let errorDTO = await MainActor.run {
-            try? AppConfiguration.jsonDecoder.decode(APIErrorDTO.self, from: data)
+        let error = await MainActor.run {
+            if let errorDTO = try? AppConfiguration.jsonDecoder.decode(APIErrorDTO.self, from: data) {
+                return APIError(
+                    code: errorDTO.code,
+                    message: errorDTO.message,
+                    details: errorDTO.details
+                )
+            }
+
+            if let fastAPIError = try? AppConfiguration.jsonDecoder.decode(FastAPIErrorDTO.self, from: data) {
+                return APIError(
+                    code: "HTTP_\(httpResponse.statusCode)",
+                    message: fastAPIError.detail.userMessage,
+                    details: nil
+                )
+            }
+
+            if let fallbackMessage = String(data: data, encoding: .utf8),
+               !fallbackMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                return APIError(
+                    code: "HTTP_\(httpResponse.statusCode)",
+                    message: fallbackMessage,
+                    details: nil
+                )
+            }
+
+            return APIError(
+                code: "HTTP_\(httpResponse.statusCode)",
+                message: HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode),
+                details: nil
+            )
         }
 
-        throw APIError(
-            code: errorDTO?.code ?? "HTTP_\(httpResponse.statusCode)",
-            message: errorDTO?.message ?? HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode),
-            details: errorDTO?.details
-        )
+        throw error
     }
     return data
 }

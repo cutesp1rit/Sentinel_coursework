@@ -11,6 +11,7 @@ enum APIModelConverter {
             email: dto.email,
             timezone: dto.timezone,
             locale: dto.locale,
+            isVerified: dto.isVerified,
             createdAt: dto.createdAt
         )
     }
@@ -107,6 +108,15 @@ enum APIModelConverter {
         )
     }
 
+    nonisolated static func convert(_ dto: ImageAttachmentDTO) -> ChatImageAttachment {
+        ChatImageAttachment(
+            url: dto.url,
+            filename: dto.filename,
+            mimeType: dto.mimeType,
+            previewData: nil
+        )
+    }
+
     nonisolated static func convert(_ dto: ChatMessageDTO) -> ChatMessage {
         let role: ChatMessage.Role
         switch dto.role {
@@ -122,10 +132,23 @@ enum APIModelConverter {
             role: role,
             content: ChatMessage.Content(
                 markdownText: dto.contentText,
-                eventActions: dto.contentStructured.map(convert)
+                eventActions: dto.contentStructured?.eventActionsDTO.map(convert),
+                images: dto.contentStructured?.imageMessageDTO?.images.map(convert) ?? []
             ),
             aiModel: dto.aiModel,
             createdAt: dto.createdAt
         )
+    }
+}
+
+private extension ChatStructuredContentDTO {
+    nonisolated var eventActionsDTO: EventActionsContentDTO? {
+        guard case let .eventActions(content) = self else { return nil }
+        return content
+    }
+
+    nonisolated var imageMessageDTO: ImageMessageContentDTO? {
+        guard case let .imageMessage(content) = self else { return nil }
+        return content
     }
 }

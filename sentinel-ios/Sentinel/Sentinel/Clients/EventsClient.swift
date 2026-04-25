@@ -12,6 +12,7 @@ struct EventsClient {
 extension EventsClient: DependencyKey {
     static let liveValue = EventsClient(
         createEvent: { payload, bearerToken in
+            let idempotencyKey = UUID().uuidString.lowercased()
             let body = try await MainActor.run {
                 try AppConfiguration.jsonEncoder.encode(
                     try payload.eventCreateRequestDTO()
@@ -22,7 +23,8 @@ extension EventsClient: DependencyKey {
                     path: "events/",
                     method: .post,
                     body: body,
-                    bearerToken: bearerToken
+                    bearerToken: bearerToken,
+                    headers: ["X-Idempotency-Key": idempotencyKey]
                 )
             )
             let dto = try await MainActor.run {

@@ -13,6 +13,9 @@ struct APIRequest {
     var queryItems: [URLQueryItem] = []
     var body: Data?
     var bearerToken: String?
+    var headers: [String: String] = [:]
+    var contentType: String? = "application/json; charset=utf-8"
+    var accept: String? = "application/json"
     var timeoutInterval: TimeInterval?
 
     nonisolated func urlRequest(baseURL: URL) throws -> URLRequest {
@@ -32,11 +35,19 @@ struct APIRequest {
         request.httpMethod = method.rawValue
         request.httpBody = body
         request.timeoutInterval = timeoutInterval ?? 60
-        request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let contentType {
+            request.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        }
+        if let accept {
+            request.setValue(accept, forHTTPHeaderField: "Accept")
+        }
 
         if let bearerToken {
             request.setValue("Bearer \(bearerToken)", forHTTPHeaderField: "Authorization")
+        }
+
+        for (field, value) in headers {
+            request.setValue(value, forHTTPHeaderField: field)
         }
 
         return request

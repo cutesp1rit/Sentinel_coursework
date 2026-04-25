@@ -1,5 +1,7 @@
 import ComposableArchitecture
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ChatSheetView: View {
     private enum Route: Hashable {
@@ -18,7 +20,9 @@ struct ChatSheetView: View {
     let store: StoreOf<ChatSheetReducer>
 
     @FocusState private var isComposerFocused: Bool
+    @State private var isPhotosPickerPresented = false
     @State private var path: [Route] = [.chat]
+    @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var transcriptOpacity: CGFloat = 1
 
     private var isCollapsed: Bool {
@@ -37,6 +41,9 @@ struct ChatSheetView: View {
                             path.append(.chat)
                         }
                     },
+                    onDeleteChat: { chatID in
+                        store.send(.chatDeleteRequested(chatID))
+                    },
                     onSelectChat: { chatID in
                         store.send(.chatSelected(chatID))
                         if path.isEmpty {
@@ -54,6 +61,23 @@ struct ChatSheetView: View {
                 .onChange(of: store.isChatListPresented) { _, _ in
                     syncPathWithPresentationState(animated: true)
                 }
+            }
+        }
+        .photosPicker(
+            isPresented: $isPhotosPickerPresented,
+            selection: $selectedPhotoItems,
+            maxSelectionCount: max(1, remainingAttachmentSlots),
+            matching: .images
+        )
+        .onChange(of: selectedPhotoItems.count) { _, _ in
+            let newItems = selectedPhotoItems
+            guard !newItems.isEmpty else { return }
+            Task {
+                let attachments = await makeComposerAttachments(from: newItems)
+                if !attachments.isEmpty {
+                    store.send(.attachmentsAdded(attachments), animation: detentTransitionAnimation)
+                }
+                selectedPhotoItems = []
             }
         }
     }
@@ -233,12 +257,17 @@ struct ChatSheetView: View {
     private var composerDock: some View {
         ChatSheetComposerView(
             draft: draftBinding,
+            attachments: store.composerAttachments,
             isComposerEnabled: store.isSignedIn,
             isSendEnabled: store.isSignedIn
                 && !store.isSending
-                && !store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                && (
+                    !store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                    || !store.composerAttachments.isEmpty
+                ),
             composerFocus: $isComposerFocused,
             onAttachmentTap: addAttachment,
+            onRemoveAttachment: removeAttachment,
             onComposerTap: expandComposerIfNeeded,
             onSendTap: sendMessage
         )
@@ -363,6 +392,13 @@ struct ChatSheetView: View {
 
     private func addAttachment() {
         _ = store.send(.addAttachmentTapped, animation: detentTransitionAnimation)
+        if store.isSignedIn && remainingAttachmentSlots > 0 {
+            isPhotosPickerPresented = true
+        }
+    }
+
+    private func removeAttachment(_ attachmentID: ChatSheetState.ComposerAttachment.ID) {
+        store.send(.attachmentRemoved(attachmentID))
     }
 
     private func expandComposerIfNeeded() {
@@ -385,6 +421,38 @@ struct ChatSheetView: View {
         } else {
             path = targetPath
         }
+    }
+
+    private var remainingAttachmentSlots: Int {
+        max(0, 5 - store.composerAttachments.count)
+    }
+
+    private func makeComposerAttachments(
+        from items: [PhotosPickerItem]
+    ) async -> [ChatSheetState.ComposerAttachment] {
+        var attachments: [ChatSheetState.ComposerAttachment] = []
+
+        for (index, item) in items.enumerated() {
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  !data.isEmpty else {
+                continue
+            }
+
+            let contentType = item.supportedContentTypes.first ?? .png
+            let fileExtension = contentType.preferredFilenameExtension ?? "jpg"
+            let mimeType = contentType.preferredMIMEType ?? "image/jpeg"
+            let filename = "photo-\(UUID().uuidString.prefix(8))-\(index + 1).\(fileExtension)"
+
+            attachments.append(
+                .init(
+                    data: data,
+                    filename: filename,
+                    mimeType: mimeType
+                )
+            )
+        }
+
+        return attachments
     }
 }
 

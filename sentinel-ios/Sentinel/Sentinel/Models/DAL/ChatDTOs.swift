@@ -28,7 +28,7 @@ struct ChatMessageDTO: Codable, Equatable {
     let chatId: UUID
     let role: String
     let contentText: String?
-    let contentStructured: EventActionsContentDTO?
+    let contentStructured: ChatStructuredContentDTO?
     let aiModel: String?
     let createdAt: Date
 
@@ -61,12 +61,14 @@ struct ChatMessageCreateRequestDTO: Encodable, Equatable {
     let role: String
     let contentText: String?
     let contentStructured: EventActionsContentDTO?
+    let images: [ImageAttachmentDTO]?
     let aiModel: String?
 
     enum CodingKeys: String, CodingKey {
         case aiModel = "ai_model"
         case contentStructured = "content_structured"
         case contentText = "content_text"
+        case images
         case role
     }
 }
@@ -134,4 +136,69 @@ struct EventActionDTO: Codable, Equatable {
 struct EventActionsContentDTO: Codable, Equatable {
     let type: String
     let actions: [EventActionDTO]
+}
+
+struct ImageAttachmentDTO: Codable, Equatable {
+    let url: String
+    let filename: String
+    let mimeType: String
+
+    enum CodingKeys: String, CodingKey {
+        case filename
+        case mimeType = "mime_type"
+        case url
+    }
+}
+
+struct ImageMessageContentDTO: Codable, Equatable {
+    let type: String
+    let images: [ImageAttachmentDTO]
+}
+
+struct UploadResponseDTO: Codable, Equatable {
+    let url: String
+    let filename: String
+    let mimeType: String
+
+    enum CodingKeys: String, CodingKey {
+        case filename
+        case mimeType = "mime_type"
+        case url
+    }
+}
+
+enum ChatStructuredContentDTO: Codable, Equatable {
+    case eventActions(EventActionsContentDTO)
+    case imageMessage(ImageMessageContentDTO)
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(String.self, forKey: .type)
+
+        switch type {
+        case "event_actions":
+            self = .eventActions(try EventActionsContentDTO(from: decoder))
+        case "image_message":
+            self = .imageMessage(try ImageMessageContentDTO(from: decoder))
+        default:
+            throw DecodingError.dataCorruptedError(
+                forKey: .type,
+                in: container,
+                debugDescription: "Unsupported structured content type: \(type)"
+            )
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        switch self {
+        case let .eventActions(content):
+            try content.encode(to: encoder)
+        case let .imageMessage(content):
+            try content.encode(to: encoder)
+        }
+    }
 }

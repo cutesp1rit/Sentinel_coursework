@@ -6,8 +6,11 @@ struct ChatSheetReducer {
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.chatClient) var chatClient
     @Dependency(\.eventsClient) var eventsClient
+    @Dependency(\.localNotificationsClient) var localNotificationsClient
 
     private enum Constants {
+        static let attachmentLimit = 5
+        static let maxAttachmentSize = 10 * 1024 * 1024
         static let pageSize = 100
         static let recoveryPollAttempts = 6
         static let recoveryPollDelayNanoseconds: UInt64 = 5_000_000_000
@@ -25,6 +28,7 @@ struct ChatSheetReducer {
                 guard token != nil else {
                     state.activeChatID = nil
                     state.chatSummaries = []
+                    state.composerAttachments = []
                     state.draft = ""
                     state.messages = []
                     state.activeSendRequestID = nil
@@ -52,6 +56,29 @@ struct ChatSheetReducer {
                 }
                 return .none
 
+            case let .attachmentsAdded(attachments):
+                let oversizedAttachment = attachments.first { $0.data.count > Constants.maxAttachmentSize }
+                if oversizedAttachment != nil {
+                    state.errorMessage = L10n.ChatSheet.attachmentTooLarge
+                    return .none
+                }
+
+                let availableSlots = max(Constants.attachmentLimit - state.composerAttachments.count, 0)
+                if availableSlots == 0 {
+                    state.errorMessage = L10n.ChatSheet.attachmentLimitReached
+                    return .none
+                }
+
+                state.composerAttachments.append(contentsOf: attachments.prefix(availableSlots))
+                state.errorMessage = attachments.count > availableSlots
+                    ? L10n.ChatSheet.attachmentLimitReached
+                    : nil
+                return .none
+
+            case let .attachmentRemoved(attachmentID):
+                state.composerAttachments.removeAll { $0.id == attachmentID }
+                return .none
+
             case let .addSelectedSuggestionsTapped(messageID):
                 guard let accessToken = state.accessToken,
                       let activeChatID = state.activeChatID,
@@ -64,7 +91,7 @@ struct ChatSheetReducer {
                 payload.isApplying = true
                 state.messages[messageIndex].suggestionsPayload = payload
                 state.errorMessage = nil
-                return .run { [calendarSyncClient, chatClient, eventsClient] send in
+                return .run { [calendarSyncClient, chatClient, eventsClient, localNotificationsClient] send in
                     do {
                         let updatedMessage: ChatMessage
                         do {
@@ -136,6 +163,11 @@ struct ChatSheetReducer {
                             }
                         }
 
+                        await localNotificationsClient.syncReminderNotifications(
+                            Array(canonicalEventsByID.values),
+                            applyPlan.deletedEventIDs
+                        )
+
                         await send(.suggestionApplyCompleted(
                             messageID: messageID,
                             updatedMessage: updatedMessage,
@@ -152,6 +184,36 @@ struct ChatSheetReducer {
 
             case .autoScrollCompleted:
                 state.shouldAutoScrollToBottom = false
+                return .none
+
+            case let .chatDeleteFailed(message, requestToken):
+                guard state.accessToken == requestToken else { return .none }
+                state.errorMessage = message
+                return .none
+
+            case let .chatDeleteRequested(chatID):
+                guard let accessToken = state.accessToken else { return .none }
+                state.errorMessage = nil
+                return .run { [chatClient] send in
+                    do {
+                        try await chatClient.deleteChat(chatID, accessToken)
+                        await send(.chatDeleted(chatID, requestToken: accessToken))
+                    } catch {
+                        await send(.chatDeleteFailed(Self.errorMessage(for: error), requestToken: accessToken))
+                    }
+                }
+
+            case let .chatDeleted(chatID, requestToken):
+                guard state.accessToken == requestToken else { return .none }
+                state.chatSummaries.removeAll { $0.id == chatID }
+                if state.activeChatID == chatID {
+                    state.activeChatID = state.chatSummaries.first?.id
+                    state.messages = []
+                    state.hasMoreHistory = false
+                    if let nextChatID = state.activeChatID {
+                        return .send(.loadMessagesRequested(chatID: nextChatID, reset: true))
+                    }
+                }
                 return .none
 
             case .chatListButtonTapped:
@@ -382,7 +444,8 @@ struct ChatSheetReducer {
                 guard !state.isSending else { return .none }
 
                 let trimmedDraft = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmedDraft.isEmpty else { return .none }
+                let composerAttachments = state.composerAttachments
+                guard !trimmedDraft.isEmpty || !composerAttachments.isEmpty else { return .none }
 
                 let pendingLocalMessageID = UUID()
                 let requestID = UUID()
@@ -398,6 +461,7 @@ struct ChatSheetReducer {
                         id: pendingLocalMessageID,
                         role: .user,
                         text: trimmedDraft,
+                        images: composerAttachments.map(\.imageAttachment),
                         deliveryState: .sending
                     )
                 )
@@ -405,6 +469,7 @@ struct ChatSheetReducer {
                 state.draft = ""
                 return .run { [chatClient] send in
                     var activeChatID: UUID?
+                    var uploadedImages: [ChatImageAttachment] = []
                     do {
                         if let existingActiveChatID {
                             activeChatID = existingActiveChatID
@@ -416,10 +481,24 @@ struct ChatSheetReducer {
                             activeChatID = createdChat.id
                         }
 
+                        if !composerAttachments.isEmpty {
+                            for attachment in composerAttachments {
+                                let uploadedImage = try await chatClient.uploadImage(
+                                    activeChatID!,
+                                    attachment.filename,
+                                    attachment.mimeType,
+                                    attachment.data,
+                                    accessToken
+                                )
+                                uploadedImages.append(uploadedImage)
+                            }
+                        }
+
                         let assistantMessage = try await chatClient.sendMessage(
                             activeChatID!,
                             "user",
-                            trimmedDraft,
+                            trimmedDraft.isEmpty ? nil : trimmedDraft,
+                            uploadedImages,
                             accessToken
                         )
                         await send(.sendResponseReceived(
@@ -457,14 +536,18 @@ struct ChatSheetReducer {
                                 Constants.pageSize,
                                 accessToken
                             )
+                            let expectedImageNames = Set(
+                                (uploadedImages.isEmpty ? composerAttachments.map(\.filename) : uploadedImages.map(\.filename))
+                            )
                             messagePersisted = await MainActor.run {
                                 transcript?.0.contains(where: { message in
-                                    switch message.role {
-                                    case .user:
-                                        return message.content.markdownText == trimmedDraft
-                                    case .assistant, .system, .tool:
-                                        return false
-                                    }
+                                    guard message.role == .user else { return false }
+
+                                    let textMatches = !trimmedDraft.isEmpty
+                                        && (message.content.markdownText?.hasPrefix(trimmedDraft) ?? false)
+                                    let imageMatches = !expectedImageNames.isEmpty
+                                        && Set(message.content.images.map(\.filename)).isSuperset(of: expectedImageNames)
+                                    return textMatches || imageMatches
                                 }) ?? false
                             }
                         } else {
@@ -551,6 +634,7 @@ struct ChatSheetReducer {
                 state.messages = mergedMessages.map(ChatSheetState.Message.init)
                 state.hasMoreHistory = hasMore
                 state.activeSendRequestID = nil
+                state.composerAttachments = []
                 state.sendStage = nil
                 state.shouldAutoScrollToBottom = true
                 return Self.refreshConflictEffects(for: state.messages)

@@ -9,6 +9,17 @@ struct Chat: Equatable, Identifiable {
     let updatedAt: Date
 }
 
+struct ChatImageAttachment: Equatable, Identifiable {
+    let url: String
+    let filename: String
+    let mimeType: String
+    let previewData: Data?
+
+    var id: String {
+        url.isEmpty ? "local-\(filename)" : url
+    }
+}
+
 struct ChatMessage: Equatable, Identifiable {
     enum Role: Equatable {
         case assistant
@@ -20,9 +31,10 @@ struct ChatMessage: Equatable, Identifiable {
     struct Content: Equatable {
         var markdownText: String?
         var eventActions: EventActionsContent?
+        var images: [ChatImageAttachment] = []
 
         var isEmpty: Bool {
-            markdownText == nil && eventActions == nil
+            markdownText == nil && eventActions == nil && images.isEmpty
         }
     }
 

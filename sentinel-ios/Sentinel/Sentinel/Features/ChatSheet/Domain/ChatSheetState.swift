@@ -35,6 +35,34 @@ struct ChatSheetState: Equatable {
         }
     }
 
+    struct ComposerAttachment: Equatable, Identifiable {
+        let id: UUID
+        let data: Data
+        let filename: String
+        let mimeType: String
+
+        init(
+            id: UUID = UUID(),
+            data: Data,
+            filename: String,
+            mimeType: String
+        ) {
+            self.id = id
+            self.data = data
+            self.filename = filename
+            self.mimeType = mimeType
+        }
+
+        var imageAttachment: ChatImageAttachment {
+            ChatImageAttachment(
+                url: "",
+                filename: filename,
+                mimeType: mimeType,
+                previewData: data
+            )
+        }
+    }
+
     struct Message: Equatable, Identifiable {
         enum Role: Equatable {
             case user
@@ -56,6 +84,7 @@ struct ChatSheetState: Equatable {
         let id: UUID
         let role: Role
         var deliveryState: DeliveryState
+        var images: [ChatImageAttachment]
         var markdownText: String?
         var suggestionsPayload: SuggestionsPayload?
 
@@ -63,11 +92,13 @@ struct ChatSheetState: Equatable {
             id: UUID = UUID(),
             role: Role,
             text: String,
+            images: [ChatImageAttachment] = [],
             deliveryState: DeliveryState = .delivered
         ) {
             self.id = id
             self.role = role
             self.deliveryState = deliveryState
+            self.images = images
             self.markdownText = text
             self.suggestionsPayload = nil
         }
@@ -83,6 +114,7 @@ struct ChatSheetState: Equatable {
             self.id = id
             self.role = role
             self.deliveryState = .delivered
+            self.images = []
             self.markdownText = nil
             self.suggestionsPayload = .init(
                 isApplying: isApplying,
@@ -96,6 +128,7 @@ struct ChatSheetState: Equatable {
             id = chatMessage.id
             role = chatMessage.role == .user ? .user : .assistant
             deliveryState = .delivered
+            images = chatMessage.content.images
             markdownText = chatMessage.content.markdownText
             suggestionsPayload = chatMessage.content.eventActions.map(SuggestionsPayload.init)
         }
@@ -229,6 +262,7 @@ struct ChatSheetState: Equatable {
     var accessToken: String?
     var activeChatID: UUID?
     var chatSummaries: [ChatSummary] = []
+    var composerAttachments: [ComposerAttachment] = []
     var draft = ""
     var detent: Detent = .collapsed
     var errorMessage: String?
@@ -249,6 +283,7 @@ struct ChatSheetState: Equatable {
         accessToken: String? = nil,
         activeChatID: UUID? = nil,
         chatSummaries: [ChatSummary] = [],
+        composerAttachments: [ComposerAttachment] = [],
         draft: String = "",
         detent: Detent = .collapsed,
         errorMessage: String? = nil,
@@ -268,6 +303,7 @@ struct ChatSheetState: Equatable {
         self.accessToken = accessToken
         self.activeChatID = activeChatID
         self.chatSummaries = chatSummaries
+        self.composerAttachments = composerAttachments
         self.draft = draft
         self.detent = detent
         self.errorMessage = errorMessage

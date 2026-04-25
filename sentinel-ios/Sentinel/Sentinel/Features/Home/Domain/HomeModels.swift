@@ -1,12 +1,12 @@
 import Foundation
 
-enum HomeScheduleAccess: Equatable {
+enum HomeScheduleAccess: Equatable, Sendable {
     case notRequested
     case granted
     case denied
 }
 
-struct HomeScheduleItem: Equatable, Identifiable {
+struct HomeScheduleItem: Equatable, Identifiable, Sendable {
     let id: UUID
     var endDate: Date?
     var startDate: Date
@@ -31,25 +31,25 @@ struct HomeScheduleItem: Equatable, Identifiable {
     }
 }
 
-struct HomeScheduleState: Equatable {
+struct HomeScheduleState: Equatable, Sendable {
     var access: HomeScheduleAccess = .notRequested
     var isLoading = false
     var errorMessage: String?
     var upcomingItems: [HomeScheduleItem] = []
 }
 
-struct HomeBatterySnapshot: Equatable {
+struct HomeBatterySnapshot: Equatable, Sendable {
     var headline: String
     var detail: String
 }
 
-enum HomeBatteryState: Equatable {
+enum HomeBatteryState: Equatable, Sendable {
     case placeholder
     case unavailable
     case ready(HomeBatterySnapshot)
 }
 
-struct HomeDayMarker: Equatable, Identifiable {
+struct HomeDayMarker: Equatable, Identifiable, Sendable {
     let id: Int
     let title: String
     let dayNumber: String
@@ -74,18 +74,18 @@ struct HomeDayMarker: Equatable, Identifiable {
     }()
 }
 
-struct HomeSnapshot: Equatable {
+struct HomeSnapshot: Equatable, Sendable {
     var title: String
     var detail: String
 }
 
-struct HomeEventDaySection: Equatable, Identifiable {
+struct HomeEventDaySection: Equatable, Identifiable, Sendable {
     let id: String
     let date: Date
     var items: [HomeScheduleItem]
 }
 
-struct HomeAchievementHighlight: Equatable, Identifiable {
+struct HomeAchievementHighlight: Equatable, Identifiable, Sendable {
     let id: UUID
     let groupTitle: String
     let icon: String

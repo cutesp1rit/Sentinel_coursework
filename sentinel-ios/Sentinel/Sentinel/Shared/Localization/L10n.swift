@@ -75,7 +75,10 @@ enum L10n {
 
     enum ChatSheet {
         static let addAttachmentAccessibility = String(localized: "chat_sheet.add_attachment_accessibility")
+        static let attachmentLimitReached = String(localized: "chat_sheet.attachment_limit_reached")
+        static let attachmentTooLarge = String(localized: "chat_sheet.attachment_too_large")
         static let composerPlaceholder = String(localized: "chat_sheet.composer_placeholder")
+        static let deleteChat = String(localized: "chat_sheet.delete_chat")
         static let authRequiredBody = String(localized: "chat_sheet.auth_required_body")
         static let authRequiredTitle = String(localized: "chat_sheet.auth_required_title")
         static let errorTitle = String(localized: "chat_sheet.error_title")
@@ -89,8 +92,10 @@ enum L10n {
         static let noChatsTitle = String(localized: "chat_sheet.no_chats_title")
         static let noMessagesBody = String(localized: "chat_sheet.no_messages_body")
         static let noMessagesTitle = String(localized: "chat_sheet.no_messages_title")
+        static let removeAttachmentAccessibility = String(localized: "chat_sheet.remove_attachment_accessibility")
         static let retry = String(localized: "chat_sheet.retry")
         static let sendMessageAccessibility = String(localized: "chat_sheet.send_message_accessibility")
+        static let selectedImages = String(localized: "chat_sheet.selected_images")
         static let suggestedEvents = String(localized: "chat_sheet.suggested_events")
         static let thinking = String(localized: "chat_sheet.thinking")
         static let conflict = String(localized: "chat_sheet.conflict")
@@ -134,29 +139,120 @@ enum L10n {
     }
 
     enum Profile {
+        static let accountDeletedStatus = String(localized: "profile.account_deleted_status")
         static let authHint = String(localized: "profile.auth_hint")
+        static let backToSignInButton = String(localized: "profile.back_to_sign_in_button")
+        static let backToEmailButton = String(localized: "profile.back_to_email_button")
+        static let cancelButton = String(localized: "profile.cancel_button")
         static let closeButton = String(localized: "profile.close_button")
+        static let confirmPasswordPlaceholder = String(localized: "profile.confirm_password_placeholder")
+        static let confirmPasswordRequired = String(localized: "profile.confirm_password_required")
+        static let continueButton = String(localized: "profile.continue_button")
+        static let deleteAccountBody = String(localized: "profile.delete_account_body")
+        static let deleteAccountButton = String(localized: "profile.delete_account_button")
+        static let deleteAccountConfirmButton = String(localized: "profile.delete_account_confirm_button")
+        static let deleteAccountPasswordPlaceholder = String(localized: "profile.delete_account_password_placeholder")
+        static let deleteAccountPasswordRequired = String(localized: "profile.delete_account_password_required")
         static let emailInvalid = String(localized: "profile.email_invalid")
         static let emailPlaceholder = String(localized: "profile.email_placeholder")
         static let emailRequired = String(localized: "profile.email_required")
+        static let emailVerifiedStatus = String(localized: "profile.email_verified_status")
+        static let forgotPasswordButton = String(localized: "profile.forgot_password_button")
+        static let forgotPasswordBody = String(localized: "profile.forgot_password_body")
+        static let forgotPasswordTitle = String(localized: "profile.forgot_password_title")
         static let loggedOutStatus = String(localized: "profile.logged_out_status")
         static let loginButton = String(localized: "profile.login_button")
         static let loginMode = String(localized: "profile.login_mode")
         static let logoutButton = String(localized: "profile.logout_button")
         static let logoutHint = String(localized: "profile.logout_hint")
+        static let manualResetHint = String(localized: "profile.manual_reset_hint")
+        static let manualVerificationHint = String(localized: "profile.manual_verification_hint")
         static let modePickerLabel = String(localized: "profile.mode_picker_label")
+        static let newPasswordPlaceholder = String(localized: "profile.new_password_placeholder")
         static let openButton = String(localized: "profile.open_button")
         static let passwordPlaceholder = String(localized: "profile.password_placeholder")
+        static let passwordResetEmailSent = String(localized: "profile.password_reset_email_sent")
+        static let passwordResetSucceeded = String(localized: "profile.password_reset_succeeded")
         static let passwordRequired = String(localized: "profile.password_required")
+        static let passwordsDoNotMatch = String(localized: "profile.passwords_do_not_match")
+        static let passwordTooShort = String(localized: "profile.password_too_short")
+        static let registerEmailStepBody = String(localized: "profile.register_email_step_body")
+        static let registerEmailStepTitle = String(localized: "profile.register_email_step_title")
         static let registerButton = String(localized: "profile.register_button")
         static let registerMode = String(localized: "profile.register_mode")
+        static let registerPasswordStepTitle = String(localized: "profile.register_password_step_title")
+        static let resendVerificationButton = String(localized: "profile.resend_verification_button")
+        static let resetPasswordButton = String(localized: "profile.reset_password_button")
+        static let resetTokenPlaceholder = String(localized: "profile.reset_token_placeholder")
+        static let resetTokenRequired = String(localized: "profile.reset_token_required")
         static let restoringStatus = String(localized: "profile.restoring_status")
+        static let sendResetLinkButton = String(localized: "profile.send_reset_link_button")
         static let sessionStoredBody = String(localized: "profile.session_stored_body")
         static let signedInStatus = String(localized: "profile.signed_in_status")
         static let signedInTitle = String(localized: "profile.signed_in_title")
         static let signedOutBody = String(localized: "profile.signed_out_body")
         static let signedOutTitle = String(localized: "profile.signed_out_title")
         static let title = String(localized: "profile.title")
+        static let trySignInAgainButton = String(localized: "profile.try_sign_in_again_button")
+        static let verificationTokenPlaceholder = String(localized: "profile.verification_token_placeholder")
+        static let verificationEmailResent = String(localized: "profile.verification_email_resent")
+        static let verificationRequiredStatus = String(localized: "profile.verification_required_status")
+        static let verificationRequiredTitle = String(localized: "profile.verification_required_title")
+        static let verificationTokenRequired = String(localized: "profile.verification_token_required")
+        static let verifyEmailButton = String(localized: "profile.verify_email_button")
+
+        static func verificationRequiredBody(_ email: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "profile.verification_required_body_format"),
+                email
+            )
+        }
+
+        static func verificationPendingBody(_ email: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "profile.verification_pending_body_format"),
+                email
+            )
+        }
+    }
+
+    enum Settings {
+        static let achievements = String(localized: "settings.achievements")
+        static let authStatus = String(localized: "settings.auth_status")
+        static let defaultPromptFooter = String(localized: "settings.default_prompt_footer")
+        static let defaultPromptTitle = String(localized: "settings.default_prompt_title")
+        static let logout = String(localized: "settings.logout")
+        static let notificationsDenied = String(localized: "settings.notifications_denied")
+        static let notificationsEnabled = String(localized: "settings.notifications_enabled")
+        static let notificationsTitle = String(localized: "settings.notifications_title")
+        static let savePromptButton = String(localized: "settings.save_prompt_button")
+        static let savedStatus = String(localized: "settings.saved_status")
+        static let title = String(localized: "settings.title")
+    }
+
+    enum Calendar {
+        static let allDay = String(localized: "calendar.all_day")
+        static let deleteEvent = String(localized: "calendar.delete_event")
+        static let descriptionPlaceholder = String(localized: "calendar.description_placeholder")
+        static let editorDetails = String(localized: "calendar.editor_details")
+        static let editorTiming = String(localized: "calendar.editor_timing")
+        static let editEvent = String(localized: "calendar.edit_event")
+        static let endDate = String(localized: "calendar.end_date")
+        static let errorTitle = String(localized: "calendar.error_title")
+        static let eventTag = String(localized: "calendar.event_tag")
+        static let locationPlaceholder = String(localized: "calendar.location_placeholder")
+        static let modePickerTitle = String(localized: "calendar.mode_picker_title")
+        static let monthMode = String(localized: "calendar.month_mode")
+        static let monthTitle = String(localized: "calendar.month_title")
+        static let newEvent = String(localized: "calendar.new_event")
+        static let reminderTag = String(localized: "calendar.reminder_tag")
+        static let saveEvent = String(localized: "calendar.save_event")
+        static let startDate = String(localized: "calendar.start_date")
+        static let titlePlaceholder = String(localized: "calendar.title_placeholder")
+        static let titleRequired = String(localized: "calendar.title_required")
+        static let typePicker = String(localized: "calendar.type_picker")
+        static let weekMode = String(localized: "calendar.week_mode")
+        static let weekTitle = String(localized: "calendar.week_title")
     }
 
     enum Achievements {

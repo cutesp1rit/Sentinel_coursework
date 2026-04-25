@@ -3,6 +3,7 @@ import Foundation
 
 struct HomeReducer: Reducer {
     @Dependency(\.achievementsClient) var achievementsClient
+    @Dependency(\.batteryClient) var batteryClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
 
     typealias State = HomeState
@@ -86,6 +87,16 @@ struct HomeReducer: Reducer {
                         subtitle: item.subtitle.isEmpty ? "Calendar" : item.subtitle
                     )
                 }
+                let access = state.schedule.access
+                let items = state.schedule.upcomingItems
+                return .run { send in
+                    @Dependency(\.batteryClient) var batteryClient
+                    let battery = await batteryClient.evaluate(items, access)
+                    await send(.batteryUpdated(battery))
+                }
+
+            case let .batteryUpdated(battery):
+                state.battery = battery
                 return .none
             }
         }

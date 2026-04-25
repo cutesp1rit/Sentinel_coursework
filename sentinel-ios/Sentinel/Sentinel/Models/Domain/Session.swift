@@ -10,5 +10,6 @@ struct User: Equatable, Identifiable, Sendable {
     let email: String
     let timezone: String
     let locale: String
+    let isVerified: Bool
     let createdAt: Date
 }

@@ -25,7 +25,7 @@ struct HomeCalendarSectionView: View {
                                     .background(
                                         isSelected(marker)
                                             ? Color.accentColor.opacity(0.14)
-                                            : Color(uiColor: .tertiarySystemGroupedBackground)
+                                            : AppPlatformColor.tertiaryGroupedBackground
                                     )
                                     .clipShape(Circle())
                             }

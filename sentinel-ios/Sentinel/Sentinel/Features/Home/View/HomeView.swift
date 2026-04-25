@@ -177,10 +177,13 @@ struct HomeView: View {
 
                 if !store.allEventSections.isEmpty {
                     NavigationLink {
-                        HomeAllEventsView(
-                            batteryProgress: store.resourceBatteryProgress,
-                            sections: store.allEventSections
-                        )
+                        if let accessToken = store.accessToken {
+                            CalendarView(
+                                store: Store(initialState: CalendarState(accessToken: accessToken)) {
+                                    CalendarReducer()
+                                }
+                            )
+                        }
                     } label: {
                         HStack(spacing: AppSpacing.xSmall) {
                             Text(L10n.Home.viewAllButton)
@@ -213,10 +216,13 @@ struct HomeView: View {
 
     private var allEventsSlot: some View {
         NavigationLink {
-            HomeAllEventsView(
-                batteryProgress: store.resourceBatteryProgress,
-                sections: store.allEventSections
-            )
+            if let accessToken = store.accessToken {
+                CalendarView(
+                    store: Store(initialState: CalendarState(accessToken: accessToken)) {
+                        CalendarReducer()
+                    }
+                )
+            }
         } label: {
             HStack(spacing: AppSpacing.medium) {
                 VStack(alignment: .leading, spacing: AppSpacing.small) {
@@ -362,14 +368,14 @@ struct HomeView: View {
 struct HomeTopGradientBackground: View {
     var body: some View {
         ZStack(alignment: .top) {
-            Color(uiColor: .systemGroupedBackground)
+            AppPlatformColor.systemGroupedBackground
 
             LinearGradient(
                 colors: [
                     Color(red: 0.80, green: 0.90, blue: 1.0),
                     Color(red: 0.92, green: 0.85, blue: 1.0),
                     Color(red: 0.95, green: 0.96, blue: 1.0),
-                    Color(uiColor: .systemGroupedBackground)
+                    AppPlatformColor.systemGroupedBackground
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
