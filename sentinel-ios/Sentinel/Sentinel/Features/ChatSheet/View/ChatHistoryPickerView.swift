@@ -14,7 +14,7 @@ struct ChatHistoryPickerView: View {
                 ForEach(store.chats) { chat in
                     ChatListRow(
                         title: chat.title,
-                        subtitle: subtitle(for: chat),
+                        subtitle: chat.subtitle,
                         state: chat.id == store.activeChatID ? .selected : .regular
                     ) {
                         store.send(.rowTapped(chat.id))
@@ -58,10 +58,5 @@ struct ChatHistoryPickerView: View {
         .task {
             store.send(.onAppear)
         }
-    }
-
-    private func subtitle(for chat: ChatListItem) -> String? {
-        guard let lastMessageAt = chat.lastMessageAt else { return nil }
-        return lastMessageAt.formatted(date: .abbreviated, time: .shortened)
     }
 }

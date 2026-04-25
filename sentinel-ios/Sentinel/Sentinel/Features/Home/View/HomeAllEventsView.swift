@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeAllEventsView: View {
-    let batteryProgress: Double
+    let batteryValueText: String
     let sections: [HomeEventDaySection]
 
     var body: some View {
@@ -10,12 +10,12 @@ struct HomeAllEventsView: View {
                 ForEach(sections) { section in
                     VStack(alignment: .leading, spacing: AppSpacing.medium) {
                         HStack(alignment: .center, spacing: AppSpacing.medium) {
-                            Text(section.date.formatted(.dateTime.day().month(.wide)))
+                            Text(section.titleText)
                                 .font(.title3.weight(.semibold))
 
                             Spacer()
 
-                            Text("\(Int(batteryProgress * 100))%")
+                            Text(batteryValueText)
                                 .font(.headline.weight(.semibold))
                                 .foregroundStyle(Color.green)
 

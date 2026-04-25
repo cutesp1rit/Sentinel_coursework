@@ -69,16 +69,16 @@ struct AuthFlowView: View {
                 .padding(.vertical, AppSpacing.small)
                 .background(.ultraThinMaterial, in: Capsule())
 
-            if let progressLabel {
+            if let progressLabel = store.progressLabel {
                 Text(progressLabel)
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
 
-            Text(screenTitle)
+            Text(store.screenTitle)
                 .font(.system(size: 38, weight: .bold, design: .rounded))
 
-            Text(screenSubtitle)
+            Text(store.screenSubtitle)
                 .font(.body)
                 .foregroundStyle(.secondary)
         }
@@ -259,49 +259,6 @@ struct AuthFlowView: View {
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
                         .fill(AppPlatformColor.secondaryGroupedBackground.opacity(0.84))
                 )
-        }
-    }
-
-    private var screenTitle: String {
-        switch (store.flow, store.mode, store.registerStep) {
-        case (.auth, .login, _):
-            return L10n.Profile.loginHeroTitle
-        case (.auth, .register, .email):
-            return L10n.Profile.registerEmailStepTitle
-        case (.auth, .register, .credentials):
-            return L10n.Profile.registerPasswordStepTitle
-        case (.verificationPending, _, _):
-            return L10n.Profile.verifyHeroTitle
-        case (.forgotPassword, _, _):
-            return L10n.Profile.forgotPasswordHeroTitle
-        }
-    }
-
-    private var screenSubtitle: String {
-        switch (store.flow, store.mode, store.registerStep) {
-        case (.auth, .login, _):
-            return L10n.Profile.loginBody
-        case (.auth, .register, .email):
-            return L10n.Profile.registerEmailStepBody
-        case (.auth, .register, .credentials):
-            return L10n.Profile.registerPasswordStepBody
-        case (.verificationPending, _, _):
-            return L10n.Profile.verifyHeroBody
-        case (.forgotPassword, _, _):
-            return L10n.Profile.forgotPasswordBody
-        }
-    }
-
-    private var progressLabel: String? {
-        switch (store.flow, store.mode, store.registerStep) {
-        case (.auth, .register, .email):
-            return L10n.Profile.stepProgress(1, 3)
-        case (.auth, .register, .credentials):
-            return L10n.Profile.stepProgress(2, 3)
-        case (.verificationPending, _, _):
-            return L10n.Profile.stepProgress(3, 3)
-        default:
-            return nil
         }
     }
 }

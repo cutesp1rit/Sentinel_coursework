@@ -1,8 +1,24 @@
 import ComposableArchitecture
 import Foundation
+import SwiftUI
 
 @ObservableState
 struct HomeState: Equatable {
+    struct MetricCardModel: Equatable {
+        let detail: String
+        let systemImage: String?
+        let tint: Color
+        let title: String
+        let value: String
+    }
+
+    struct TodayRowModel: Equatable, Identifiable {
+        let id: String
+        let location: String?
+        let time: String
+        let title: String
+    }
+
     var accessToken: String?
     var achievementGroups: [AchievementGroup] = []
     var schedule = HomeScheduleState()
@@ -35,6 +51,10 @@ struct HomeState: Equatable {
             .replacingOccurrences(of: ".", with: " ")
             .replacingOccurrences(of: "_", with: " ")
             .capitalized
+    }
+
+    var currentDateText: String {
+        Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
     }
 
     var isAuthenticated: Bool {
@@ -97,6 +117,25 @@ struct HomeState: Equatable {
         }
     }
 
+    var resourceBatteryValueText: String {
+        "\(Int(resourceBatteryProgress * 100))%"
+    }
+
+    var resourceBatterySymbolName: String {
+        switch resourceBatteryProgress {
+        case ..<0.125:
+            return "battery.0percent"
+        case ..<0.375:
+            return "battery.25percent"
+        case ..<0.625:
+            return "battery.50percent"
+        case ..<0.875:
+            return "battery.75percent"
+        default:
+            return "battery.100percent"
+        }
+    }
+
     var scheduleMetricDetail: String {
         if let firstItem = todayPreviewItems.first {
             return "Next: \(firstItem.timeText)"
@@ -115,8 +154,27 @@ struct HomeState: Equatable {
             .sorted { $0.startDate < $1.startDate }
     }
 
+    var displayDayStrip: [HomeDayMarker] {
+        dayStrip.map { marker in
+            var marker = marker
+            marker.isSelected = marker.id == selectedDayID
+            return marker
+        }
+    }
+
     var todayPreviewItems: [HomeScheduleItem] {
         Array(todayItems.prefix(3))
+    }
+
+    var todayPreviewRows: [TodayRowModel] {
+        todayPreviewItems.map { item in
+            TodayRowModel(
+                id: "\(item.title)-\(item.startDate.timeIntervalSince1970)",
+                location: item.subtitle == "Calendar" ? nil : item.subtitle,
+                time: item.timeText,
+                title: item.title
+            )
+        }
     }
 
     var todayTitle: String {
@@ -175,5 +233,29 @@ struct HomeState: Equatable {
                 detail: "Next: \(firstItem.title) at \(firstItem.timeText)."
             )
         }
+    }
+
+    var scheduleMetricCard: MetricCardModel {
+        MetricCardModel(
+            detail: todayTitle,
+            systemImage: nil,
+            tint: .primary,
+            title: L10n.Home.metricTodayTitle,
+            value: "\(todayItems.count)"
+        )
+    }
+
+    var batteryMetricCard: MetricCardModel {
+        MetricCardModel(
+            detail: resourceBatteryTitle,
+            systemImage: resourceBatterySymbolName,
+            tint: .green,
+            title: L10n.Home.metricBatteryTitle,
+            value: resourceBatteryValueText
+        )
+    }
+
+    var achievementPreviewHighlights: [HomeAchievementHighlight] {
+        Array(nextAchievementHighlights.prefix(6))
     }
 }

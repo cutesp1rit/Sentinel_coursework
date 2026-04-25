@@ -11,7 +11,7 @@ struct ChatSheetTranscriptView: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
                 messageRow(for: message)
-                    .padding(.bottom, messageSpacing(after: index))
+                    .padding(.bottom, messages.spacing(after: index))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -27,7 +27,7 @@ struct ChatSheetTranscriptView: View {
     @ViewBuilder
     private func messageRow(for message: ChatThreadMessage) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            if message.markdownText != nil || !message.images.isEmpty {
+            if message.hasBubbleContent {
                 ChatBubbleRow(message: message)
             }
 
@@ -43,10 +43,6 @@ struct ChatSheetTranscriptView: View {
         }
     }
 
-    private func messageSpacing(after index: Int) -> CGFloat {
-        guard messages.indices.contains(index + 1) else { return 0 }
-        return messages[index].role == messages[index + 1].role ? AppSpacing.small : AppSpacing.medium
-    }
 }
 
 private struct SuggestionsMessageRowView: View {
@@ -55,40 +51,6 @@ private struct SuggestionsMessageRowView: View {
     let onToggleExpansion: (ChatThreadMessage.ID) -> Void
     let onToggleSuggestionSelection: (ChatThreadMessage.ID, ChatSuggestion.ID) -> Void
     let onAddSelectedSuggestions: (ChatThreadMessage.ID) -> Void
-
-    private var addToCalendarTitle: String {
-        if payload.isApplying {
-            return L10n.ChatSheet.syncingToCalendar
-        }
-
-        if !payload.hasPendingSuggestions {
-            return L10n.ChatSheet.applied
-        }
-
-        if payload.suggestions.count == 1 || selectedPendingCount == 0 {
-            return L10n.ChatSheet.addToCalendar
-        }
-        return L10n.ChatSheet.addCountToCalendar(selectedPendingCount)
-    }
-
-    private var isSingleSuggestion: Bool {
-        payload.suggestions.count == 1
-    }
-
-    private var selectedPendingCount: Int {
-        payload.suggestions.filter {
-            payload.selectedSuggestionIDs.contains($0.id) && $0.status == .pending
-        }.count
-    }
-
-    private var canAddToCalendar: Bool {
-        guard !payload.isApplying, payload.hasPendingSuggestions else {
-            return false
-        }
-
-        let pendingSuggestions = payload.suggestions.filter { $0.status == .pending }
-        return pendingSuggestions.count == 1 || selectedPendingCount > 0
-    }
 
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.small) {
@@ -102,8 +64,8 @@ private struct SuggestionsMessageRowView: View {
 
                         Spacer()
 
-                        if selectedPendingCount > 0 {
-                            Text(L10n.ChatSheet.selectedCount(selectedPendingCount))
+                        if payload.selectedPendingCount > 0 {
+                            Text(L10n.ChatSheet.selectedCount(payload.selectedPendingCount))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -120,9 +82,9 @@ private struct SuggestionsMessageRowView: View {
                         ForEach(payload.suggestions) { suggestion in
                             SuggestionCardView(
                                 suggestion: suggestion,
-                                isSelected: payload.selectedSuggestionIDs.contains(suggestion.id),
-                                showsSelectionControl: !isSingleSuggestion && suggestion.status == .pending,
-                                isInteractive: !isSingleSuggestion && suggestion.status == .pending && !payload.isApplying
+                                isSelected: payload.isSelected(suggestion.id),
+                                showsSelectionControl: !payload.isSingleSuggestion && suggestion.status == .pending,
+                                isInteractive: !payload.isSingleSuggestion && suggestion.status == .pending && !payload.isApplying
                             ) {
                                 onToggleSuggestionSelection(messageID, suggestion.id)
                             }
@@ -131,7 +93,7 @@ private struct SuggestionsMessageRowView: View {
                         Button {
                             onAddSelectedSuggestions(messageID)
                         } label: {
-                            Text(addToCalendarTitle)
+                            Text(payload.addToCalendarTitle)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.white)
                                 .frame(maxWidth: .infinity)
@@ -155,10 +117,10 @@ private struct SuggestionsMessageRowView: View {
                                         )
                                 }
                                 .shadow(color: Color.blue.opacity(0.18), radius: 10, y: 4)
-                                .opacity(canAddToCalendar ? 1 : AppOpacity.disabled)
+                                .opacity(payload.canAddToCalendar ? 1 : AppOpacity.disabled)
                         }
                         .buttonStyle(.plain)
-                        .disabled(!canAddToCalendar)
+                        .disabled(!payload.canAddToCalendar)
                     }
                 }
             }

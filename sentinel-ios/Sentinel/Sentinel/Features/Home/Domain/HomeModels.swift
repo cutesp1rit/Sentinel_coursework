@@ -36,6 +36,40 @@ struct HomeScheduleState: Equatable, Sendable {
     var isLoading = false
     var errorMessage: String?
     var upcomingItems: [HomeScheduleItem] = []
+
+    var emptyStateCopy: HomeSnapshot {
+        if isLoading {
+            return HomeSnapshot(
+                title: L10n.Home.loadingTitle,
+                detail: L10n.Home.loadingBody
+            )
+        }
+
+        if errorMessage != nil {
+            return HomeSnapshot(
+                title: L10n.Home.calendarErrorTitle,
+                detail: L10n.Home.calendarErrorBody
+            )
+        }
+
+        switch access {
+        case .notRequested:
+            return HomeSnapshot(
+                title: L10n.Home.connectCalendarTitle,
+                detail: L10n.Home.connectCalendarBody
+            )
+        case .denied:
+            return HomeSnapshot(
+                title: L10n.Home.calendarDeniedTitle,
+                detail: L10n.Home.calendarDeniedBody
+            )
+        case .granted:
+            return HomeSnapshot(
+                title: L10n.Home.noEventsTitle,
+                detail: L10n.Home.noEventsBody
+            )
+        }
+    }
 }
 
 struct HomeBatterySnapshot: Equatable, Sendable {
@@ -47,6 +81,23 @@ enum HomeBatteryState: Equatable, Sendable {
     case placeholder
     case unavailable
     case ready(HomeBatterySnapshot)
+
+    var displaySnapshot: HomeBatterySnapshot {
+        switch self {
+        case .placeholder:
+            return .init(
+                headline: L10n.Home.batteryPlaceholderTitle,
+                detail: L10n.Home.batteryPlaceholderBody
+            )
+        case .unavailable:
+            return .init(
+                headline: L10n.Home.batteryUnavailableTitle,
+                detail: L10n.Home.batteryUnavailableBody
+            )
+        case let .ready(snapshot):
+            return snapshot
+        }
+    }
 }
 
 struct HomeDayMarker: Equatable, Identifiable, Sendable {
@@ -54,6 +105,7 @@ struct HomeDayMarker: Equatable, Identifiable, Sendable {
     let title: String
     let dayNumber: String
     let isToday: Bool
+    var isSelected = false
 
     static let previewWeek: [Self] = {
         let calendar = Calendar.current
@@ -68,7 +120,8 @@ struct HomeDayMarker: Equatable, Identifiable, Sendable {
                 id: offset,
                 title: date.formatted(.dateTime.weekday(.abbreviated)),
                 dayNumber: date.formatted(.dateTime.day()),
-                isToday: offset == 0
+                isToday: offset == 0,
+                isSelected: offset == 0
             )
         }
     }()
@@ -83,6 +136,10 @@ struct HomeEventDaySection: Equatable, Identifiable, Sendable {
     let id: String
     let date: Date
     var items: [HomeScheduleItem]
+
+    var titleText: String {
+        date.formatted(.dateTime.day().month(.wide))
+    }
 }
 
 struct HomeAchievementHighlight: Equatable, Identifiable, Sendable {

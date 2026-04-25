@@ -7,28 +7,6 @@ struct SuggestionCardView: View {
     let isInteractive: Bool
     let onTap: () -> Void
 
-    private var statusText: String? {
-        switch suggestion.status {
-        case .accepted:
-            return L10n.ChatSheet.statusAccepted
-        case .pending:
-            return nil
-        case .rejected:
-            return L10n.ChatSheet.statusRejected
-        }
-    }
-
-    private var statusTint: Color {
-        switch suggestion.status {
-        case .accepted:
-            return .green
-        case .pending:
-            return .secondary
-        case .rejected:
-            return .secondary
-        }
-    }
-
     var body: some View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
@@ -57,10 +35,10 @@ struct SuggestionCardView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: AppSpacing.small) {
-                        if let statusText {
+                        if let statusText = suggestion.statusText {
                             Text(statusText)
                                 .font(.caption2.weight(.semibold))
-                                .foregroundStyle(statusTint)
+                                .foregroundStyle(suggestion.statusTint)
                         }
 
                         if suggestion.hasConflict {

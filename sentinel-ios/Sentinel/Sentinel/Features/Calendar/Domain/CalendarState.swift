@@ -3,6 +3,15 @@ import Foundation
 
 @ObservableState
 struct CalendarState: Equatable {
+    struct AgendaRow: Equatable, Identifiable {
+        let id: UUID
+        let badge: String
+        let conflictTitle: String?
+        let location: String?
+        let time: String
+        let title: String
+    }
+
     @ObservableState
     struct Editor: Equatable {
         var allDay = false
@@ -54,6 +63,95 @@ struct CalendarState: Equatable {
 
     var selectedMonthLabel: String {
         selectedDate.formatted(.dateTime.month(.wide).year())
+    }
+
+    var selectedDateHeaderTitle: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate) {
+            return L10n.Calendar.today
+        }
+        if calendar.isDateInTomorrow(selectedDate) {
+            return L10n.Calendar.tomorrow
+        }
+        return selectedDate.formatted(.dateTime.day().month(.wide))
+    }
+
+    var selectedDateHeaderSubtitle: String {
+        selectedDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+    }
+
+    var weekStripDays: [WeekStripDay] {
+        let calendar = Calendar.current
+        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: selectedDate)?.start ?? selectedDate
+
+        return (0 ..< 7).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: startOfWeek) else {
+                return nil
+            }
+
+            return WeekStripDay(
+                id: date.formatted(.iso8601.year().month().day()),
+                date: date,
+                weekday: date.formatted(.dateTime.weekday(.abbreviated)),
+                dayNumber: date.formatted(.dateTime.day()),
+                isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
+                isToday: calendar.isDateInToday(date)
+            )
+        }
+    }
+
+    var selectedDayRows: [AgendaRow] {
+        let calendar = Calendar.current
+        return events
+            .filter { calendar.isDate($0.startAt, inSameDayAs: selectedDate) }
+            .sorted { $0.startAt < $1.startAt }
+            .map(agendaRow(for:))
+    }
+
+    var upcomingRows: [AgendaRow] {
+        let calendar = Calendar.current
+        let selectedStart = calendar.startOfDay(for: selectedDate)
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: selectedStart) ?? selectedStart
+
+        return events
+            .filter { $0.startAt >= nextDay }
+            .sorted { $0.startAt < $1.startAt }
+            .prefix(4)
+            .map(agendaRow(for:))
+    }
+
+    private func agendaRow(for event: Event) -> AgendaRow {
+        AgendaRow(
+            id: event.id,
+            badge: event.type == .reminder ? L10n.Calendar.reminderTag : L10n.Calendar.eventTag,
+            conflictTitle: hasConflict(for: event) ? L10n.ChatSheet.conflict : nil,
+            location: event.location,
+            time: timeText(for: event),
+            title: event.title
+        )
+    }
+
+    private func hasConflict(for event: Event) -> Bool {
+        events.contains { other in
+            guard other.id != event.id else { return false }
+            guard Calendar.current.isDate(other.startAt, inSameDayAs: event.startAt) else { return false }
+            let eventEnd = event.endAt ?? event.startAt
+            let otherEnd = other.endAt ?? other.startAt
+            return other.startAt < eventEnd && otherEnd > event.startAt
+        }
+    }
+
+    private func timeText(for event: Event) -> String {
+        if event.allDay {
+            return L10n.Calendar.allDay
+        }
+        if let endAt = event.endAt {
+            return "\(event.startAt.formatted(date: .omitted, time: .shortened)) - \(endAt.formatted(date: .omitted, time: .shortened))"
+        }
+        if event.type == .reminder {
+            return event.startAt.formatted(date: .omitted, time: .shortened)
+        }
+        return event.startAt.formatted(date: .abbreviated, time: .shortened)
     }
 }
 

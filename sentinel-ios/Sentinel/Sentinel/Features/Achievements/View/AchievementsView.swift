@@ -104,34 +104,22 @@ struct AchievementsView: View {
 private struct AchievementGroupCard: View {
     let group: AchievementGroup
 
-    private var progressFraction: Double {
-        guard let target = group.nextLockedLevel?.targetValue ?? group.levels.last?.targetValue,
-              target > 0 else {
-            return 1
-        }
-        return min(Double(group.currentValue) / Double(target), 1)
-    }
-
-    private var categoryTitle: String {
-        group.category.replacingOccurrences(of: "_", with: " ").capitalized
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                Text(categoryTitle)
+                Text(group.categoryTitle)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                Text(groupTitle)
+                Text(group.displayTitle)
                     .font(.headline)
 
-                Text(progressCopy)
+                Text(group.progressCopy)
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
-            ProgressView(value: progressFraction)
+            ProgressView(value: group.progressFraction)
 
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 ForEach(group.levels) { level in
@@ -144,29 +132,6 @@ private struct AchievementGroupCard: View {
         .background(AppPlatformColor.secondaryGroupedBackground)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
     }
-
-    private var groupTitle: String {
-        switch group.groupCode {
-        case "events_created":
-            return L10n.Achievements.eventsCreated
-        case "ai_assisted":
-            return L10n.Achievements.aiAssisted
-        case "reminders":
-            return L10n.Achievements.reminders
-        case "active_days":
-            return L10n.Achievements.activeDays
-        default:
-            return group.groupCode.replacingOccurrences(of: "_", with: " ").capitalized
-        }
-    }
-
-    private var progressCopy: String {
-        if let nextLockedLevel = group.nextLockedLevel {
-            return L10n.Achievements.progressToLevel(group.currentValue, nextLockedLevel.targetValue)
-        }
-
-        return L10n.Achievements.completedGroup
-    }
 }
 
 private struct AchievementLevelRow: View {
@@ -175,16 +140,6 @@ private struct AchievementLevelRow: View {
 
     private var accentColor: Color {
         level.unlocked ? .green : .secondary
-    }
-
-    private var statusCopy: String {
-        if level.unlocked {
-            if let earnedAt = level.earnedAt {
-                return L10n.Achievements.earnedAt(earnedAt.formatted(date: .abbreviated, time: .omitted))
-            }
-            return L10n.Achievements.unlocked
-        }
-        return L10n.Achievements.target(level.targetValue)
     }
 
     var body: some View {
@@ -200,7 +155,7 @@ private struct AchievementLevelRow: View {
                     Text(level.title)
                         .font(.subheadline.weight(.semibold))
 
-                    Text(L10n.Achievements.level(level.level))
+                    Text(level.levelTitle)
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(accentColor)
                 }
@@ -209,7 +164,7 @@ private struct AchievementLevelRow: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
 
-                Text(statusCopy)
+                Text(level.statusCopy)
                     .font(.caption)
                     .foregroundStyle(accentColor)
             }

@@ -1,13 +1,15 @@
 import SwiftUI
 
 struct HomeHeaderView: View {
+    let dateText: String
+
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.medium) {
             VStack(alignment: .leading, spacing: AppSpacing.small) {
                 Text(L10n.App.title)
                     .font(.largeTitle.bold())
 
-                Text(Date.now.formatted(date: .abbreviated, time: .omitted))
+                Text(dateText)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
 

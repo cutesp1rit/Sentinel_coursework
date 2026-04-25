@@ -3,7 +3,6 @@ import SwiftUI
 
 struct HomeCalendarSectionView: View {
     let dayStrip: [HomeDayMarker]
-    let selectedDayID: Int
     let onSelectDay: (Int) -> Void
 
     var body: some View {
@@ -17,13 +16,13 @@ struct HomeCalendarSectionView: View {
                             VStack(spacing: AppSpacing.xSmall) {
                                 Text(marker.title)
                                     .font(.caption.weight(.medium))
-                                    .foregroundStyle(isSelected(marker) ? .primary : .secondary)
+                                    .foregroundStyle(marker.isSelected ? .primary : .secondary)
 
                                 Text(marker.dayNumber)
                                     .font(.body.weight(.semibold))
                                     .frame(width: AppGrid.value(10), height: AppGrid.value(10))
                                     .background(
-                                        isSelected(marker)
+                                        marker.isSelected
                                             ? Color.accentColor.opacity(0.14)
                                             : AppPlatformColor.tertiaryGroupedBackground
                                     )
@@ -40,9 +39,5 @@ struct HomeCalendarSectionView: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-
-    private func isSelected(_ marker: HomeDayMarker) -> Bool {
-        marker.id == selectedDayID
     }
 }

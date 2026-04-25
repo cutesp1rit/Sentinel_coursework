@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct ChatListItem: Equatable, Identifiable {
     let id: UUID
@@ -9,6 +10,11 @@ struct ChatListItem: Equatable, Identifiable {
         id = chat.id
         title = chat.title
         lastMessageAt = chat.lastMessageAt
+    }
+
+    var subtitle: String? {
+        guard let lastMessageAt else { return nil }
+        return lastMessageAt.formatted(date: .abbreviated, time: .shortened)
     }
 }
 
@@ -127,6 +133,26 @@ struct ChatSuggestion: Equatable, Identifiable {
         }
         return "proposal-\(actionIndex)"
     }
+
+    var statusText: String? {
+        switch status {
+        case .accepted:
+            return L10n.ChatSheet.statusAccepted
+        case .pending:
+            return nil
+        case .rejected:
+            return L10n.ChatSheet.statusRejected
+        }
+    }
+
+    var statusTint: Color {
+        switch status {
+        case .accepted:
+            return .green
+        case .pending, .rejected:
+            return .secondary
+        }
+    }
 }
 
 struct ChatThreadMessage: Equatable, Identifiable {
@@ -187,9 +213,57 @@ struct ChatThreadMessage: Equatable, Identifiable {
     var isUser: Bool {
         role == .user
     }
+
+    var hasBubbleContent: Bool {
+        markdownText != nil || !images.isEmpty
+    }
 }
 
 enum ChatSendStage: Equatable {
     case delivering
     case syncing
+}
+
+extension ChatThreadMessage.SuggestionsPayload {
+    func isSelected(_ suggestionID: ChatSuggestion.ID) -> Bool {
+        selectedSuggestionIDs.contains(suggestionID)
+    }
+
+    var selectedPendingCount: Int {
+        suggestions.filter {
+            selectedSuggestionIDs.contains($0.id) && $0.status == .pending
+        }.count
+    }
+
+    var isSingleSuggestion: Bool {
+        suggestions.count == 1
+    }
+
+    var addToCalendarTitle: String {
+        if isApplying {
+            return L10n.ChatSheet.syncingToCalendar
+        }
+        if !hasPendingSuggestions {
+            return L10n.ChatSheet.applied
+        }
+        if suggestions.count == 1 || selectedPendingCount == 0 {
+            return L10n.ChatSheet.addToCalendar
+        }
+        return L10n.ChatSheet.addCountToCalendar(selectedPendingCount)
+    }
+
+    var canAddToCalendar: Bool {
+        guard !isApplying, hasPendingSuggestions else {
+            return false
+        }
+        let pendingSuggestions = suggestions.filter { $0.status == .pending }
+        return pendingSuggestions.count == 1 || selectedPendingCount > 0
+    }
+}
+
+extension Array where Element == ChatThreadMessage {
+    func spacing(after index: Int) -> CGFloat {
+        guard indices.contains(index + 1) else { return 0 }
+        return self[index].role == self[index + 1].role ? AppSpacing.small : AppSpacing.medium
+    }
 }

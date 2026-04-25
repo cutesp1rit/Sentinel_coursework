@@ -86,7 +86,7 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xLarge) {
             HStack(alignment: .top, spacing: AppSpacing.medium) {
                 VStack(alignment: .leading, spacing: AppSpacing.small) {
-                    Text(Date.now.formatted(.dateTime.weekday(.wide).day().month(.wide).year()))
+                    Text(store.currentDateText)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -105,18 +105,11 @@ struct HomeView: View {
 
             HStack(spacing: AppSpacing.medium) {
                 metricCard(
-                    title: L10n.Home.metricTodayTitle,
-                    value: "\(store.todayItems.count)",
-                    detail: store.todayTitle,
-                    tint: .primary
+                    model: store.scheduleMetricCard
                 )
 
                 metricCard(
-                    title: L10n.Home.metricBatteryTitle,
-                    value: "\(Int(store.resourceBatteryProgress * 100))%",
-                    detail: store.resourceBatteryTitle,
-                    tint: .green,
-                    systemImage: batterySymbolName
+                    model: store.batteryMetricCard
                 )
             }
 
@@ -157,12 +150,12 @@ struct HomeView: View {
                 )
             } else {
                 VStack(spacing: AppSpacing.medium) {
-                    ForEach(store.todayPreviewItems) { item in
+                    ForEach(store.todayPreviewRows) { item in
                         EventRowCard(
                             title: item.title,
                             badge: L10n.Calendar.eventTag,
-                            time: item.timeText,
-                            location: item.subtitle == "Calendar" ? nil : item.subtitle,
+                            time: item.time,
+                            location: item.location,
                             conflictTitle: nil,
                             action: nil
                         )
@@ -232,7 +225,7 @@ struct HomeView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: AppSpacing.medium) {
-                    ForEach(store.nextAchievementHighlights.prefix(6)) { highlight in
+                    ForEach(store.achievementPreviewHighlights) { highlight in
                         HomeAchievementCard(highlight: highlight)
                     }
                 }
@@ -260,48 +253,25 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
     }
-
-    private var batterySymbolName: String {
-        let progress = store.resourceBatteryProgress
-        switch progress {
-        case ..<0.125:
-            return "battery.0percent"
-        case ..<0.375:
-            return "battery.25percent"
-        case ..<0.625:
-            return "battery.50percent"
-        case ..<0.875:
-            return "battery.75percent"
-        default:
-            return "battery.100percent"
-        }
-    }
-
-    private func metricCard(
-        title: String,
-        value: String,
-        detail: String,
-        tint: Color,
-        systemImage: String? = nil
-    ) -> some View {
+    private func metricCard(model: HomeState.MetricCardModel) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(title)
+            Text(model.title)
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
-                if let systemImage {
+                if let systemImage = model.systemImage {
                     Image(systemName: systemImage)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(tint)
+                        .foregroundStyle(model.tint)
                 }
 
-                Text(value)
+                Text(model.value)
                     .font(.title2.weight(.bold))
-                    .foregroundStyle(tint)
+                    .foregroundStyle(model.tint)
             }
 
-            Text(detail)
+            Text(model.detail)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)

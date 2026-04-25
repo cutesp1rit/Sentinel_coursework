@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import CoreGraphics
 
 struct AppFeature: Reducer {
     @ObservableState
@@ -10,6 +11,19 @@ struct AppFeature: Reducer {
         var isAuthFlowPresented = false
         var isChatSheetPresented = false
         var isProfileSheetPresented = false
+
+        func chatSheetInsetHeight(containerHeight: CGFloat) -> CGFloat {
+            guard isChatSheetPresented else { return 0 }
+
+            switch chatSheet.detent {
+            case .collapsed:
+                return AppGrid.value(24)
+            case .medium:
+                return max(containerHeight * 0.56, 420)
+            case .large:
+                return containerHeight * 0.82
+            }
+        }
     }
 
     @CasePathable

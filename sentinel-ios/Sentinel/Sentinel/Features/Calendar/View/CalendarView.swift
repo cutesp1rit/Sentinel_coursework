@@ -8,7 +8,7 @@ struct CalendarView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
                 WeekStrip(
-                    days: weekStripDays,
+                    days: store.weekStripDays,
                     onSelect: { store.send(.selectedDateChanged($0)) },
                     onSwipe: { store.send(.weekAdvanced($0)) }
                 )
@@ -87,128 +87,54 @@ struct CalendarView: View {
     private var agendaContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.large) {
             AgendaDayHeader(
-                title: dayHeaderTitle(for: store.selectedDate),
-                subtitle: store.selectedDate.formatted(.dateTime.weekday(.wide).day().month(.wide).year())
+                title: store.selectedDateHeaderTitle,
+                subtitle: store.selectedDateHeaderSubtitle
             )
 
-            if selectedDayEvents.isEmpty {
+            if store.selectedDayRows.isEmpty {
                 EmptyStateCard(
                     title: L10n.Calendar.emptySelectedDayTitle,
                     bodyText: L10n.Calendar.emptySelectedDayBody
                 )
             } else {
                 VStack(spacing: AppSpacing.medium) {
-                    ForEach(selectedDayEvents) { event in
-                        eventRow(event)
+                    ForEach(store.selectedDayRows) { row in
+                        eventRow(row)
                     }
                 }
             }
 
-            if !upcomingEvents.isEmpty {
+            if !store.upcomingRows.isEmpty {
                 VStack(alignment: .leading, spacing: AppSpacing.medium) {
                     Text(L10n.Calendar.upcomingTitle)
                         .font(.headline)
 
-                    ForEach(upcomingEvents) { event in
-                        eventRow(event)
+                    ForEach(store.upcomingRows) { row in
+                        eventRow(row)
                     }
                 }
             }
         }
     }
 
-    private func eventRow(_ event: Event) -> some View {
+    private func eventRow(_ row: CalendarState.AgendaRow) -> some View {
         EventRowCard(
-            title: event.title,
-            badge: event.type == .reminder ? L10n.Calendar.reminderTag : L10n.Calendar.eventTag,
-            time: timeText(for: event),
-            location: event.location,
-            conflictTitle: hasConflict(for: event) ? L10n.ChatSheet.conflict : nil
+            title: row.title,
+            badge: row.badge,
+            time: row.time,
+            location: row.location,
+            conflictTitle: row.conflictTitle
         ) {
-            store.send(.editTapped(event.id))
+            store.send(.editTapped(row.id))
         }
         .contextMenu {
             Button(L10n.Calendar.editEvent) {
-                store.send(.editTapped(event.id))
+                store.send(.editTapped(row.id))
             }
             Button(L10n.Calendar.deleteEvent, role: .destructive) {
-                store.send(.deleteTapped(event.id))
+                store.send(.deleteTapped(row.id))
             }
         }
-    }
-
-    private var weekStripDays: [WeekStripDay] {
-        let calendar = Calendar.current
-        let weekInterval = calendar.dateInterval(of: .weekOfYear, for: store.selectedDate)
-        let startOfWeek = weekInterval?.start ?? store.selectedDate
-
-        return (0 ..< 7).compactMap { offset in
-            guard let date = calendar.date(byAdding: .day, value: offset, to: startOfWeek) else {
-                return nil
-            }
-
-            return WeekStripDay(
-                id: date.formatted(.iso8601.year().month().day()),
-                date: date,
-                weekday: date.formatted(.dateTime.weekday(.abbreviated)),
-                dayNumber: date.formatted(.dateTime.day()),
-                isSelected: calendar.isDate(date, inSameDayAs: store.selectedDate),
-                isToday: calendar.isDateInToday(date)
-            )
-        }
-    }
-
-    private var selectedDayEvents: [Event] {
-        let calendar = Calendar.current
-        return store.events
-            .filter { calendar.isDate($0.startAt, inSameDayAs: store.selectedDate) }
-            .sorted { $0.startAt < $1.startAt }
-    }
-
-    private var upcomingEvents: [Event] {
-        let calendar = Calendar.current
-        let selectedStart = calendar.startOfDay(for: store.selectedDate)
-        let nextDay = calendar.date(byAdding: .day, value: 1, to: selectedStart) ?? selectedStart
-
-        return store.events
-            .filter { $0.startAt >= nextDay }
-            .sorted { $0.startAt < $1.startAt }
-            .prefix(4)
-            .map { $0 }
-    }
-
-    private func hasConflict(for event: Event) -> Bool {
-        store.events.contains { other in
-            guard other.id != event.id else { return false }
-            guard Calendar.current.isDate(other.startAt, inSameDayAs: event.startAt) else { return false }
-            let eventEnd = event.endAt ?? event.startAt
-            let otherEnd = other.endAt ?? other.startAt
-            return other.startAt < eventEnd && otherEnd > event.startAt
-        }
-    }
-
-    private func dayHeaderTitle(for date: Date) -> String {
-        let calendar = Calendar.current
-        if calendar.isDateInToday(date) {
-            return L10n.Calendar.today
-        }
-        if calendar.isDateInTomorrow(date) {
-            return L10n.Calendar.tomorrow
-        }
-        return date.formatted(.dateTime.day().month(.wide))
-    }
-
-    private func timeText(for event: Event) -> String {
-        if event.allDay {
-            return L10n.Calendar.allDay
-        }
-        if let endAt = event.endAt {
-            return "\(event.startAt.formatted(date: .omitted, time: .shortened)) - \(endAt.formatted(date: .omitted, time: .shortened))"
-        }
-        if event.type == .reminder {
-            return event.startAt.formatted(date: .omitted, time: .shortened)
-        }
-        return event.startAt.formatted(date: .abbreviated, time: .shortened)
     }
 }
 

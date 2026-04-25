@@ -7,7 +7,7 @@ struct AppView: View {
     var body: some View {
         GeometryReader { proxy in
             HomeView(
-                bottomOverlayInset: chatSheetInsetHeight(containerHeight: proxy.size.height),
+                bottomOverlayInset: store.state.chatSheetInsetHeight(containerHeight: proxy.size.height),
                 showsChatLauncher: store.home.isAuthenticated
                     && !store.isChatSheetPresented
                     && !store.isProfileSheetPresented
@@ -52,19 +52,6 @@ struct AppView: View {
                     store: store.scope(state: \.chatSheet, action: \.chatSheet)
                 )
             }
-        }
-    }
-
-    private func chatSheetInsetHeight(containerHeight: CGFloat) -> CGFloat {
-        guard store.isChatSheetPresented else { return 0 }
-
-        switch store.chatSheet.detent {
-        case .collapsed:
-            return AppGrid.value(24)
-        case .medium:
-            return max(containerHeight * 0.56, 420)
-        case .large:
-            return containerHeight * 0.82
         }
     }
 }

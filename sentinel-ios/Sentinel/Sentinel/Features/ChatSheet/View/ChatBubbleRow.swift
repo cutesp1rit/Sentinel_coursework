@@ -10,31 +10,6 @@ import AppKit
 struct ChatBubbleRow: View {
     let message: ChatThreadMessage
 
-    private var attributedText: AttributedString {
-        guard let markdownText = message.markdownText, !markdownText.isEmpty else {
-            return AttributedString("")
-        }
-        return (try? AttributedString(markdown: markdownText)) ?? AttributedString(markdownText)
-    }
-
-    private var bubbleMaxWidth: CGFloat {
-        AppGrid.value(68)
-    }
-
-    private var estimatedBubbleWidth: CGFloat {
-        guard let text = message.markdownText, !text.isEmpty else {
-            return AppGrid.value(18)
-        }
-
-        let compactText = text.replacingOccurrences(of: "\n", with: " ")
-        let estimated = CGFloat(compactText.count) * 11 + (AppSpacing.large * 2)
-        return min(max(estimated, AppGrid.value(18)), bubbleMaxWidth)
-    }
-
-    private var hasText: Bool {
-        !(message.markdownText?.isEmpty ?? true)
-    }
-
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.small) {
             if message.isUser {
@@ -64,7 +39,7 @@ struct ChatBubbleRow: View {
                 imageGrid
             }
 
-            if hasText {
+            if let attributedText = message.attributedText {
                 Text(attributedText)
                     .font(.body)
                     .foregroundStyle(foregroundStyle)
@@ -73,11 +48,7 @@ struct ChatBubbleRow: View {
         }
         .padding(.horizontal, AppSpacing.large)
         .padding(.vertical, AppSpacing.medium)
-        .frame(
-            width: message.images.isEmpty ? estimatedBubbleWidth : nil,
-            alignment: .leading
-        )
-        .frame(maxWidth: bubbleMaxWidth, alignment: .leading)
+        .frame(maxWidth: AppGrid.value(68), alignment: .leading)
     }
 
     private var imageGrid: some View {
@@ -129,6 +100,15 @@ struct ChatBubbleRow: View {
                 Image(systemName: "photo")
                     .foregroundStyle(.secondary)
             }
+    }
+}
+
+private extension ChatThreadMessage {
+    var attributedText: AttributedString? {
+        guard let markdownText, !markdownText.isEmpty else {
+            return nil
+        }
+        return (try? AttributedString(markdown: markdownText)) ?? AttributedString(markdownText)
     }
 }
 
