@@ -15,22 +15,45 @@ struct ChatBubbleRow: View {
             if message.isUser {
                 Spacer(minLength: AppSizing.minimumHitTarget)
 
-                bubbleBody(foregroundStyle: .white)
-                    .background(
-                        Color.blue,
-                        in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                    )
+                userMessageBody
             } else {
-                bubbleBody(foregroundStyle: .primary)
-                    .background(
-                        AppPlatformColor.tertiaryGroupedBackground,
-                        in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
-                    )
+                assistantMessageBody
 
                 Spacer(minLength: AppSizing.minimumHitTarget)
             }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private var userMessageBody: some View {
+        VStack(alignment: .trailing, spacing: AppSpacing.small) {
+            if !message.images.isEmpty {
+                imageGrid
+                    .frame(width: maxBubbleImageGridWidth, alignment: .trailing)
+            }
+
+            if let attributedText = message.attributedText {
+                Text(attributedText)
+                    .font(.body)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+                    .padding(.horizontal, AppSpacing.large)
+                    .padding(.vertical, AppSpacing.medium)
+                    .frame(maxWidth: AppGrid.value(68), alignment: .leading)
+                    .background(
+                        Color.blue,
+                        in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+                    )
+            }
+        }
+    }
+
+    private var assistantMessageBody: some View {
+        bubbleBody(foregroundStyle: .primary)
+            .background(
+                AppPlatformColor.tertiaryGroupedBackground,
+                in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
+            )
     }
 
     private func bubbleBody(foregroundStyle: some ShapeStyle) -> some View {
@@ -52,14 +75,14 @@ struct ChatBubbleRow: View {
     }
 
     private var imageGrid: some View {
-        VStack(spacing: AppSpacing.small) {
+        LazyVGrid(columns: imageGridColumns, alignment: .leading, spacing: AppSpacing.small) {
             ForEach(message.images) { attachment in
                 attachmentView(attachment)
-                    .frame(maxWidth: AppGrid.value(68) - (AppSpacing.large * 2))
-                    .frame(height: 180)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous))
+                    .frame(width: imageGridItemSide, height: imageGridItemSide)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
             }
         }
+        .frame(width: maxBubbleImageGridWidth, alignment: .leading)
     }
 
     @ViewBuilder
@@ -100,6 +123,23 @@ struct ChatBubbleRow: View {
                 Image(systemName: "photo")
                     .foregroundStyle(.secondary)
             }
+    }
+
+    private var imageGridColumns: [GridItem] {
+        Array(
+            repeating: GridItem(.flexible(), spacing: AppSpacing.small),
+            count: min(max(message.images.count, 1), 3)
+        )
+    }
+
+    private var imageGridItemSide: CGFloat {
+        let columnCount = CGFloat(min(max(message.images.count, 1), 3))
+        let totalSpacing = AppSpacing.small * (columnCount - 1)
+        return floor((maxBubbleImageGridWidth - totalSpacing) / columnCount)
+    }
+
+    private var maxBubbleImageGridWidth: CGFloat {
+        AppGrid.value(68) - (AppSpacing.large * 2)
     }
 }
 

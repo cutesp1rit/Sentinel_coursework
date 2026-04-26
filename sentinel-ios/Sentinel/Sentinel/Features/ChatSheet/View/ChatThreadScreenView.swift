@@ -16,6 +16,7 @@ struct ChatThreadScreenView: View {
     @FocusState private var isComposerFocused: Bool
     @State private var isPhotosPickerPresented = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
+    @State private var isImportingAttachments = false
     @State private var transcriptOpacity: CGFloat = 1
 
     var body: some View {
@@ -76,7 +77,7 @@ struct ChatThreadScreenView: View {
             .photosPicker(
                 isPresented: $isPhotosPickerPresented,
                 selection: $selectedPhotoItems,
-                maxSelectionCount: max(1, 5 - store.composerAttachments.count),
+                maxSelectionCount: max(1, 10 - store.composerAttachments.count),
                 matching: .images
             )
             .onAppear {
@@ -101,16 +102,9 @@ struct ChatThreadScreenView: View {
                     scrollToBottom(scrollProxy)
                 }
             }
-            .onChange(of: selectedPhotoItems.count) { _, _ in
-                let items = selectedPhotoItems
-                guard !items.isEmpty else { return }
-                Task {
-                    let attachments = await makeComposerAttachments(from: items)
-                    if !attachments.isEmpty {
-                        store.send(.attachmentsAdded(attachments))
-                    }
-                    selectedPhotoItems = []
-                }
+            .onChange(of: isPhotosPickerPresented) { _, isPresented in
+                guard !isPresented else { return }
+                importSelectedPhotoItemsIfNeeded()
             }
         }
     }
@@ -187,5 +181,27 @@ struct ChatThreadScreenView: View {
         )
         .padding(.horizontal, detent == .collapsed ? 16 : 24)
         .padding(.bottom, detent == .collapsed ? 16 : -8)
+    }
+}
+
+private extension ChatThreadScreenView {
+    func importSelectedPhotoItemsIfNeeded() {
+        let items = selectedPhotoItems
+        guard !isImportingAttachments, !items.isEmpty else { return }
+        selectedPhotoItems = []
+        isImportingAttachments = true
+        Task {
+            for (index, item) in items.enumerated() {
+                if let attachment = await makeComposerAttachment(from: item, index: index) {
+                    await MainActor.run {
+                        _ = store.send(.attachmentsAdded([attachment]))
+                    }
+                }
+            }
+
+            await MainActor.run {
+                isImportingAttachments = false
+            }
+        }
     }
 }

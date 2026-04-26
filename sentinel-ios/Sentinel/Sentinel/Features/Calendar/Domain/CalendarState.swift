@@ -70,6 +70,7 @@ struct CalendarState: Equatable {
     var events: [Event] = []
     var isInlineMonthPickerVisible = false
     var isLoading = false
+    var pendingScrollSectionID: AgendaSection.ID?
     var selectedDate = Date()
 
     var navigationTitle: String {
@@ -110,7 +111,7 @@ struct CalendarState: Equatable {
 
     var agendaSections: [AgendaSection] {
         let grouped = Dictionary(grouping: events) { Calendar.current.startOfDay(for: $0.startAt) }
-        return grouped.keys.sorted().map { date in
+        return Self.visibleRangeDates(for: selectedDate).map { date in
             AgendaSection(
                 id: date.formatted(.iso8601.year().month().day()),
                 date: date,
@@ -119,6 +120,10 @@ struct CalendarState: Equatable {
                     .map(agendaRow(for:))
             )
         }
+    }
+
+    var selectedSectionID: AgendaSection.ID {
+        Self.sectionID(for: selectedDate)
     }
 
     func visibleSectionDate(for offsets: [AgendaSection.ID: CGFloat]) -> Date? {
@@ -138,6 +143,34 @@ struct CalendarState: Equatable {
         return sortedSections
             .max { $0.1 < $1.1 }?
             .0
+    }
+
+    func hasSection(for date: Date) -> Bool {
+        agendaSections.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+
+    static func sectionID(for date: Date) -> AgendaSection.ID {
+        date.formatted(.iso8601.year().month().day())
+    }
+
+    private static func visibleRangeDates(for selectedDate: Date) -> [Date] {
+        let calendar = Calendar.current
+        let startOfMonth = calendar.dateInterval(of: .month, for: selectedDate)?.start ?? selectedDate
+        let rangeStart = calendar.date(byAdding: .day, value: -7, to: startOfMonth) ?? startOfMonth
+        let rangeEndBase = calendar.date(byAdding: .month, value: 1, to: startOfMonth) ?? selectedDate
+        let rangeEnd = calendar.date(byAdding: .day, value: 14, to: rangeEndBase) ?? rangeEndBase
+
+        var dates: [Date] = []
+        var cursor = calendar.startOfDay(for: rangeStart)
+        let end = calendar.startOfDay(for: rangeEnd)
+
+        while cursor <= end {
+            dates.append(cursor)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        return dates
     }
 
     private func agendaRow(for event: Event) -> AgendaRow {

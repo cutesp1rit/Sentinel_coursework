@@ -37,7 +37,14 @@ extension ChatThreadFeature {
 
                 for attachment in composerAttachments {
                     let image = try await chatClient.uploadImage(activeChatID!, attachment.filename, attachment.mimeType, attachment.data, accessToken)
-                    uploadedImages.append(image)
+                    uploadedImages.append(
+                        ChatImageAttachment(
+                            url: image.url,
+                            filename: image.filename,
+                            mimeType: image.mimeType,
+                            previewData: attachment.previewData ?? attachment.data
+                        )
+                    )
                 }
 
                 let assistantMessage = try await chatClient.sendMessage(activeChatID!, "user", trimmedDraft.isEmpty ? nil : trimmedDraft, uploadedImages, accessToken)
@@ -51,6 +58,7 @@ extension ChatThreadFeature {
                     requestID: requestID,
                     message: Self.errorMessage(for: error),
                     restoreDraft: trimmedDraft,
+                    restoreAttachments: composerAttachments,
                     activeChatID: activeChatID,
                     messages: nil,
                     hasMore: nil,
@@ -116,7 +124,7 @@ extension ChatThreadFeature {
         for message in existing where !merged.contains(where: { $0.id == message.id }) {
             merged.append(message)
         }
-        return merged
+        return mergingPreviewData(loadedMessages: merged, existingMessages: existing)
     }
 
     static func mergingUpdatedMessage(updatedMessage: ChatMessage, existingMessage: ChatThreadMessage) -> ChatThreadMessage {
@@ -128,6 +136,53 @@ extension ChatThreadFeature {
                 suggestions: updatedPayload.suggestions,
                 isExpanded: existingPayload.isExpanded,
                 selectedSuggestionIDs: existingPayload.selectedSuggestionIDs
+            )
+        }
+        return mergedMessage
+    }
+
+    static func mergingPreviewData(
+        loadedMessages: [ChatThreadMessage],
+        existingMessages: [ChatThreadMessage]
+    ) -> [ChatThreadMessage] {
+        var unmatchedExistingMessages = existingMessages.filter { !$0.images.isEmpty }
+
+        return loadedMessages.map { loadedMessage in
+            guard let candidateIndex = unmatchedExistingMessages.lastIndex(where: {
+                messageMatchesForPreview(loadedMessage, existingMessage: $0)
+            }) else {
+                return loadedMessage
+            }
+
+            let existingMessage = unmatchedExistingMessages.remove(at: candidateIndex)
+            return applyingPreviewData(from: existingMessage, to: loadedMessage)
+        }
+    }
+
+    private static func messageMatchesForPreview(
+        _ loadedMessage: ChatThreadMessage,
+        existingMessage: ChatThreadMessage
+    ) -> Bool {
+        loadedMessage.role == existingMessage.role
+            && loadedMessage.markdownText == existingMessage.markdownText
+            && loadedMessage.images.map(\.filename) == existingMessage.images.map(\.filename)
+    }
+
+    private static func applyingPreviewData(
+        from existingMessage: ChatThreadMessage,
+        to loadedMessage: ChatThreadMessage
+    ) -> ChatThreadMessage {
+        var mergedMessage = loadedMessage
+        let previewDataByFilename = Dictionary(
+            uniqueKeysWithValues: existingMessage.images.map { ($0.filename, $0.previewData) }
+        )
+
+        mergedMessage.images = loadedMessage.images.map { image in
+            ChatImageAttachment(
+                url: image.url,
+                filename: image.filename,
+                mimeType: image.mimeType,
+                previewData: image.previewData ?? previewDataByFilename[image.filename] ?? nil
             )
         }
         return mergedMessage

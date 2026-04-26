@@ -44,6 +44,21 @@
 "home.create_account_button" = "Create Account";
 "home.open_chat_button" = "Open Chat";
 "home.rebalance_button" = "Rebalance";
+
+"rebalance.title" = "Rebalance";
+"rebalance.subtitle" = "Select a few days and let Sentinel suggest a smoother distribution for flexible events.";
+"rebalance.day_selection_title" = "Days to rebalance";
+"rebalance.preview_button" = "Preview Rebalance";
+"rebalance.refresh_button" = "Refresh Preview";
+"rebalance.preview_title" = "Suggested Changes";
+"rebalance.apply_button" = "Apply Changes";
+"rebalance.no_changes_title" = "Already balanced";
+"rebalance.no_changes_body" = "Sentinel does not recommend moving anything for the selected days.";
+"rebalance.event_count_format" = "%lld events";
+"rebalance.energy_level_format" = "Energy %lld%%";
+"rebalance.change_summary_format" = "%lld events moved, %lld kept unchanged.";
+"rebalance.original_time_format" = "Original: %@";
+"rebalance.new_time_format" = "New: %@";
 "home.sign_in_button" = "Log In";
 "home.signed_out_cta_body" = "Sign in to start planning in chat, review suggestions, and keep everything in sync with your calendar.";
 "home.signed_out_cta_headline" = "Ready to begin?";
@@ -58,7 +73,7 @@
 "home.view_all_button" = "View all";
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
-"chat_sheet.attachment_limit_reached" = "You can attach up to 5 images to one message.";
+"chat_sheet.attachment_limit_reached" = "You can attach up to 10 images to one message.";
 "chat_sheet.attachment_too_large" = "Each image must be 10 MB or smaller.";
 "chat_sheet.chat_title" = "Chat";
 "chat_sheet.chats_title" = "Chats";

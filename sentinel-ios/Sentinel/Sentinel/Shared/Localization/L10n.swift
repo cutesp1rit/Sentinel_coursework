@@ -345,4 +345,52 @@ enum L10n {
             )
         }
     }
+
+    enum Rebalance {
+        static let title = String(localized: "rebalance.title")
+        static let subtitle = String(localized: "rebalance.subtitle")
+        static let daySelectionTitle = String(localized: "rebalance.day_selection_title")
+        static let previewButton = String(localized: "rebalance.preview_button")
+        static let refreshButton = String(localized: "rebalance.refresh_button")
+        static let previewTitle = String(localized: "rebalance.preview_title")
+        static let applyButton = String(localized: "rebalance.apply_button")
+        static let noChangesTitle = String(localized: "rebalance.no_changes_title")
+        static let noChangesBody = String(localized: "rebalance.no_changes_body")
+
+        static func eventCount(_ count: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "rebalance.event_count_format"),
+                count
+            )
+        }
+
+        static func energyLevel(_ percentage: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "rebalance.energy_level_format"),
+                percentage
+            )
+        }
+
+        static func changeSummary(_ changedCount: Int, _ unchangedCount: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "rebalance.change_summary_format"),
+                changedCount,
+                unchangedCount
+            )
+        }
+
+        static func originalTime(_ value: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "rebalance.original_time_format"),
+                value
+            )
+        }
+
+        static func newTime(_ value: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "rebalance.new_time_format"),
+                value
+            )
+        }
+    }
 }

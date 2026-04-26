@@ -2,11 +2,14 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ChatHistoryPickerView: View {
+    let onBack: () -> Void
     let store: StoreOf<ChatListFeature>
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                header
+
                 if let errorMessage = store.errorMessage {
                     EmptyStateCard(title: L10n.ChatSheet.errorTitle, bodyText: errorMessage)
                 }
@@ -39,17 +42,6 @@ struct ChatHistoryPickerView: View {
             .padding(.vertical, AppSpacing.medium)
         }
         .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
-        .navigationTitle(L10n.ChatSheet.chatsTitle)
-        .sentinelInlineNavigationTitle()
-        .toolbar {
-            ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
-                Button(L10n.ChatSheet.newChat) {
-                    store.send(.newChatTapped)
-                }
-                .buttonStyle(.plain)
-                .font(.subheadline.weight(.semibold))
-            }
-        }
         .overlay {
             if store.isLoading {
                 ProgressView()
@@ -57,6 +49,32 @@ struct ChatHistoryPickerView: View {
         }
         .task {
             store.send(.onAppear)
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: AppSpacing.medium) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+                    .frame(width: AppGrid.value(11), height: AppGrid.value(11))
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Text(L10n.ChatSheet.chatsTitle)
+                .font(.title3.weight(.bold))
+
+            Spacer()
+
+            Button(L10n.ChatSheet.newChat) {
+                store.send(.newChatTapped)
+                onBack()
+            }
+            .buttonStyle(.plain)
+            .font(.subheadline.weight(.semibold))
         }
     }
 }

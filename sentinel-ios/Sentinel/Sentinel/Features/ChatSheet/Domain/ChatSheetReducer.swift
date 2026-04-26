@@ -31,6 +31,9 @@ struct ChatSheetReducer {
 
             case let .detentChanged(detent):
                 state.detent = detent
+                if detent == .collapsed {
+                    state.isChatListPresented = false
+                }
                 return .none
 
             case let .list(.delegate(.activeChatChanged(chatID))):

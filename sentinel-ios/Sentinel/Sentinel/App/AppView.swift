@@ -42,6 +42,18 @@ struct AppView: View {
                     store: store.scope(state: \.profile, action: \.profile)
                 )
             }
+            .sheet(
+                isPresented: Binding(
+                    get: { store.isRebalanceSheetPresented },
+                    set: { store.send(.rebalanceSheetPresentationChanged($0)) }
+                ),
+                onDismiss: { store.send(.rebalanceSheetDismissed) }
+            ) {
+                RebalanceSheetView(
+                    onClose: { store.send(.rebalance(.delegate(.close))) },
+                    store: store.scope(state: \.rebalance, action: \.rebalance)
+                )
+            }
             #endif
             .sheet(
                 isPresented: Binding(

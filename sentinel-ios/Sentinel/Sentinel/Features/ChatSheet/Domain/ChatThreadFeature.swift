@@ -95,7 +95,10 @@ struct ChatThreadFeature {
 
             case let .messagesLoaded(chatID, messages, hasMore, reset, requestToken):
                 guard state.accessToken == requestToken, state.activeChatID == chatID else { return .none }
-                let mappedMessages = messages.map(ChatThreadMessage.init)
+                let mappedMessages = Self.mergingPreviewData(
+                    loadedMessages: messages.map(ChatThreadMessage.init),
+                    existingMessages: state.messages
+                )
                 state.messages = reset
                     ? mappedMessages
                     : Self.mergingOlderMessages(existing: state.messages, olderMessages: mappedMessages)
@@ -127,7 +130,10 @@ struct ChatThreadFeature {
             case let .sendFlowCompleted(requestID, _, activeChatID, messages, assistantMessage, hasMore, requestToken):
                 guard state.accessToken == requestToken, state.activeSendRequestID == requestID else { return .none }
                 state.activeChatID = activeChatID
-                state.messages = messages.map(ChatThreadMessage.init)
+                state.messages = Self.mergingPreviewData(
+                    loadedMessages: messages.map(ChatThreadMessage.init),
+                    existingMessages: state.messages
+                )
                 state.hasMoreHistory = hasMore
                 state.pendingLocalMessageID = nil
                 state.activeSendRequestID = nil
@@ -141,7 +147,7 @@ struct ChatThreadFeature {
                     refreshSuggestions
                 )
 
-            case let .sendFlowFailed(requestID, message, restoreDraft, activeChatID, messages, hasMore, messagePersisted, requestToken):
+            case let .sendFlowFailed(requestID, message, restoreDraft, restoreAttachments, activeChatID, messages, hasMore, messagePersisted, requestToken):
                 guard state.accessToken == requestToken, state.activeSendRequestID == requestID else { return .none }
                 state.isSending = false
                 state.sendStage = nil
@@ -149,6 +155,7 @@ struct ChatThreadFeature {
                 state.pendingLocalMessageID = nil
                 state.errorMessage = message
                 if let restoreDraft { state.draft = restoreDraft }
+                if !restoreAttachments.isEmpty { state.composerAttachments = restoreAttachments }
                 if let activeChatID { state.activeChatID = activeChatID }
                 if let messages {
                     state.messages = messagePersisted ? messages.map(ChatThreadMessage.init) : state.messages.dropLast().map { $0 }

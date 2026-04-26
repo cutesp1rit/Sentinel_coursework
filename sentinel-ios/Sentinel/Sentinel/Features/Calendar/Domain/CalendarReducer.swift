@@ -82,6 +82,9 @@ struct CalendarReducer {
                 state.events = events
                 state.errorMessage = nil
                 state.isLoading = false
+                if state.pendingScrollSectionID == nil, state.hasSection(for: state.selectedDate) {
+                    state.pendingScrollSectionID = state.selectedSectionID
+                }
                 return .none
 
             case let .inlineMonthPickerVisibilityChanged(isPresented):
@@ -147,15 +150,25 @@ struct CalendarReducer {
                 let nextMonth = Calendar.current.component(.month, from: date)
                 state.selectedDate = date
                 state.isInlineMonthPickerVisible = false
+                state.pendingScrollSectionID = CalendarState.sectionID(for: date)
                 return previousMonth == nextMonth ? .none : .send(.reloadRequested)
 
             case let .visibleDateChanged(date):
+                let visibleSectionID = CalendarState.sectionID(for: date)
+                if let pendingScrollSectionID = state.pendingScrollSectionID {
+                    if pendingScrollSectionID == visibleSectionID {
+                        state.pendingScrollSectionID = nil
+                    } else {
+                        return .none
+                    }
+                }
                 state.selectedDate = date
                 return .none
 
             case let .weekAdvanced(direction):
                 let calendar = Calendar.current
                 state.selectedDate = calendar.date(byAdding: .day, value: direction * 7, to: state.selectedDate) ?? state.selectedDate
+                state.pendingScrollSectionID = state.selectedSectionID
                 return .send(.reloadRequested)
             }
         }

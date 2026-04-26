@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import uuid
 
 from app.infrastructure.database.models.chat import Chat, ChatMessage
+from app.core.config import settings
 from app.core.schemas.chat import ChatCreate, ChatMessageCreate
 
 
@@ -143,12 +144,18 @@ class ChatMessageRepository:
                 and m.content_structured
                 and m.content_structured.get("type") == "image_message"
             ):
-                content: list[dict] = []
-                if m.content_text:
-                    content.append({"type": "text", "text": m.content_text})
-                for img in m.content_structured.get("images", []):
-                    content.append({"type": "image_url", "image_url": {"url": img["url"]}})
-                history.append({"role": "user", "content": content})
+                if settings.LLM_VISION_ENABLED:
+                    content: list[dict] = []
+                    if m.content_text:
+                        content.append({"type": "text", "text": m.content_text})
+                    for img in m.content_structured.get("images", []):
+                        content.append({"type": "image_url", "image_url": {"url": img["url"]}})
+                    history.append({"role": "user", "content": content})
+                else:
+                    history.append({
+                        "role": "user",
+                        "content": m.content_text or "User sent an image attachment.",
+                    })
             else:
                 history.append({"role": m.role, "content": m.content_text or ""})
 

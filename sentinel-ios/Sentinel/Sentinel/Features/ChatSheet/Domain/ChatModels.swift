@@ -21,17 +21,20 @@ struct ChatListItem: Equatable, Identifiable {
 struct ChatComposerAttachment: Equatable, Identifiable {
     let id: UUID
     let data: Data
+    let previewData: Data?
     let filename: String
     let mimeType: String
 
     init(
         id: UUID = UUID(),
         data: Data,
+        previewData: Data? = nil,
         filename: String,
         mimeType: String
     ) {
         self.id = id
         self.data = data
+        self.previewData = previewData
         self.filename = filename
         self.mimeType = mimeType
     }
@@ -41,7 +44,7 @@ struct ChatComposerAttachment: Equatable, Identifiable {
             url: "",
             filename: filename,
             mimeType: mimeType,
-            previewData: data
+            previewData: previewData ?? data
         )
     }
 }

@@ -9,9 +9,11 @@ struct AppFeature: Reducer {
         var home = HomeState()
         var chatSheet = ChatSheetState.initial
         var profile = ProfileFeature.State()
+        var rebalance = RebalanceFeature.State(accessToken: "")
         var isAuthFlowPresented = false
         var isChatSheetPresented = false
         var isProfileSheetPresented = false
+        var isRebalanceSheetPresented = false
 
         func chatSheetInsetHeight(containerHeight: CGFloat) -> CGFloat {
             guard isChatSheetPresented else { return 0 }
@@ -38,6 +40,9 @@ struct AppFeature: Reducer {
         case profile(ProfileFeature.Action)
         case profileSheetDismissed
         case profileSheetPresentationChanged(Bool)
+        case rebalance(RebalanceFeature.Action)
+        case rebalanceSheetDismissed
+        case rebalanceSheetPresentationChanged(Bool)
         case task
         case chatSheet(ChatSheetAction)
     }
@@ -56,11 +61,14 @@ struct AppFeature: Reducer {
                     ? .none
                     : .send(.chatSheet(.accessTokenChanged(accessToken)))
 
+                state.rebalance.accessToken = accessToken ?? ""
+
                 switch action {
                 case .auth(.restoredSession(nil)):
                     state.isAuthFlowPresented = false
                     state.isProfileSheetPresented = false
                     state.isChatSheetPresented = false
+                    state.isRebalanceSheetPresented = false
 
                 case .auth(.restoredSession(.some)), .auth(.submitSucceeded(_)):
                     state.isAuthFlowPresented = false
@@ -118,6 +126,14 @@ struct AppFeature: Reducer {
                 state.isAuthFlowPresented = true
                 return .none
 
+            case .home(.rebalanceTapped):
+                guard state.auth.session != nil else { return .none }
+                state.isChatSheetPresented = false
+                state.isProfileSheetPresented = false
+                state.rebalance = RebalanceFeature.State(accessToken: state.auth.session?.accessToken ?? "")
+                state.isRebalanceSheetPresented = true
+                return .none
+
             case .chatSheetDismissed:
                 state.isChatSheetPresented = false
                 return .none
@@ -137,15 +153,39 @@ struct AppFeature: Reducer {
                 state.isProfileSheetPresented = isPresented
                 return .none
 
+            case .rebalance(.delegate(.applied)):
+                state.isRebalanceSheetPresented = false
+                state.isChatSheetPresented = true
+                return .send(.home(.onAppear))
+
+            case .rebalance(.delegate(.close)):
+                state.isRebalanceSheetPresented = false
+                if state.auth.session != nil {
+                    state.isChatSheetPresented = true
+                }
+                return .none
+
+            case .rebalanceSheetDismissed:
+                state.isRebalanceSheetPresented = false
+                if state.auth.session != nil {
+                    state.isChatSheetPresented = true
+                }
+                return .none
+
+            case let .rebalanceSheetPresentationChanged(isPresented):
+                state.isRebalanceSheetPresented = isPresented
+                return .none
+
             case .profile(.delegate(.sessionEnded)):
                 state.isProfileSheetPresented = false
                 state.isChatSheetPresented = false
+                state.isRebalanceSheetPresented = false
                 return .send(.auth(.restoredSession(nil)))
 
             case .chatSheet(.delegate(.suggestionApplyCompleted)):
                 return .send(.home(.onAppear))
 
-            case .chatSheet, .home, .profile:
+            case .chatSheet, .home, .profile, .rebalance:
                 return .none
             }
         }
@@ -167,6 +207,10 @@ struct AppFeature: Reducer {
 
             Scope(state: \.profile, action: \.profile) {
                 ProfileFeature()
+            }
+
+            Scope(state: \.rebalance, action: \.rebalance) {
+                RebalanceFeature()
             }
 
             Coordinator()

@@ -23,6 +23,10 @@ from app.core.limiter import limiter
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
+IMAGE_ONLY_VISION_DISABLED_REPLY = (
+    "Я сохранил изображение. Добавьте текстовый запрос, и я помогу без распознавания картинок."
+)
+
 
 @router.get("/", response_model=ChatList)
 async def get_chats(
@@ -160,6 +164,14 @@ async def create_message(
         )
 
     await msg_repo.create(chat_id, user_msg_data)
+
+    if data.images and not settings.LLM_VISION_ENABLED and not (data.content_text or "").strip():
+        assistant_data = ChatMessageCreate(
+            role="assistant",
+            content_text=IMAGE_ONLY_VISION_DISABLED_REPLY,
+            ai_model=None,
+        )
+        return await msg_repo.create(chat_id, assistant_data)
 
     images_for_llm = (
         [img.model_dump() for img in data.images]

@@ -54,6 +54,7 @@ extension ChatThreadFeature {
             requestID: UUID,
             message: String,
             restoreDraft: String?,
+            restoreAttachments: [ChatComposerAttachment],
             activeChatID: UUID?,
             messages: [ChatMessage]?,
             hasMore: Bool?,
@@ -94,7 +95,7 @@ extension ChatThreadFeature {
     }
 
     enum Constants {
-        static let attachmentLimit = 5
+        static let attachmentLimit = 10
         static let maxAttachmentSize = 10 * 1024 * 1024
         static let pageSize = 100
     }

@@ -20,19 +20,13 @@ struct ChatSheetComposerView: View {
     let onSendTap: () -> Void
 
     var body: some View {
-        GlassEffectContainer(spacing: 10) {
-            VStack(alignment: .leading, spacing: 10) {
-                if !isCollapsed && !attachments.isEmpty {
-                    attachmentStrip
-                }
-
-                expandedComposer
-            }
+        GlassEffectContainer(spacing: AppSpacing.medium) {
+            expandedComposer
         }
     }
 
     private var expandedComposer: some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .bottom, spacing: AppSpacing.medium) {
             Button(action: onAttachmentTap) {
                 Image(systemName: "plus")
                     .font(.system(size: 22, weight: .regular))
@@ -45,33 +39,13 @@ struct ChatSheetComposerView: View {
             .disabled(!isComposerEnabled)
             .opacity(isComposerEnabled ? 1 : AppOpacity.disabled)
 
-            HStack(alignment: .center, spacing: 8) {
-                TextField(L10n.ChatSheet.composerPlaceholder, text: $draft, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1 ... 5)
-                    .font(.callout)
-                    .frame(minHeight: 20)
-                    .focused(composerFocus)
-                    .onTapGesture(perform: onComposerTap)
-                    .disabled(!isComposerEnabled)
-
-                Button(action: onSendTap) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white.opacity(isSendEnabled ? 1 : 0))
-                        .frame(width: 38, height: 30)
-                        .background {
-                            Capsule()
-                                .fill(isSendEnabled ? Color.blue : Color.clear)
-                        }
+            VStack(alignment: .leading, spacing: hasAttachmentStrip ? AppSpacing.small : 0) {
+                if hasAttachmentStrip {
+                    attachmentStrip
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.ChatSheet.sendMessageAccessibility)
-                .allowsHitTesting(isSendEnabled && isComposerEnabled)
+
+                composerTextRow
             }
-            .padding(.leading, 16)
-            .padding(.trailing, 8)
-            .padding(.vertical, 4)
             .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
             .glassEffect(
                 .regular.interactive(),
@@ -81,22 +55,54 @@ struct ChatSheetComposerView: View {
     }
 
     private var attachmentStrip: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(L10n.ChatSheet.selectedImages)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.medium) {
-                    ForEach(attachments) { attachment in
-                        ComposerAttachmentPreview(
-                            attachment: attachment,
-                            onRemove: { onRemoveAttachment(attachment.id) }
-                        )
-                    }
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: AppSpacing.small) {
+                ForEach(attachments) { attachment in
+                    ComposerAttachmentPreview(
+                        attachment: attachment,
+                        onRemove: { onRemoveAttachment(attachment.id) }
+                    )
                 }
             }
         }
+        .contentMargins(.top, AppSpacing.medium, for: .scrollContent)
+        .contentMargins(.horizontal, AppSpacing.medium, for: .scrollContent)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var composerTextRow: some View {
+        HStack(alignment: .bottom, spacing: AppSpacing.small) {
+            TextField(L10n.ChatSheet.composerPlaceholder, text: $draft, axis: .vertical)
+                .textFieldStyle(.plain)
+                .lineLimit(1 ... 5)
+                .font(.callout)
+                .frame(minHeight: 20)
+                .focused(composerFocus)
+                .onTapGesture(perform: onComposerTap)
+                .disabled(!isComposerEnabled)
+
+            Button(action: onSendTap) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white.opacity(isSendEnabled ? 1 : 0))
+                    .frame(width: 34, height: 26)
+                    .background {
+                        Capsule()
+                            .fill(isSendEnabled ? Color.blue : Color.clear)
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.ChatSheet.sendMessageAccessibility)
+            .allowsHitTesting(isSendEnabled && isComposerEnabled)
+        }
+        .padding(.horizontal, AppSpacing.medium)
+        .padding(.top, hasAttachmentStrip ? 0 : AppSpacing.small)
+        .padding(.bottom, AppSpacing.small)
+        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+    }
+
+    private var hasAttachmentStrip: Bool {
+        !isCollapsed && !attachments.isEmpty
     }
 }
 
@@ -107,12 +113,12 @@ private struct ComposerAttachmentPreview: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             attachmentImage
-                .frame(width: 84, height: 84)
+                .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.body)
+                    .font(.title3.weight(.bold))
                     .foregroundStyle(.white, .black.opacity(0.75))
                     .padding(4)
             }
@@ -123,7 +129,8 @@ private struct ComposerAttachmentPreview: View {
 
     @ViewBuilder
     private var attachmentImage: some View {
-        if let image = PlatformImage(data: attachment.data) {
+        let imageData = attachment.previewData ?? attachment.data
+        if let image = PlatformImage(data: imageData) {
             platformImageView(image)
                 .resizable()
                 .scaledToFill()

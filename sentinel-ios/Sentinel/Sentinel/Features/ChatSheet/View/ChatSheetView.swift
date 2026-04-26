@@ -2,48 +2,35 @@ import ComposableArchitecture
 import SwiftUI
 
 struct ChatSheetView: View {
-    private enum Route: Hashable {
-        case chats
-    }
-
     let store: StoreOf<ChatSheetReducer>
-    @State private var path: [Route] = []
 
     var body: some View {
-        NavigationStack(path: $path) {
-            ChatThreadScreenView(
-                activeChatTitle: store.activeChatTitle,
-                detent: store.detent,
-                onDetentChanged: { store.send(.detentChanged($0)) },
-                onOpenChatList: { store.send(.chatListButtonTapped) },
-                store: store.scope(state: \.thread, action: \.thread)
-            )
-            .navigationDestination(for: Route.self) { route in
-                switch route {
-                case .chats:
-                    ChatHistoryPickerView(
-                        store: store.scope(state: \.list, action: \.list)
+        ZStack {
+            if store.isChatListPresented {
+                ChatHistoryPickerView(
+                    onBack: { store.send(.chatListPresentationChanged(false)) },
+                    store: store.scope(state: \.list, action: \.list)
+                )
+                .transition(.move(edge: .leading).combined(with: .opacity))
+            } else {
+                NavigationStack {
+                    ChatThreadScreenView(
+                        activeChatTitle: store.activeChatTitle,
+                        detent: store.detent,
+                        onDetentChanged: { store.send(.detentChanged($0)) },
+                        onOpenChatList: { store.send(.chatListButtonTapped) },
+                        store: store.scope(state: \.thread, action: \.thread)
                     )
                 }
-            }
-            .onAppear {
-                syncPath(animated: false)
-            }
-            .onChange(of: store.isChatListPresented) { _, _ in
-                syncPath(animated: true)
+                .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
-    }
-
-    private func syncPath(animated: Bool) {
-        let targetPath: [Route] = store.isChatListPresented ? [.chats] : []
-        guard targetPath != path else { return }
-        if animated {
-            withAnimation(.snappy(duration: AppAnimationDuration.standard)) {
-                path = targetPath
+        .animation(.snappy(duration: AppAnimationDuration.standard), value: store.isChatListPresented)
+        .background(AppPlatformColor.systemBackground)
+        .onAppear {
+            if store.detent == .collapsed {
+                store.send(.chatListPresentationChanged(false))
             }
-        } else {
-            path = targetPath
         }
     }
 }

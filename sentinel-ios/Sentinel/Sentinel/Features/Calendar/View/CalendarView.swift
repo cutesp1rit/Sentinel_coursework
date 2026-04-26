@@ -5,103 +5,124 @@ struct CalendarView: View {
     let store: StoreOf<CalendarReducer>
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: AppSpacing.large, pinnedViews: [.sectionHeaders]) {
-                WeekStrip(
-                    days: store.weekStripDays,
-                    onSelect: { store.send(.selectedDateChanged($0)) },
-                    onSwipe: { store.send(.weekAdvanced($0)) }
-                )
-                .padding(.top, AppSpacing.xLarge)
+        ScrollViewReader { scrollProxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: AppSpacing.large, pinnedViews: [.sectionHeaders]) {
+                    WeekStrip(
+                        days: store.weekStripDays,
+                        onSelect: { store.send(.selectedDateChanged($0)) },
+                        onSwipe: { store.send(.weekAdvanced($0)) }
+                    )
+                    .padding(.top, AppSpacing.xLarge)
 
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    Button {
-                        store.send(.inlineMonthPickerVisibilityChanged(!store.isInlineMonthPickerVisible))
-                    } label: {
-                        HStack {
-                            Text(store.selectedMonthLabel.capitalized)
-                                .font(.headline.weight(.semibold))
-                            Image(systemName: store.isInlineMonthPickerVisible ? "chevron.up" : "chevron.down")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.secondary)
-                            Spacer()
+                    VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                        Button {
+                            store.send(.inlineMonthPickerVisibilityChanged(!store.isInlineMonthPickerVisible))
+                        } label: {
+                            HStack {
+                                Text(store.selectedMonthLabel.capitalized)
+                                    .font(.headline.weight(.semibold))
+                                Image(systemName: store.isInlineMonthPickerVisible ? "chevron.up" : "chevron.down")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+
+                        if store.isInlineMonthPickerVisible {
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: { store.selectedDate },
+                                    set: { store.send(.selectedDateChanged($0)) }
+                                ),
+                                displayedComponents: .date
+                            )
+                            .datePickerStyle(.graphical)
+                            .labelsHidden()
                         }
                     }
-                    .buttonStyle(.plain)
 
-                    if store.isInlineMonthPickerVisible {
-                        DatePicker(
-                            "",
-                            selection: Binding(
-                                get: { store.selectedDate },
-                                set: { store.send(.selectedDateChanged($0)) }
-                            ),
-                            displayedComponents: .date
-                        )
-                        .datePickerStyle(.graphical)
-                        .labelsHidden()
+                    if let errorMessage = store.errorMessage {
+                        EmptyStateCard(title: L10n.Calendar.errorTitle, bodyText: errorMessage)
                     }
-                }
 
-                if let errorMessage = store.errorMessage {
-                    EmptyStateCard(title: L10n.Calendar.errorTitle, bodyText: errorMessage)
-                }
-
-                if store.isLoading && store.events.isEmpty {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, AppSpacing.xLarge)
-                } else {
-                    ForEach(store.agendaSections) { section in
-                        Section {
-                            VStack(spacing: AppSpacing.medium) {
-                                ForEach(section.rows) { row in
-                                    EventRowCard(
-                                        title: row.title,
-                                        badge: row.badge,
-                                        time: row.time,
-                                        location: row.location,
-                                        conflictTitle: row.conflictTitle
-                                    ) {
-                                        store.send(.editTapped(row.id))
-                                    }
-                                    .contextMenu {
-                                        Button(L10n.Calendar.editEvent) {
-                                            store.send(.editTapped(row.id))
+                    if store.isLoading && store.events.isEmpty {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, AppSpacing.xLarge)
+                    } else {
+                        ForEach(store.agendaSections) { section in
+                            Section {
+                                VStack(spacing: AppSpacing.medium) {
+                                    if section.rows.isEmpty {
+                                        if Calendar.current.isDate(section.date, inSameDayAs: store.selectedDate) {
+                                            EmptyStateCard(
+                                                title: L10n.Calendar.emptySelectedDayTitle,
+                                                bodyText: L10n.Calendar.emptySelectedDayBody
+                                            )
+                                        } else {
+                                            Color.clear
+                                                .frame(height: AppSpacing.small)
                                         }
-                                        Button(L10n.Calendar.deleteEvent, role: .destructive) {
-                                            store.send(.deleteTapped(row.id))
+                                    } else {
+                                        ForEach(section.rows) { row in
+                                            EventRowCard(
+                                                title: row.title,
+                                                badge: row.badge,
+                                                time: row.time,
+                                                location: row.location,
+                                                conflictTitle: row.conflictTitle
+                                            ) {
+                                                store.send(.editTapped(row.id))
+                                            }
+                                            .contextMenu {
+                                                Button(L10n.Calendar.editEvent) {
+                                                    store.send(.editTapped(row.id))
+                                                }
+                                                Button(L10n.Calendar.deleteEvent, role: .destructive) {
+                                                    store.send(.deleteTapped(row.id))
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            .onAppear {
-                                store.send(.visibleDateChanged(section.date))
-                            }
-                        } header: {
-                            AgendaDayHeader(
-                                title: section.title,
-                                subtitle: section.subtitle
-                            )
-                            .background(
-                                GeometryReader { proxy in
-                                    Color.clear.preference(
-                                        key: CalendarSectionOffsetKey.self,
-                                        value: [section.id: proxy.frame(in: .named("calendarScroll")).minY]
-                                    )
+                                .onAppear {
+                                    store.send(.visibleDateChanged(section.date))
                                 }
-                            )
-                            .padding(.top, AppSpacing.small)
-                            .padding(.bottom, AppSpacing.medium)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            } header: {
+                                AgendaDayHeader(
+                                    title: section.title,
+                                    subtitle: section.subtitle
+                                )
+                                .id(section.id)
+                                .background(
+                                    GeometryReader { proxy in
+                                        Color.clear.preference(
+                                            key: CalendarSectionOffsetKey.self,
+                                            value: [section.id: proxy.frame(in: .named("calendarScroll")).minY]
+                                        )
+                                    }
+                                )
+                                .padding(.top, AppSpacing.small)
+                                .padding(.bottom, AppSpacing.medium)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
+                }
+                .padding(.horizontal, AppSpacing.large)
+                .padding(.bottom, AppSpacing.xLarge)
+            }
+            .coordinateSpace(name: "calendarScroll")
+            .onChange(of: store.pendingScrollSectionID) { _, sectionID in
+                guard let sectionID else { return }
+                withAnimation(.snappy(duration: AppAnimationDuration.settle)) {
+                    scrollProxy.scrollTo(sectionID, anchor: .top)
                 }
             }
-            .padding(.horizontal, AppSpacing.large)
-            .padding(.bottom, AppSpacing.xLarge)
         }
-        .coordinateSpace(name: "calendarScroll")
         .background(HomeTopGradientBackground().ignoresSafeArea())
         .navigationTitle(store.navigationTitle)
         .sentinelLargeNavigationTitle()

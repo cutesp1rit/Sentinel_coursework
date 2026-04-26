@@ -26,6 +26,20 @@ struct AuthFlowView: View {
         )
     }
 
+    private var resetTokenBinding: Binding<String> {
+        Binding(
+            get: { store.resetToken },
+            set: { store.send(.resetTokenChanged($0)) }
+        )
+    }
+
+    private var verificationTokenBinding: Binding<String> {
+        Binding(
+            get: { store.verificationToken },
+            set: { store.send(.verificationTokenChanged($0)) }
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -186,6 +200,20 @@ struct AuthFlowView: View {
                 bodyText: L10n.Profile.verificationPendingBody(store.verificationRequiredEmail ?? store.email)
             )
 
+            Text(L10n.Profile.manualVerificationHint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            formField(title: L10n.Profile.verificationTokenPlaceholder) {
+                TextField(L10n.Profile.verificationTokenPlaceholder, text: verificationTokenBinding)
+                    .sentinelTokenField()
+            }
+
+            PrimaryButton(L10n.Profile.verifyEmailButton, isEnabled: !store.isSubmitting) {
+                store.send(.verifyEmailTapped)
+            }
+
             PrimaryButton(L10n.Profile.trySignInAgainButton, isEnabled: !store.isSubmitting) {
                 store.send(.retryVerificationLoginTapped)
             }
@@ -195,6 +223,8 @@ struct AuthFlowView: View {
             }
             .buttonStyle(.plain)
             .font(.subheadline.weight(.semibold))
+            .disabled(store.isResendingVerification)
+            .opacity(store.isResendingVerification ? AppOpacity.disabled : 1)
 
             SecondaryTextAction(L10n.Profile.backToSignInButton) {
                 store.send(.modeChanged(.login))
@@ -211,6 +241,30 @@ struct AuthFlowView: View {
 
             PrimaryButton(L10n.Profile.sendResetLinkButton, isEnabled: !store.isSubmitting) {
                 store.send(.sendPasswordResetEmailTapped)
+            }
+
+            Text(L10n.Profile.manualResetHint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            formField(title: L10n.Profile.resetTokenPlaceholder) {
+                TextField(L10n.Profile.resetTokenPlaceholder, text: resetTokenBinding)
+                    .sentinelTokenField()
+            }
+
+            formField(title: L10n.Profile.newPasswordPlaceholder) {
+                SecureField(L10n.Profile.newPasswordPlaceholder, text: passwordBinding)
+                    .textContentType(.newPassword)
+            }
+
+            formField(title: L10n.Profile.confirmPasswordPlaceholder) {
+                SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
+                    .textContentType(.newPassword)
+            }
+
+            PrimaryButton(L10n.Profile.resetPasswordButton, isEnabled: !store.isSubmitting) {
+                store.send(.resetPasswordTapped)
             }
 
             SecondaryTextAction(L10n.Profile.backToSignInButton) {
@@ -261,6 +315,17 @@ private extension View {
             .textInputAutocapitalization(.never)
             .keyboardType(.emailAddress)
             .textContentType(.username)
+            .autocorrectionDisabled()
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func sentinelTokenField() -> some View {
+        #if os(iOS)
+        self
+            .textInputAutocapitalization(.never)
             .autocorrectionDisabled()
         #else
         self
