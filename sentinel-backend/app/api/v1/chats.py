@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
 import uuid
@@ -19,6 +19,7 @@ from app.core.services.llm_service import LLMService
 from app.core.services.achievement_service import AchievementService
 from app.core.services.storage_service import upload_image
 from app.api.dependencies import get_current_user
+from app.core.limiter import limiter
 
 router = APIRouter(prefix="/chats", tags=["Chats"])
 
@@ -122,7 +123,9 @@ async def upload_chat_image(
 
 
 @router.post("/{chat_id}/messages", response_model=ChatMessage, status_code=status.HTTP_201_CREATED)
+@limiter.limit("30/minute")
 async def create_message(
+    request: Request,
     chat_id: uuid.UUID,
     data: ChatMessageCreate,
     current_user: User = Depends(get_current_user),

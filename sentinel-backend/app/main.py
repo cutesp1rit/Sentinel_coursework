@@ -6,9 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
-from app.api.v1 import auth, events, chats, achievements
+from app.core.limiter import limiter
+from app.api.v1 import auth, events, chats, achievements, rebalance
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,6 +18,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%dT%H:%M:%S",
 )
 logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -48,6 +51,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.state.limiter = limiter
+
 _HTTP_CODE_NAMES = {
     400: "BAD_REQUEST",
     401: "UNAUTHORIZED",
@@ -55,6 +60,7 @@ _HTTP_CODE_NAMES = {
     404: "NOT_FOUND",
     409: "CONFLICT",
     422: "VALIDATION_ERROR",
+    429: "RATE_LIMIT_EXCEEDED",
     500: "INTERNAL_ERROR",
 }
 
@@ -65,6 +71,18 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     return JSONResponse(
         status_code=exc.status_code,
         content={"code": code, "message": exc.detail, "details": None},
+    )
+
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        status_code=429,
+        content={
+            "code": "RATE_LIMIT_EXCEEDED",
+            "message": "Too many requests. Please slow down.",
+            "details": None,
+        },
     )
 
 
@@ -84,6 +102,7 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(events.router, prefix=settings.API_V1_STR)
 app.include_router(chats.router, prefix=settings.API_V1_STR)
 app.include_router(achievements.router, prefix=settings.API_V1_STR)
+app.include_router(rebalance.router, prefix=settings.API_V1_STR)
 
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["System"])

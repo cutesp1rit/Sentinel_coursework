@@ -3,13 +3,14 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import get_current_user
-from app.core.schemas.event import Event, EventCreate, EventUpdate, EventList
+from app.core.limiter import limiter
+from app.core.schemas.event import Event, EventCreate, EventUpdate, EventList, EventSyncRequest, EventSyncResponse
 from app.core.services.achievement_service import AchievementService
 from app.infrastructure.database.base import get_db
 from app.infrastructure.database.models import User
@@ -81,6 +82,44 @@ async def create_event(
         current_user.id, {"source": event.source, "type": event.type}
     )
     return event
+
+
+@router.post("/sync", response_model=EventSyncResponse)
+@limiter.limit("30/minute")
+async def sync_events(
+    request: Request,
+    data: EventSyncRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Apply offline iOS changes in a single batch request."""
+    event_repo = EventRepository(db)
+    achievement_service = AchievementService(db)
+
+    created, updated, deleted_events = await event_repo.sync_batch(
+        current_user.id, data.upserts, data.deletes
+    )
+
+    for event in created:
+        await achievement_service.handle_event_created(
+            current_user.id, {"source": event.source, "type": event.type}
+        )
+
+    for event in deleted_events:
+        await achievement_service.handle_event_deleted(
+            current_user.id, {"source": event.source, "type": event.type}
+        )
+
+    logger.info(
+        "sync_batch user_id=%s created=%d updated=%d deleted=%d",
+        current_user.id, len(created), len(updated), len(deleted_events),
+    )
+
+    return EventSyncResponse(
+        created=created,
+        updated=updated,
+        deleted=[e.id for e in deleted_events],
+    )
 
 
 @router.get("/{event_id}", response_model=Event)

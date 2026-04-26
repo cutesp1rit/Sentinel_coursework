@@ -50,3 +50,33 @@ class Event(EventBase):
 class EventList(BaseModel):
     items: list[Event]
     total: int
+
+
+class EventSyncUpsert(BaseModel):
+    id: Optional[uuid.UUID] = None
+    title: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = None
+    start_at: datetime
+    end_at: Optional[datetime] = None
+    all_day: bool = False
+    type: Literal["event", "reminder"] = "event"
+    location: Optional[str] = Field(None, max_length=255)
+    is_fixed: bool = False
+    source: Literal["user", "ai", "import"] = "user"
+
+    @model_validator(mode="after")
+    def end_after_start(self) -> "EventSyncUpsert":
+        if self.end_at is not None and self.end_at <= self.start_at:
+            raise ValueError("end_at must be after start_at")
+        return self
+
+
+class EventSyncRequest(BaseModel):
+    upserts: list[EventSyncUpsert] = Field(default_factory=list, max_length=500)
+    deletes: list[uuid.UUID] = Field(default_factory=list, max_length=500)
+
+
+class EventSyncResponse(BaseModel):
+    created: list[Event] = []
+    updated: list[Event] = []
+    deleted: list[uuid.UUID] = []
