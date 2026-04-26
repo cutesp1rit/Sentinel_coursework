@@ -20,24 +20,13 @@ struct ChatSheetComposerView: View {
     let onSendTap: () -> Void
 
     var body: some View {
-        if isCollapsed {
-            ChatCollapsedBar(
-                draft: draft,
-                isComposerEnabled: isComposerEnabled,
-                isSendEnabled: isSendEnabled,
-                onAttachmentTap: onAttachmentTap,
-                onComposerTap: onComposerTap,
-                onSendTap: onSendTap
-            )
-        } else {
-            GlassEffectContainer(spacing: 10) {
-                VStack(alignment: .leading, spacing: 10) {
-                    if !attachments.isEmpty {
-                        attachmentStrip
-                    }
-
-                    expandedComposer
+        GlassEffectContainer(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                if !isCollapsed && !attachments.isEmpty {
+                    attachmentStrip
                 }
+
+                expandedComposer
             }
         }
     }
@@ -107,57 +96,6 @@ struct ChatSheetComposerView: View {
                     }
                 }
             }
-        }
-    }
-}
-
-private struct ChatCollapsedBar: View {
-    let draft: String
-    let isComposerEnabled: Bool
-    let isSendEnabled: Bool
-    let onAttachmentTap: () -> Void
-    let onComposerTap: () -> Void
-    let onSendTap: () -> Void
-
-    var body: some View {
-        GlassEffectContainer(spacing: 10) {
-            HStack(alignment: .center, spacing: 10) {
-                Button(action: onAttachmentTap) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 22, weight: .regular))
-                        .foregroundStyle(.primary)
-                        .frame(width: 42, height: 42)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: Circle())
-                .disabled(!isComposerEnabled)
-                .opacity(isComposerEnabled ? 1 : AppOpacity.disabled)
-
-                Button(action: onComposerTap) {
-                    Text(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? L10n.ChatSheet.composerPlaceholder : draft)
-                        .font(.callout)
-                        .foregroundStyle(draft.isEmpty ? .secondary : .primary)
-                        .lineLimit(1)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .frame(minHeight: 20)
-                }
-                .buttonStyle(.plain)
-                .disabled(!isComposerEnabled)
-
-                Button(action: onSendTap) {
-                    Image(systemName: "arrow.up")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white.opacity(isSendEnabled ? 1 : 0))
-                        .frame(width: 38, height: 30)
-                        .background {
-                            Capsule()
-                                .fill(isSendEnabled ? Color.blue : Color.clear)
-                        }
-                }
-                .buttonStyle(.plain)
-                .allowsHitTesting(isSendEnabled && isComposerEnabled)
-            }
-            .padding(.vertical, 2)
         }
     }
 }
