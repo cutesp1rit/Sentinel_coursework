@@ -1,6 +1,7 @@
 import Foundation
 
 enum HomeAction: Equatable {
+    case batteryRefreshRequested
     case batteryUpdated(HomeBatteryState)
     case achievementsFailed(String)
     case achievementsLoaded([AchievementGroup])

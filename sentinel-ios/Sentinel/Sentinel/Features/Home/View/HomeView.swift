@@ -2,6 +2,9 @@ import ComposableArchitecture
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(\.openSettings) private var openSettings
+    @Environment(\.scenePhase) private var scenePhase
+
     let bottomOverlayInset: CGFloat
     let store: StoreOf<HomeReducer>
 
@@ -34,6 +37,10 @@ struct HomeView: View {
         }
         .onAppear {
             store.send(.onAppear)
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            store.send(.batteryRefreshRequested)
         }
     }
 
@@ -98,13 +105,17 @@ struct HomeView: View {
                 profileButton
             }
 
-            HStack(spacing: AppSpacing.medium) {
+            if let batteryCard = store.batteryMetricCard {
+                HStack(spacing: AppSpacing.medium) {
+                    metricCard(
+                        model: store.scheduleMetricCard
+                    )
+
+                    batteryMetricCard(model: batteryCard)
+                }
+            } else {
                 metricCard(
                     model: store.scheduleMetricCard
-                )
-
-                metricCard(
-                    model: store.batteryMetricCard
                 )
             }
 
@@ -233,6 +244,22 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
     }
+
+    @ViewBuilder
+    private func batteryMetricCard(model: HomeState.MetricCardModel) -> some View {
+        if store.isBatteryMetricActionable {
+            Button {
+                openSettings()
+            } label: {
+                metricCard(model: model)
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint(L10n.Home.batteryOpenSettingsHint)
+        } else {
+            metricCard(model: model)
+        }
+    }
+
     private func metricCard(model: HomeState.MetricCardModel) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.small) {
             Text(model.title)

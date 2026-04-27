@@ -15,6 +15,14 @@ struct HomeReducer: Reducer {
             case .chatTapped, .createAccountTapped, .profileTapped, .rebalanceTapped, .signInTapped:
                 return .none
 
+            case .batteryRefreshRequested:
+                guard state.isAuthenticated else { return .none }
+                return Self.evaluateBatteryEffect(
+                    batteryClient: batteryClient,
+                    items: state.schedule.upcomingItems,
+                    access: state.schedule.access
+                )
+
             case .achievementsFailed:
                 return .none
 
@@ -28,26 +36,39 @@ struct HomeReducer: Reducer {
 
             case .onAppear:
                 guard state.isAuthenticated else { return .none }
-                guard !state.schedule.isLoading else { return .none }
-                state.schedule.isLoading = true
-                state.schedule.errorMessage = nil
+                var effects: [Effect<Action>] = [
+                    Self.evaluateBatteryEffect(
+                        batteryClient: batteryClient,
+                        items: state.schedule.upcomingItems,
+                        access: state.schedule.access
+                    )
+                ]
+
                 let accessToken = state.accessToken
-                return .merge(
-                    .run { [calendarSyncClient] send in
-                        let snapshot = await calendarSyncClient.loadUpcoming()
-                        await send(.scheduleLoaded(snapshot))
-                    },
-                    .run { [achievementsClient] send in
-                        guard let accessToken else { return }
-                        do {
-                            let groups = try await achievementsClient.loadAchievements(accessToken)
-                            await send(.achievementsLoaded(groups))
-                        } catch {
-                            let message = (error as? APIError)?.message ?? error.localizedDescription
-                            await send(.achievementsFailed(message))
+                if !state.schedule.isLoading {
+                    state.schedule.isLoading = true
+                    state.schedule.errorMessage = nil
+                    effects.append(
+                        .run { [calendarSyncClient] send in
+                            let snapshot = await calendarSyncClient.loadUpcoming()
+                            await send(.scheduleLoaded(snapshot))
                         }
-                    }
-                )
+                    )
+                    effects.append(
+                        .run { [achievementsClient] send in
+                            guard let accessToken else { return }
+                            do {
+                                let groups = try await achievementsClient.loadAchievements(accessToken)
+                                await send(.achievementsLoaded(groups))
+                            } catch {
+                                let message = (error as? APIError)?.message ?? error.localizedDescription
+                                await send(.achievementsFailed(message))
+                            }
+                        }
+                    )
+                }
+
+                return .merge(effects)
 
             case let .sessionChanged(session):
                 let previousToken = state.accessToken
@@ -56,6 +77,7 @@ struct HomeReducer: Reducer {
                 if session == nil {
                     state.achievementGroups = []
                     state.schedule = HomeScheduleState()
+                    state.battery = .hidden
                 }
                 if previousToken != state.accessToken, state.accessToken != nil {
                     return .send(.onAppear)
@@ -89,11 +111,11 @@ struct HomeReducer: Reducer {
                 }
                 let access = state.schedule.access
                 let items = state.schedule.upcomingItems
-                return .run { send in
-                    @Dependency(\.batteryClient) var batteryClient
-                    let battery = await batteryClient.evaluate(items, access)
-                    await send(.batteryUpdated(battery))
-                }
+                return Self.evaluateBatteryEffect(
+                    batteryClient: batteryClient,
+                    items: items,
+                    access: access
+                )
 
             case let .batteryUpdated(battery):
                 state.battery = battery
@@ -104,6 +126,17 @@ struct HomeReducer: Reducer {
 }
 
 private extension HomeReducer {
+    static func evaluateBatteryEffect(
+        batteryClient: BatteryClient,
+        items: [HomeScheduleItem],
+        access: HomeScheduleAccess
+    ) -> Effect<Action> {
+        .run { send in
+            let battery = await batteryClient.evaluate(items, access)
+            await send(.batteryUpdated(battery))
+        }
+    }
+
     static func timeText(startAt: Date, endAt: Date?) -> String {
         if let endAt {
             return "\(startAt.formatted(date: .omitted, time: .shortened)) - \(endAt.formatted(date: .omitted, time: .shortened))"
