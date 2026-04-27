@@ -1,8 +1,11 @@
 import ComposableArchitecture
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct HomeView: View {
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
 
     let bottomOverlayInset: CGFloat
@@ -249,7 +252,7 @@ struct HomeView: View {
     private func batteryMetricCard(model: HomeState.MetricCardModel) -> some View {
         if store.isBatteryMetricActionable {
             Button {
-                openSettings()
+                openSystemSettings()
             } label: {
                 metricCard(model: model)
             }
@@ -286,6 +289,13 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
+    }
+
+    private func openSystemSettings() {
+        #if canImport(UIKit)
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
+        #endif
     }
 }
 
