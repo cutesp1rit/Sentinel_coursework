@@ -446,6 +446,7 @@ struct AgendaDayHeader: View {
 struct EventRowCard: View {
     let title: String
     let badge: String
+    let isFixed: Bool
     let time: String
     let location: String?
     let conflictTitle: String?
@@ -466,6 +467,15 @@ struct EventRowCard: View {
                             .padding(.vertical, 4)
                             .background(.ultraThinMaterial, in: Capsule())
                             .foregroundStyle(.secondary)
+
+                        if isFixed {
+                            Text(L10n.Calendar.fixedTag)
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.blue.opacity(0.10), in: Capsule())
+                                .foregroundStyle(.blue)
+                        }
                     }
 
                     Text(time)
@@ -488,6 +498,10 @@ struct EventRowCard: View {
                         .padding(.vertical, 5)
                         .background(Color.orange.opacity(0.12), in: Capsule())
                         .foregroundStyle(.orange)
+                } else if action != nil {
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(AppSpacing.large)

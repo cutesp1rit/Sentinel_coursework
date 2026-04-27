@@ -13,7 +13,11 @@ struct ChatThreadScreenView: View {
     let onOpenChatList: () -> Void
     let store: StoreOf<ChatThreadFeature>
 
+    @AppStorage("chat.attachments.processingConsentAccepted") private var hasAttachmentProcessingConsent = false
     @FocusState private var isComposerFocused: Bool
+    @State private var isAttachmentConsentAlertPresented = false
+    @State private var isAttachmentSourceDialogPresented = false
+    @State private var isCameraPickerPresented = false
     @State private var isPhotosPickerPresented = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var isImportingAttachments = false
@@ -80,6 +84,40 @@ struct ChatThreadScreenView: View {
                 maxSelectionCount: max(1, 10 - store.composerAttachments.count),
                 matching: .images
             )
+            #if os(iOS)
+            .confirmationDialog(
+                L10n.ChatSheet.attachmentSourceTitle,
+                isPresented: $isAttachmentSourceDialogPresented,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.ChatSheet.photoLibraryOption) {
+                    isPhotosPickerPresented = true
+                }
+                if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                    Button(L10n.ChatSheet.cameraOption) {
+                        isCameraPickerPresented = true
+                    }
+                }
+                Button(L10n.Profile.cancelButton, role: .cancel) {}
+            }
+            .sheet(isPresented: $isCameraPickerPresented) {
+                CameraImagePicker { image in
+                    importCapturedCameraImage(image)
+                }
+            }
+            .alert(
+                L10n.ChatSheet.attachmentConsentTitle,
+                isPresented: $isAttachmentConsentAlertPresented
+            ) {
+                Button(L10n.ChatSheet.attachmentConsentConfirm) {
+                    hasAttachmentProcessingConsent = true
+                    isAttachmentSourceDialogPresented = true
+                }
+                Button(L10n.Profile.cancelButton, role: .cancel) {}
+            } message: {
+                Text(L10n.ChatSheet.attachmentConsentBody)
+            }
+            #endif
             .onAppear {
                 store.send(.onAppear)
                 transcriptOpacity = detent == .collapsed ? 0 : 1
@@ -132,7 +170,12 @@ struct ChatThreadScreenView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, AppSpacing.xLarge)
         } else if let errorMessage = store.errorMessage, store.messages.isEmpty {
-            EmptyStateCard(title: L10n.ChatSheet.errorTitle, bodyText: errorMessage)
+            VStack(spacing: AppSpacing.medium) {
+                EmptyStateCard(title: L10n.ChatSheet.errorTitle, bodyText: errorMessage)
+                PrimaryButton(L10n.ChatSheet.retry) {
+                    store.send(.retryTapped)
+                }
+            }
         } else if store.messages.isEmpty {
             EmptyStateCard(
                 title: L10n.ChatSheet.noMessagesTitle,
@@ -140,6 +183,10 @@ struct ChatThreadScreenView: View {
             )
         } else {
             VStack(spacing: AppSpacing.medium) {
+                if let errorMessage = store.errorMessage {
+                    inlineErrorBanner(errorMessage)
+                }
+
                 ChatSheetTranscriptView(
                     detent: detent,
                     messages: store.messages,
@@ -155,20 +202,44 @@ struct ChatThreadScreenView: View {
         }
     }
 
+    private func inlineErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .center, spacing: AppSpacing.medium) {
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(L10n.ChatSheet.retry) {
+                store.send(.retryTapped)
+            }
+            .buttonStyle(.plain)
+            .font(.footnote.weight(.semibold))
+        }
+        .padding(AppSpacing.large)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.red.opacity(0.10))
+        )
+    }
+
     private var composerDock: some View {
         ChatSheetComposerView(
             draft: draftBinding,
             attachments: store.composerAttachments,
             isCollapsed: detent == .collapsed,
             isComposerEnabled: store.isSignedIn,
-            isSendEnabled: store.isSignedIn && !store.isSending && (!store.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !store.composerAttachments.isEmpty),
+            isSendEnabled: store.isSignedIn && !store.isSending && store.hasComposerContent,
             composerFocus: $isComposerFocused,
             onAttachmentTap: {
                 if detent == .collapsed {
                     onDetentChanged(.medium)
                 }
                 if store.isSignedIn {
-                    isPhotosPickerPresented = true
+                    if hasAttachmentProcessingConsent {
+                        isAttachmentSourceDialogPresented = true
+                    } else {
+                        isAttachmentConsentAlertPresented = true
+                    }
                 }
             },
             onRemoveAttachment: { store.send(.attachmentRemoved($0)) },
@@ -185,6 +256,11 @@ struct ChatThreadScreenView: View {
 }
 
 private extension ChatThreadScreenView {
+    func importCapturedCameraImage(_ image: UIImage) {
+        guard let attachment = makeComposerAttachment(from: image, index: store.composerAttachments.count) else { return }
+        store.send(.attachmentsAdded([attachment]))
+    }
+
     func importSelectedPhotoItemsIfNeeded() {
         let items = selectedPhotoItems
         guard !isImportingAttachments, !items.isEmpty else { return }
@@ -205,3 +281,45 @@ private extension ChatThreadScreenView {
         }
     }
 }
+
+#if os(iOS)
+private struct CameraImagePicker: UIViewControllerRepresentable {
+    let onImagePicked: (UIImage) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onImagePicked: onImagePicked)
+    }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.allowsEditing = false
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let onImagePicked: (UIImage) -> Void
+
+        init(onImagePicked: @escaping (UIImage) -> Void) {
+            self.onImagePicked = onImagePicked
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerController(
+            _ picker: UIImagePickerController,
+            didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]
+        ) {
+            if let image = info[.originalImage] as? UIImage {
+                onImagePicked(image)
+            }
+            picker.dismiss(animated: true)
+        }
+    }
+}
+#endif

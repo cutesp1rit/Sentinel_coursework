@@ -71,6 +71,7 @@ struct CalendarView: View {
                                             EventRowCard(
                                                 title: row.title,
                                                 badge: row.badge,
+                                                isFixed: row.isFixed,
                                                 time: row.time,
                                                 location: row.location,
                                                 conflictTitle: row.conflictTitle
@@ -215,6 +216,14 @@ private struct CalendarEditorView: View {
                         isOn: Binding(
                             get: { store.editor?.allDay ?? false },
                             set: { store.send(.editorAllDayChanged($0)) }
+                        )
+                    )
+
+                    Toggle(
+                        L10n.Calendar.fixedEvent,
+                        isOn: Binding(
+                            get: { store.editor?.isFixed ?? false },
+                            set: { store.send(.editorFixedChanged($0)) }
                         )
                     )
 

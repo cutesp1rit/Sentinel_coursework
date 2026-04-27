@@ -20,6 +20,11 @@ from app.infrastructure.database.repositories.event_repository import EventRepos
 
 logger = logging.getLogger(__name__)
 
+NO_CHANGES_SUMMARY = (
+    "Расписание уже выглядит сбалансированным. Sentinel не рекомендует переносить события "
+    "для выбранных дней."
+)
+
 
 class RebalanceValidationError(Exception):
     pass
@@ -331,7 +336,7 @@ class RebalanceService:
 
         return RebalanceResponse(
             proposed=proposed,
-            summary=summary,
+            summary=summary if changed_count > 0 else NO_CHANGES_SUMMARY,
             changed_count=changed_count,
             unchanged_count=len(proposed) - changed_count,
         )

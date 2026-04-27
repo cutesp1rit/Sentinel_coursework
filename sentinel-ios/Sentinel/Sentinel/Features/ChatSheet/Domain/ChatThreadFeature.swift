@@ -121,6 +121,9 @@ struct ChatThreadFeature {
                 }
 
             case .retryTapped:
+                if state.hasComposerContent {
+                    return sendMessage(state: &state)
+                }
                 guard state.activeChatID != nil else { return .none }
                 return .send(.loadMessagesRequested(reset: true))
 

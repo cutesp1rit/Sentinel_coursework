@@ -37,6 +37,7 @@ struct RebalanceFeature {
         var errorMessage: String?
         var isApplying = false
         var isLoading = false
+        var isPreviewPresented = false
         var preview: RebalancePreview?
         var selectedDayIDs: Set<DayItem.ID> = []
 
@@ -63,6 +64,7 @@ struct RebalanceFeature {
         case eventsFailed(String)
         case onAppear
         case previewLoaded(RebalancePreview)
+        case previewPresentationChanged(Bool)
         case previewTapped
         case proposeFailed(String)
         case selectedDayToggled(State.DayItem.ID)
@@ -119,6 +121,7 @@ struct RebalanceFeature {
                 } else {
                     state.selectedDayIDs.insert(dayID)
                 }
+                state.isPreviewPresented = false
                 state.preview = nil
                 state.errorMessage = nil
                 return .none
@@ -148,6 +151,11 @@ struct RebalanceFeature {
             case let .previewLoaded(preview):
                 state.preview = preview
                 state.isLoading = false
+                state.isPreviewPresented = true
+                return .none
+
+            case let .previewPresentationChanged(isPresented):
+                state.isPreviewPresented = isPresented
                 return .none
 
             case .applyTapped:

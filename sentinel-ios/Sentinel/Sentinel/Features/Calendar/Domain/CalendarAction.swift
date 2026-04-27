@@ -8,6 +8,7 @@ enum CalendarAction: Equatable {
     case editorDescriptionChanged(String)
     case editorDismissed
     case editorEndDateChanged(Date)
+    case editorFixedChanged(Bool)
     case editorLocationChanged(String)
     case editorStartDateChanged(Date)
     case editorTitleChanged(String)

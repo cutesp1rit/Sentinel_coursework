@@ -19,6 +19,10 @@ extension ChatThreadFeature {
         var sendStage: ChatSendStage?
         var shouldAutoScrollToBottom = false
 
+        var hasComposerContent: Bool {
+            !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !composerAttachments.isEmpty
+        }
+
         var isSignedIn: Bool {
             accessToken != nil
         }

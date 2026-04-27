@@ -27,6 +27,15 @@ extension ChatThreadScreenView {
         guard let data = try? await item.loadTransferable(type: Data.self), !data.isEmpty else { return nil }
 
         let contentType = item.supportedContentTypes.first ?? .png
+        return makeComposerAttachment(from: data, contentType: contentType, index: index)
+    }
+
+    func makeComposerAttachment(from image: UIImage, index: Int) -> ChatComposerAttachment? {
+        guard let data = image.jpegData(compressionQuality: 0.92), !data.isEmpty else { return nil }
+        return makeComposerAttachment(from: data, contentType: .jpeg, index: index)
+    }
+
+    private func makeComposerAttachment(from data: Data, contentType: UTType, index: Int) -> ChatComposerAttachment? {
         let fileExtension = contentType.preferredFilenameExtension ?? "jpg"
         let mimeType = contentType.preferredMIMEType ?? "image/jpeg"
         let filename = "photo-\(UUID().uuidString.prefix(8))-\(index + 1).\(fileExtension)"

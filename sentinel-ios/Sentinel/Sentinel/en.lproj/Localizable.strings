@@ -73,8 +73,13 @@
 "home.view_all_button" = "View all";
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
+"chat_sheet.attachment_consent_body" = "Images you attach are uploaded to Sentinel servers so the assistant can use them while processing your request.";
+"chat_sheet.attachment_consent_confirm" = "Allow Processing";
+"chat_sheet.attachment_consent_title" = "Allow Attachment Processing";
+"chat_sheet.attachment_source_title" = "Add Attachment";
 "chat_sheet.attachment_limit_reached" = "You can attach up to 10 images to one message.";
 "chat_sheet.attachment_too_large" = "Each image must be 10 MB or smaller.";
+"chat_sheet.camera_option" = "Camera";
 "chat_sheet.chat_title" = "Chat";
 "chat_sheet.chats_title" = "Chats";
 "chat_sheet.composer_placeholder" = "Ask Sentinel to plan your day...";
@@ -92,6 +97,7 @@
 "chat_sheet.no_chats_title" = "No Chats Yet";
 "chat_sheet.no_messages_body" = "This chat is empty. Send a message to get started.";
 "chat_sheet.no_messages_title" = "No Messages Yet";
+"chat_sheet.photo_library_option" = "Photo Library";
 "chat_sheet.remove_attachment_accessibility" = "Remove attachment";
 "chat_sheet.retry" = "Retry";
 "chat_sheet.send_message_accessibility" = "Send message";
@@ -229,6 +235,8 @@
 "calendar.end_date" = "End";
 "calendar.error_title" = "Could not load calendar";
 "calendar.event_tag" = "Event";
+"calendar.fixed_event" = "Fixed event";
+"calendar.fixed_tag" = "Fixed";
 "calendar.location_placeholder" = "Location";
 "calendar.mode_picker_title" = "Calendar Mode";
 "calendar.month_mode" = "Month";
@@ -256,6 +264,8 @@
 "achievements.empty_title" = "No achievements yet";
 "achievements.empty_body" = "Your milestones and activity badges will appear here as you use Sentinel.";
 "achievements.completed_group" = "All levels unlocked.";
+"achievements.share_button" = "Share";
+"achievements.share_message_format" = "I unlocked %@ (%@) in %@.";
 "achievements.unlocked" = "Unlocked";
 "achievements.earned_at_format" = "Earned %@";
 "achievements.level_format" = "Level %lld";

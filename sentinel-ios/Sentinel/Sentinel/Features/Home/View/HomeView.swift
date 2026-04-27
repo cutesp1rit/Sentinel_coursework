@@ -142,6 +142,7 @@ struct HomeView: View {
                         EventRowCard(
                             title: item.title,
                             badge: L10n.Calendar.eventTag,
+                            isFixed: false,
                             time: item.time,
                             location: item.location,
                             conflictTitle: nil,

@@ -8,6 +8,7 @@ struct CalendarState: Equatable {
         let id: UUID
         let badge: String
         let conflictTitle: String?
+        let isFixed: Bool
         let location: String?
         let time: String
         let title: String
@@ -33,6 +34,7 @@ struct CalendarState: Equatable {
         var description = ""
         var endDate = Date().addingTimeInterval(60 * 60)
         var eventID: UUID?
+        var isFixed = false
         var location = ""
         var startDate = Date()
         var title = ""
@@ -45,6 +47,7 @@ struct CalendarState: Equatable {
             startDate = event?.startAt ?? .now
             endDate = event?.endAt ?? (event?.startAt.addingTimeInterval(60 * 60) ?? .now.addingTimeInterval(60 * 60))
             allDay = event?.allDay ?? false
+            isFixed = event?.isFixed ?? false
             type = event?.type ?? .event
             location = event?.location ?? ""
         }
@@ -58,7 +61,7 @@ struct CalendarState: Equatable {
                 allDay: allDay,
                 type: type,
                 location: location.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
-                isFixed: false,
+                isFixed: isFixed,
                 source: eventID == nil ? "user" : nil
             )
         }
@@ -178,6 +181,7 @@ struct CalendarState: Equatable {
             id: event.id,
             badge: event.type == .reminder ? L10n.Calendar.reminderTag : L10n.Calendar.eventTag,
             conflictTitle: hasConflict(for: event) ? L10n.ChatSheet.conflict : nil,
+            isFixed: event.isFixed,
             location: event.location,
             time: timeText(for: event),
             title: event.title

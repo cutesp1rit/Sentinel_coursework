@@ -123,7 +123,11 @@ private struct AchievementGroupCard: View {
 
             VStack(alignment: .leading, spacing: AppSpacing.medium) {
                 ForEach(group.levels) { level in
-                    AchievementLevelRow(level: level, currentValue: group.currentValue)
+                    AchievementLevelRow(
+                        groupTitle: group.displayTitle,
+                        level: level,
+                        currentValue: group.currentValue
+                    )
                 }
             }
         }
@@ -135,6 +139,7 @@ private struct AchievementGroupCard: View {
 }
 
 private struct AchievementLevelRow: View {
+    let groupTitle: String
     let level: AchievementLevel
     let currentValue: Int
 
@@ -171,7 +176,18 @@ private struct AchievementLevelRow: View {
 
             Spacer()
 
-            if !level.unlocked {
+            if level.unlocked {
+                ShareLink(
+                    item: L10n.Achievements.shareMessage(level.title, level.levelTitle, L10n.App.title),
+                    subject: Text(groupTitle)
+                ) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .frame(width: AppGrid.value(8), height: AppGrid.value(8))
+                }
+                .buttonStyle(.plain)
+            } else {
                 Text("\(currentValue)/\(level.targetValue)")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)

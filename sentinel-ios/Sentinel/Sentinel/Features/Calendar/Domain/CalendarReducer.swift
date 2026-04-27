@@ -44,6 +44,10 @@ struct CalendarReducer {
                 state.editor?.description = value
                 return .none
 
+            case let .editorFixedChanged(value):
+                state.editor?.isFixed = value
+                return .none
+
             case .editorDismissed:
                 state.editor = nil
                 return .none

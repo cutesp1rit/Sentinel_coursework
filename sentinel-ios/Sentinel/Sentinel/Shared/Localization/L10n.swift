@@ -79,8 +79,13 @@ enum L10n {
 
     enum ChatSheet {
         static let addAttachmentAccessibility = String(localized: "chat_sheet.add_attachment_accessibility")
+        static let attachmentConsentBody = String(localized: "chat_sheet.attachment_consent_body")
+        static let attachmentConsentConfirm = String(localized: "chat_sheet.attachment_consent_confirm")
+        static let attachmentConsentTitle = String(localized: "chat_sheet.attachment_consent_title")
+        static let attachmentSourceTitle = String(localized: "chat_sheet.attachment_source_title")
         static let attachmentLimitReached = String(localized: "chat_sheet.attachment_limit_reached")
         static let attachmentTooLarge = String(localized: "chat_sheet.attachment_too_large")
+        static let cameraOption = String(localized: "chat_sheet.camera_option")
         static let chatTitle = String(localized: "chat_sheet.chat_title")
         static let chatsTitle = String(localized: "chat_sheet.chats_title")
         static let composerPlaceholder = String(localized: "chat_sheet.composer_placeholder")
@@ -98,6 +103,7 @@ enum L10n {
         static let noChatsTitle = String(localized: "chat_sheet.no_chats_title")
         static let noMessagesBody = String(localized: "chat_sheet.no_messages_body")
         static let noMessagesTitle = String(localized: "chat_sheet.no_messages_title")
+        static let photoLibraryOption = String(localized: "chat_sheet.photo_library_option")
         static let removeAttachmentAccessibility = String(localized: "chat_sheet.remove_attachment_accessibility")
         static let retry = String(localized: "chat_sheet.retry")
         static let sendMessageAccessibility = String(localized: "chat_sheet.send_message_accessibility")
@@ -274,6 +280,8 @@ enum L10n {
         static let endDate = String(localized: "calendar.end_date")
         static let errorTitle = String(localized: "calendar.error_title")
         static let eventTag = String(localized: "calendar.event_tag")
+        static let fixedEvent = String(localized: "calendar.fixed_event")
+        static let fixedTag = String(localized: "calendar.fixed_tag")
         static let locationPlaceholder = String(localized: "calendar.location_placeholder")
         static let modePickerTitle = String(localized: "calendar.mode_picker_title")
         static let monthMode = String(localized: "calendar.month_mode")
@@ -302,6 +310,7 @@ enum L10n {
         static let emptyTitle = String(localized: "achievements.empty_title")
         static let emptyBody = String(localized: "achievements.empty_body")
         static let completedGroup = String(localized: "achievements.completed_group")
+        static let shareButton = String(localized: "achievements.share_button")
         static let unlocked = String(localized: "achievements.unlocked")
         static let eventsCreated = String(localized: "achievements.group.events_created")
         static let aiAssisted = String(localized: "achievements.group.ai_assisted")
@@ -335,6 +344,15 @@ enum L10n {
                 String(localized: "achievements.summary_body_format"),
                 unlocked,
                 total
+            )
+        }
+
+        static func shareMessage(_ title: String, _ level: String, _ appName: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "achievements.share_message_format"),
+                title,
+                level,
+                appName
             )
         }
 
