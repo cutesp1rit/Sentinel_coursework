@@ -2,6 +2,8 @@ import Foundation
 
 enum CalendarAction: Equatable {
     case addTapped
+    case dayBatteryLoaded(String, String, DayBatteryBadgeState)
+    case dayBatteryRequested(String)
     case deleteFailed(String)
     case deleteTapped(UUID)
     case editorAllDayChanged(Bool)

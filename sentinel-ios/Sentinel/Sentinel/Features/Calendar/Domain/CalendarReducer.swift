@@ -3,6 +3,7 @@ import Foundation
 
 @Reducer
 struct CalendarReducer {
+    @Dependency(\.batteryClient) var batteryClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.eventsClient) var eventsClient
     @Dependency(\.localNotificationsClient) var localNotificationsClient
@@ -13,6 +14,48 @@ struct CalendarReducer {
             case .addTapped:
                 state.editor = .init()
                 return .none
+
+            case let .dayBatteryRequested(sectionID):
+                guard let request = state.batteryRequest(for: sectionID) else {
+                    return .none
+                }
+
+                let signature = request.signature
+                if let cache = state.dayBatteryCache[sectionID], cache.signature == signature {
+                    switch cache.state {
+                    case .loading, .ready:
+                        return .none
+                    case .hidden:
+                        break
+                    }
+                }
+
+                state.dayBatteryCache[sectionID] = .init(signature: signature, state: .loading)
+
+                if state.activeDayBatterySectionID == nil {
+                    state.activeDayBatterySectionID = sectionID
+                    return Self.evaluateDayBatteryEffect(
+                        batteryClient: batteryClient,
+                        request: request
+                    )
+                }
+
+                if !state.queuedDayBatterySectionIDs.contains(sectionID) {
+                    state.queuedDayBatterySectionIDs.append(sectionID)
+                }
+                return .none
+
+            case let .dayBatteryLoaded(sectionID, signature, badgeState):
+                if state.dayBatteryCache[sectionID]?.signature == signature {
+                    state.dayBatteryCache[sectionID]?.state = badgeState
+                }
+                if state.activeDayBatterySectionID == sectionID {
+                    state.activeDayBatterySectionID = nil
+                }
+                return Self.dequeueDayBatteryEffect(
+                    state: &state,
+                    batteryClient: batteryClient
+                )
 
             case let .deleteFailed(message), let .eventsFailed(message), let .saveFailed(message):
                 state.errorMessage = message
@@ -84,6 +127,8 @@ struct CalendarReducer {
 
             case let .eventsLoaded(events):
                 state.events = events
+                state.activeDayBatterySectionID = nil
+                state.queuedDayBatterySectionIDs = []
                 state.errorMessage = nil
                 state.isLoading = false
                 if state.pendingScrollSectionID == nil, state.hasSection(for: state.selectedDate) {
@@ -180,6 +225,37 @@ struct CalendarReducer {
 }
 
 private extension CalendarReducer {
+    static func dequeueDayBatteryEffect(
+        state: inout CalendarState,
+        batteryClient: BatteryClient
+    ) -> Effect<CalendarAction> {
+        while !state.queuedDayBatterySectionIDs.isEmpty {
+            let nextSectionID = state.queuedDayBatterySectionIDs.removeFirst()
+            guard let request = state.batteryRequest(for: nextSectionID) else {
+                continue
+            }
+
+            state.dayBatteryCache[nextSectionID] = .init(signature: request.signature, state: .loading)
+            state.activeDayBatterySectionID = nextSectionID
+            return evaluateDayBatteryEffect(
+                batteryClient: batteryClient,
+                request: request
+            )
+        }
+
+        return .none
+    }
+
+    static func evaluateDayBatteryEffect(
+        batteryClient: BatteryClient,
+        request: BatteryDayRequest
+    ) -> Effect<CalendarAction> {
+        .run { send in
+            let state = await batteryClient.evaluateDay(request)
+            await send(.dayBatteryLoaded(request.dayID, request.signature, state))
+        }
+    }
+
     static func errorMessage(for error: Error) -> String {
         if let apiError = error as? APIError {
             return apiError.message

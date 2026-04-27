@@ -68,12 +68,15 @@ struct CalendarState: Equatable {
     }
 
     let accessToken: String
+    var activeDayBatterySectionID: AgendaSection.ID?
+    var dayBatteryCache: [AgendaSection.ID: DayBatteryCacheEntry] = [:]
     var editor: Editor?
     var errorMessage: String?
     var events: [Event] = []
     var isInlineMonthPickerVisible = false
     var isLoading = false
     var pendingScrollSectionID: AgendaSection.ID?
+    var queuedDayBatterySectionIDs: [AgendaSection.ID] = []
     var selectedDate = Date()
 
     var navigationTitle: String {
@@ -150,6 +153,31 @@ struct CalendarState: Equatable {
 
     func hasSection(for date: Date) -> Bool {
         agendaSections.contains { Calendar.current.isDate($0.date, inSameDayAs: date) }
+    }
+
+    func batteryRequest(for sectionID: AgendaSection.ID) -> BatteryDayRequest? {
+        guard let section = agendaSections.first(where: { $0.id == sectionID }) else {
+            return nil
+        }
+
+        let calendar = Calendar.current
+        let startDate = calendar.startOfDay(for: section.date)
+        let endDate = calendar.date(byAdding: .day, value: 1, to: startDate) ?? startDate
+        let entries = events
+            .filter { calendar.isDate($0.startAt, inSameDayAs: startDate) }
+            .sorted { $0.startAt < $1.startAt }
+            .map(BatteryScheduleEntry.init(event:))
+
+        return BatteryDayRequest(
+            dayID: sectionID,
+            endDate: endDate,
+            entries: entries,
+            startDate: startDate
+        )
+    }
+
+    func dayBatteryState(for sectionID: AgendaSection.ID) -> DayBatteryBadgeState {
+        dayBatteryCache[sectionID]?.state ?? .hidden
     }
 
     static func sectionID(for date: Date) -> AgendaSection.ID {

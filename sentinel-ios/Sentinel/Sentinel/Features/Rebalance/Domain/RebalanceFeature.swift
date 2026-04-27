@@ -4,6 +4,7 @@ import Foundation
 @Reducer
 struct RebalanceFeature {
     @Dependency(\.appSettingsClient) var appSettingsClient
+    @Dependency(\.batteryClient) var batteryClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.eventsClient) var eventsClient
     @Dependency(\.localNotificationsClient) var localNotificationsClient
@@ -12,11 +13,11 @@ struct RebalanceFeature {
     @ObservableState
     struct State: Equatable {
         struct DayItem: Equatable, Identifiable {
+            let batteryRequest: BatteryDayRequest
             let id: String
             let date: Date
             let eventCount: Int
             let isToday: Bool
-            let batteryScore: Double?
 
             var dayNumber: String {
                 date.formatted(.dateTime.day())
@@ -32,13 +33,16 @@ struct RebalanceFeature {
         }
 
         var accessToken: String
+        var activeDayBatteryID: DayItem.ID?
         var availableDays: [DayItem] = []
+        var dayBatteryCache: [DayItem.ID: DayBatteryCacheEntry] = [:]
         var defaultPrompt = ""
         var errorMessage: String?
         var isApplying = false
         var isLoading = false
         var isPreviewPresented = false
         var preview: RebalancePreview?
+        var queuedDayBatteryIDs: [DayItem.ID] = []
         var selectedDayIDs: Set<DayItem.ID> = []
 
         var canApply: Bool {
@@ -52,12 +56,29 @@ struct RebalanceFeature {
         var selectedDays: [DayItem] {
             availableDays.filter { selectedDayIDs.contains($0.id) }
         }
+
+        func batteryScore(for dayID: DayItem.ID) -> Double? {
+            guard case let .ready(percentage) = dayBatteryState(for: dayID) else {
+                return nil
+            }
+            return Double(percentage) / 100
+        }
+
+        func batteryRequest(for dayID: DayItem.ID) -> BatteryDayRequest? {
+            availableDays.first(where: { $0.id == dayID })?.batteryRequest
+        }
+
+        func dayBatteryState(for dayID: DayItem.ID) -> DayBatteryBadgeState {
+            dayBatteryCache[dayID]?.state ?? .hidden
+        }
     }
 
     enum Action: Equatable {
         case applyCompleted
         case applyFailed(String)
         case applyTapped
+        case dayBatteryLoaded(State.DayItem.ID, String, DayBatteryBadgeState)
+        case dayBatteryRequested(State.DayItem.ID)
         case defaultPromptLoaded(AppSettings)
         case delegate(Delegate)
         case daysLoaded([State.DayItem])
@@ -104,10 +125,54 @@ struct RebalanceFeature {
                 return .none
 
             case let .daysLoaded(days):
+                state.activeDayBatteryID = nil
                 state.availableDays = days
+                state.queuedDayBatteryIDs = []
                 state.selectedDayIDs = Set(days.prefix(3).map(\.id))
                 state.isLoading = false
                 return .none
+
+            case let .dayBatteryRequested(dayID):
+                guard let request = state.batteryRequest(for: dayID) else {
+                    return .none
+                }
+
+                let signature = request.signature
+                if let cache = state.dayBatteryCache[dayID], cache.signature == signature {
+                    switch cache.state {
+                    case .loading, .ready:
+                        return .none
+                    case .hidden:
+                        break
+                    }
+                }
+
+                state.dayBatteryCache[dayID] = .init(signature: signature, state: .loading)
+
+                if state.activeDayBatteryID == nil {
+                    state.activeDayBatteryID = dayID
+                    return Self.evaluateDayBatteryEffect(
+                        batteryClient: batteryClient,
+                        request: request
+                    )
+                }
+
+                if !state.queuedDayBatteryIDs.contains(dayID) {
+                    state.queuedDayBatteryIDs.append(dayID)
+                }
+                return .none
+
+            case let .dayBatteryLoaded(dayID, signature, badgeState):
+                if state.dayBatteryCache[dayID]?.signature == signature {
+                    state.dayBatteryCache[dayID]?.state = badgeState
+                }
+                if state.activeDayBatteryID == dayID {
+                    state.activeDayBatteryID = nil
+                }
+                return Self.dequeueDayBatteryEffect(
+                    state: &state,
+                    batteryClient: batteryClient
+                )
 
             case let .eventsFailed(message), let .proposeFailed(message), let .applyFailed(message):
                 state.errorMessage = message
@@ -135,7 +200,7 @@ struct RebalanceFeature {
                 let selectedDays = state.selectedDays.map {
                     RebalanceDayInput(
                         date: $0.date,
-                        resourceBattery: $0.batteryScore
+                        resourceBattery: state.batteryScore(for: $0.id)
                     )
                 }
                 let prompt = state.defaultPrompt.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
@@ -192,6 +257,37 @@ struct RebalanceFeature {
 }
 
 private extension RebalanceFeature {
+    static func dequeueDayBatteryEffect(
+        state: inout State,
+        batteryClient: BatteryClient
+    ) -> Effect<Action> {
+        while !state.queuedDayBatteryIDs.isEmpty {
+            let nextDayID = state.queuedDayBatteryIDs.removeFirst()
+            guard let request = state.batteryRequest(for: nextDayID) else {
+                continue
+            }
+
+            state.dayBatteryCache[nextDayID] = .init(signature: request.signature, state: .loading)
+            state.activeDayBatteryID = nextDayID
+            return evaluateDayBatteryEffect(
+                batteryClient: batteryClient,
+                request: request
+            )
+        }
+
+        return .none
+    }
+
+    static func evaluateDayBatteryEffect(
+        batteryClient: BatteryClient,
+        request: BatteryDayRequest
+    ) -> Effect<Action> {
+        .run { send in
+            let state = await batteryClient.evaluateDay(request)
+            await send(.dayBatteryLoaded(request.dayID, request.signature, state))
+        }
+    }
+
     static func errorMessage(for error: Error) -> String {
         if let apiError = error as? APIError {
             return apiError.message
@@ -231,18 +327,22 @@ private extension RebalanceFeature {
         let grouped = Dictionary(grouping: events) { calendar.startOfDay(for: $0.startAt) }
         return days.map { date in
             let dayEvents = grouped[date, default: []]
-            let busyHours = dayEvents.reduce(0.0) { partial, event in
-                let endDate = event.endAt ?? event.startAt.addingTimeInterval(30 * 60)
-                return partial + max(endDate.timeIntervalSince(event.startAt), 0) / 3600
-            }
-            let pressure = min(max((busyHours / 10) + (Double(dayEvents.count) / 12), 0), 1)
-            let battery = max(0.18, 0.95 - pressure)
+            let startDate = calendar.startOfDay(for: date)
+            let endDate = calendar.date(byAdding: .day, value: 1, to: startDate) ?? startDate
+            let dayID = CalendarState.sectionID(for: date)
             return State.DayItem(
-                id: CalendarState.sectionID(for: date),
+                batteryRequest: BatteryDayRequest(
+                    dayID: dayID,
+                    endDate: endDate,
+                    entries: dayEvents
+                        .sorted { $0.startAt < $1.startAt }
+                        .map(BatteryScheduleEntry.init(event:)),
+                    startDate: startDate
+                ),
+                id: dayID,
                 date: date,
                 eventCount: dayEvents.count,
-                isToday: calendar.isDate(date, inSameDayAs: today),
-                batteryScore: dayEvents.isEmpty ? nil : battery
+                isToday: calendar.isDate(date, inSameDayAs: today)
             )
         }
     }

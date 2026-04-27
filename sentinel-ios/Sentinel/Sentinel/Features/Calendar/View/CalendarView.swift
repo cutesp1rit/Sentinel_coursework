@@ -96,7 +96,14 @@ struct CalendarView: View {
                                 AgendaDayHeader(
                                     title: section.title,
                                     subtitle: section.subtitle
-                                )
+                                ) {
+                                    ResourceBatteryInlineBadge(
+                                        state: store.state.dayBatteryState(for: section.id)
+                                    )
+                                }
+                                .onAppear {
+                                    store.send(.dayBatteryRequested(section.id))
+                                }
                                 .id(section.id)
                                 .background(
                                     GeometryReader { proxy in

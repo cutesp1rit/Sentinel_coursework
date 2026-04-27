@@ -426,18 +426,83 @@ struct WeekStrip: View {
     }
 }
 
-struct AgendaDayHeader: View {
-    let title: String
-    let subtitle: String
+struct ResourceBatteryInlineBadge: View {
+    let state: DayBatteryBadgeState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-            Text(title)
-                .font(.title3.weight(.bold))
+        switch state {
+        case .hidden:
+            EmptyView()
 
-            Text(subtitle)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+        case .loading:
+            ProgressView()
+                .controlSize(.small)
+                .tint(.green)
+                .frame(width: 18, height: 18)
+                .padding(.horizontal, AppSpacing.small)
+                .padding(.vertical, AppSpacing.xSmall)
+                .background(Color.green.opacity(0.10), in: Capsule())
+
+        case let .ready(percentage):
+            HStack(spacing: AppSpacing.xSmall) {
+                Image(systemName: Self.symbolName(for: percentage))
+                    .font(.caption2.weight(.semibold))
+
+                Text("\(percentage)%")
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(.green)
+            .padding(.horizontal, AppSpacing.small)
+            .padding(.vertical, AppSpacing.xSmall)
+            .background(Color.green.opacity(0.10), in: Capsule())
+        }
+    }
+
+    private static func symbolName(for percentage: Int) -> String {
+        switch percentage {
+        case ..<13:
+            return "battery.0percent"
+        case ..<38:
+            return "battery.25percent"
+        case ..<63:
+            return "battery.50percent"
+        case ..<88:
+            return "battery.75percent"
+        default:
+            return "battery.100percent"
+        }
+    }
+}
+
+struct AgendaDayHeader<Trailing: View>: View {
+    let title: String
+    let subtitle: String
+    let trailing: Trailing
+
+    init(
+        title: String,
+        subtitle: String,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: AppSpacing.medium) {
+            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                Text(title)
+                    .font(.title3.weight(.bold))
+
+                Text(subtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: AppSpacing.medium)
+
+            trailing
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

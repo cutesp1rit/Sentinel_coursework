@@ -136,41 +136,48 @@ struct RebalanceSheetView: View {
                     Button {
                         store.send(.selectedDayToggled(day.id))
                     } label: {
-                        VStack(alignment: .leading, spacing: AppSpacing.small) {
-                            HStack {
-                                Text(day.weekdayText)
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                if day.isToday {
-                                    Text(L10n.Calendar.today)
-                                        .font(.caption2.weight(.semibold))
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-
-                            Text("\(day.dayNumber) \(day.monthText)")
-                                .font(.headline.weight(.bold))
-                                .foregroundStyle(.primary)
-
-                            Text(L10n.Rebalance.eventCount(day.eventCount))
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-
-                            if let batteryScore = day.batteryScore {
-                                Text(L10n.Rebalance.energyLevel(Int((batteryScore * 100).rounded())))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(AppSpacing.large)
-                        .background(dayBackground(isSelected: store.selectedDayIDs.contains(day.id)))
+                        daySelectionCard(day)
                     }
                     .buttonStyle(.plain)
+                    .onAppear {
+                        store.send(.dayBatteryRequested(day.id))
+                    }
                 }
             }
         }
+    }
+
+    private func daySelectionCard(_ day: RebalanceFeature.State.DayItem) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.small) {
+            HStack {
+                Text(day.weekdayText)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                if day.isToday {
+                    Text(L10n.Calendar.today)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text("\(day.dayNumber) \(day.monthText)")
+                .font(.headline.weight(.bold))
+                .foregroundStyle(.primary)
+
+            Text(L10n.Rebalance.eventCount(day.eventCount))
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            ResourceBatteryInlineBadge(
+                state: store.state.dayBatteryState(for: day.id)
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(AppSpacing.large)
+        .background(dayBackground(isSelected: store.selectedDayIDs.contains(day.id)))
     }
 
     private func bottomBar<Content: View>(@ViewBuilder content: () -> Content) -> some View {
