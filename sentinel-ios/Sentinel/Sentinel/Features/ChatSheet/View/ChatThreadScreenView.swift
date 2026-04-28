@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ChatThreadScreenView: View {
     private enum ScrollAnchor {
@@ -16,8 +17,11 @@ struct ChatThreadScreenView: View {
     @AppStorage("chat.attachments.processingConsentAccepted") private var hasAttachmentProcessingConsent = false
     @FocusState private var isComposerFocused: Bool
     @State private var isAttachmentConsentAlertPresented = false
-    @State private var isAttachmentSourceDialogPresented = false
+    @State private var isAttachmentPickerPresented = false
     @State private var isCameraPickerPresented = false
+    @State private var isFileImporterPresented = false
+    @State private var isLoadingRecentLibraryPhotos = false
+    @State private var recentLibraryPhotos: [RecentLibraryPhoto] = []
     @State private var isPhotosPickerPresented = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
     @State private var isImportingAttachments = false
@@ -81,24 +85,40 @@ struct ChatThreadScreenView: View {
             .photosPicker(
                 isPresented: $isPhotosPickerPresented,
                 selection: $selectedPhotoItems,
-                maxSelectionCount: max(1, 10 - store.composerAttachments.count),
+                maxSelectionCount: max(1, ChatThreadFeature.Constants.attachmentLimit - store.composerAttachments.count),
                 matching: .images
             )
+            .fileImporter(
+                isPresented: $isFileImporterPresented,
+                allowedContentTypes: [.image],
+                allowsMultipleSelection: true
+            ) { result in
+                importSelectedFiles(result)
+            }
             #if os(iOS)
-            .confirmationDialog(
-                L10n.ChatSheet.attachmentSourceTitle,
-                isPresented: $isAttachmentSourceDialogPresented,
-                titleVisibility: .visible
-            ) {
-                Button(L10n.ChatSheet.photoLibraryOption) {
-                    isPhotosPickerPresented = true
-                }
-                if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                    Button(L10n.ChatSheet.cameraOption) {
-                        isCameraPickerPresented = true
+            .sheet(isPresented: $isAttachmentPickerPresented) {
+                ChatAttachmentPickerSheetView(
+                    canOpenCamera: UIImagePickerController.isSourceTypeAvailable(.camera),
+                    isLoadingRecentPhotos: isLoadingRecentLibraryPhotos,
+                    recentPhotos: recentLibraryPhotos,
+                    onAddFilesTap: {
+                        isAttachmentPickerPresented = false
+                        isFileImporterPresented = true
+                    },
+                    onAllPhotosTap: {
+                        isAttachmentPickerPresented = false
+                        isPhotosPickerPresented = true
+                    },
+                    onCameraTap: {
+                        isAttachmentPickerPresented = false
+                        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                            isCameraPickerPresented = true
+                        }
+                    },
+                    onRecentPhotoTap: { recentPhoto in
+                        importRecentPhoto(recentPhoto)
                     }
-                }
-                Button(L10n.Profile.cancelButton, role: .cancel) {}
+                )
             }
             .sheet(isPresented: $isCameraPickerPresented) {
                 CameraImagePicker { image in
@@ -111,7 +131,8 @@ struct ChatThreadScreenView: View {
             ) {
                 Button(L10n.ChatSheet.attachmentConsentConfirm) {
                     hasAttachmentProcessingConsent = true
-                    isAttachmentSourceDialogPresented = true
+                    isAttachmentPickerPresented = true
+                    refreshRecentLibraryPhotos()
                 }
                 Button(L10n.Profile.cancelButton, role: .cancel) {}
             } message: {
@@ -190,6 +211,8 @@ struct ChatThreadScreenView: View {
                 ChatSheetTranscriptView(
                     detent: detent,
                     messages: store.messages,
+                    onRemoveFailedMessage: { store.send(.failedMessageRemoveTapped($0)) },
+                    onRetryFailedMessage: { store.send(.failedMessageRetryTapped($0)) },
                     onToggleSuggestionExpansion: { store.send(.toggleSuggestionExpansion($0)) },
                     onToggleSuggestionSelection: { store.send(.toggleSuggestionSelection(messageID: $0, suggestionID: $1)) },
                     onAddSelectedSuggestions: { store.send(.addSelectedSuggestionsTapped($0)) }
@@ -236,7 +259,8 @@ struct ChatThreadScreenView: View {
                 }
                 if store.isSignedIn {
                     if hasAttachmentProcessingConsent {
-                        isAttachmentSourceDialogPresented = true
+                        isAttachmentPickerPresented = true
+                        refreshRecentLibraryPhotos()
                     } else {
                         isAttachmentConsentAlertPresented = true
                     }
@@ -261,6 +285,17 @@ private extension ChatThreadScreenView {
         store.send(.attachmentsAdded([attachment]))
     }
 
+    func importRecentPhoto(_ recentPhoto: RecentLibraryPhoto) {
+        let index = store.composerAttachments.count
+        isAttachmentPickerPresented = false
+        Task {
+            guard let attachment = await makeComposerAttachment(from: recentPhoto, index: index) else { return }
+            await MainActor.run {
+                store.send(.attachmentsAdded([attachment]))
+            }
+        }
+    }
+
     func importSelectedPhotoItemsIfNeeded() {
         let items = selectedPhotoItems
         guard !isImportingAttachments, !items.isEmpty else { return }
@@ -277,6 +312,37 @@ private extension ChatThreadScreenView {
 
             await MainActor.run {
                 isImportingAttachments = false
+            }
+        }
+    }
+
+    func importSelectedFiles(_ result: Result<[URL], Error>) {
+        guard case let .success(urls) = result else { return }
+
+        let attachments = urls.enumerated().compactMap { offset, url in
+            let didAccess = url.startAccessingSecurityScopedResource()
+            defer {
+                if didAccess {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            return makeComposerAttachment(from: url, index: store.composerAttachments.count + offset)
+        }
+
+        guard !attachments.isEmpty else { return }
+        store.send(.attachmentsAdded(attachments))
+    }
+
+    func refreshRecentLibraryPhotos() {
+        guard !isLoadingRecentLibraryPhotos else { return }
+
+        isLoadingRecentLibraryPhotos = true
+        Task {
+            let photos = await loadRecentLibraryPhotos(limit: 20)
+            await MainActor.run {
+                recentLibraryPhotos = photos
+                isLoadingRecentLibraryPhotos = false
             }
         }
     }

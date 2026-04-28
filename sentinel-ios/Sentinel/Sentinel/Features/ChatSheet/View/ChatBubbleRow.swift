@@ -9,6 +9,8 @@ import AppKit
 
 struct ChatBubbleRow: View {
     let message: ChatThreadMessage
+    let onRemoveFailedMessage: (ChatThreadMessage.ID) -> Void
+    let onRetryFailedMessage: (ChatThreadMessage.ID) -> Void
 
     var body: some View {
         HStack(alignment: .bottom, spacing: AppSpacing.small) {
@@ -44,6 +46,27 @@ struct ChatBubbleRow: View {
                         Color.blue,
                         in: RoundedRectangle(cornerRadius: AppRadius.medium, style: .continuous)
                     )
+            }
+
+            if message.isFailedToSend {
+                HStack(spacing: AppSpacing.medium) {
+                    Label(L10n.ChatSheet.failedToSend, systemImage: "exclamationmark.circle.fill")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.red)
+
+                    Button(L10n.ChatSheet.retry) {
+                        onRetryFailedMessage(message.id)
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+
+                    Button(L10n.ChatSheet.removeFailedMessage) {
+                        onRemoveFailedMessage(message.id)
+                    }
+                    .buttonStyle(.plain)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                }
             }
         }
     }
@@ -87,7 +110,7 @@ struct ChatBubbleRow: View {
 
     @ViewBuilder
     private func attachmentView(_ attachment: ChatImageAttachment) -> some View {
-        if let data = attachment.previewData,
+        if let data = attachment.previewData ?? attachment.localData,
            let image = PlatformImage(data: data) {
             platformImageView(image)
                 .resizable()

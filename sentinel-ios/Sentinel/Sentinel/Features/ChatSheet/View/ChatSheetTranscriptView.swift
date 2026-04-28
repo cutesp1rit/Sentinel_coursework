@@ -3,6 +3,8 @@ import SwiftUI
 struct ChatSheetTranscriptView: View {
     let detent: ChatSheetState.Detent
     let messages: [ChatThreadMessage]
+    let onRemoveFailedMessage: (ChatThreadMessage.ID) -> Void
+    let onRetryFailedMessage: (ChatThreadMessage.ID) -> Void
     let onToggleSuggestionExpansion: (ChatThreadMessage.ID) -> Void
     let onToggleSuggestionSelection: (ChatThreadMessage.ID, ChatSuggestion.ID) -> Void
     let onAddSelectedSuggestions: (ChatThreadMessage.ID) -> Void
@@ -28,7 +30,11 @@ struct ChatSheetTranscriptView: View {
     private func messageRow(for message: ChatThreadMessage) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.medium) {
             if message.hasBubbleContent {
-                ChatBubbleRow(message: message)
+                ChatBubbleRow(
+                    message: message,
+                    onRemoveFailedMessage: onRemoveFailedMessage,
+                    onRetryFailedMessage: onRetryFailedMessage
+                )
             }
 
             if let payload = message.suggestionsPayload {

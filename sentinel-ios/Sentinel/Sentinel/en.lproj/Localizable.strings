@@ -41,6 +41,7 @@
 "home.battery_enable_body" = "Tap to open Settings and enable Apple Intelligence for on-device evaluation.";
 "home.battery_unavailable_title" = "Battery unavailable";
 "home.battery_unavailable_body" = "Resource Battery stays hidden on devices that do not support Foundation Models.";
+"home.battery_unavailable_value" = "Unavailable";
 "home.battery_pending_value" = "Waiting";
 "home.battery_download_value" = "Download";
 "home.battery_enable_value" = "Turn On";
@@ -49,6 +50,7 @@
 "home.chat_body" = "Chat sheet arrives in the next slice, but the home screen already reserves its entry point.";
 "home.rebalance_title" = "Rebalance";
 "home.rebalance_body" = "Disabled for MVP until the backend contract is ready.";
+"home.rebalance_feature_body" = "Pick several days, review a proposed redistribution, and apply only the changes that help.";
 "home.create_account_button" = "Create Account";
 "home.open_chat_button" = "Open Chat";
 "home.rebalance_button" = "Rebalance";
@@ -81,11 +83,13 @@
 "home.view_all_button" = "View all";
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
+"chat_sheet.add_files" = "Add files";
+"chat_sheet.all_photos" = "All Photos";
 "chat_sheet.attachment_consent_body" = "Images you attach are uploaded to Sentinel servers so the assistant can use them while processing your request.";
 "chat_sheet.attachment_consent_confirm" = "Allow Processing";
 "chat_sheet.attachment_consent_title" = "Allow Attachment Processing";
 "chat_sheet.attachment_source_title" = "Add Attachment";
-"chat_sheet.attachment_limit_reached" = "You can attach up to 10 images to one message.";
+"chat_sheet.attachment_limit_reached" = "You can attach up to 5 images to one message.";
 "chat_sheet.attachment_too_large" = "Each image must be 10 MB or smaller.";
 "chat_sheet.camera_option" = "Camera";
 "chat_sheet.chat_title" = "Chat";
@@ -95,6 +99,7 @@
 "chat_sheet.auth_required_body" = "Sign in from the profile screen to load chat history and send messages to the assistant.";
 "chat_sheet.auth_required_title" = "Authorization Required";
 "chat_sheet.error_title" = "Could not load chat";
+"chat_sheet.failed_to_send" = "Failed to send";
 "chat_sheet.history_button_accessibility" = "Open chat history";
 "chat_sheet.history_title" = "Chat History";
 "chat_sheet.load_earlier_messages" = "Load Earlier Messages";
@@ -106,7 +111,9 @@
 "chat_sheet.no_messages_body" = "This chat is empty. Send a message to get started.";
 "chat_sheet.no_messages_title" = "No Messages Yet";
 "chat_sheet.photo_library_option" = "Photo Library";
+"chat_sheet.recent_photos" = "Recent photos";
 "chat_sheet.remove_attachment_accessibility" = "Remove attachment";
+"chat_sheet.remove_failed_message" = "Remove";
 "chat_sheet.retry" = "Retry";
 "chat_sheet.send_message_accessibility" = "Send message";
 "chat_sheet.selected_images" = "Selected Images";
@@ -158,6 +165,13 @@
 "profile.email_placeholder" = "Email";
 "profile.email_required" = "Email is required.";
 "profile.email_verified_status" = "Email verified. You can sign in now.";
+"profile.environment_local" = "Local";
+"profile.environment_local_body" = "Uses the local backend and docs at localhost:8000.";
+"profile.environment_production" = "Production";
+"profile.environment_production_body" = "Uses the live backend at https://sentinel-ai.tech/api/v1 and docs at https://sentinel-ai.tech/docs.";
+"profile.environment_testing" = "Testing";
+"profile.environment_testing_body" = "Testing environment is listed here, but its backend URL is not configured in the client yet.";
+"profile.environment_title" = "Environment";
 "profile.forgot_password_button" = "Forgot Password?";
 "profile.forgot_password_body" = "Request a reset link by email. For local testing, you can also paste the token from the reset URL below.";
 "profile.forgot_password_hero_body" = "Reset access in one calm flow. Ask for the email link first, then finish the password update here if needed.";
@@ -172,6 +186,7 @@
 "profile.login_inline_button" = "Log In";
 "profile.login_mode" = "Log In";
 "profile.login_title" = "Sign In";
+"profile.legal_title" = "Legal";
 "profile.logout_button" = "Log Out";
 "profile.logout_hint" = "Logout only clears the local session for now. Home remains available without backend access.";
 "profile.manual_reset_hint" = "If your email opened a URL with `reset_token`, paste that token here and set a new password.";
@@ -199,12 +214,16 @@
 "profile.reset_token_placeholder" = "Reset Token";
 "profile.reset_token_required" = "Reset token is required.";
 "profile.restoring_status" = "Restoring saved session…";
+"profile.attachment_processing_notice" = "AI / Attachment Processing Notice";
+"profile.personal_data_consent" = "Consent to Personal Data Processing";
+"profile.privacy_policy" = "Privacy Policy";
 "profile.send_reset_link_button" = "Send Reset Link";
 "profile.session_stored_body" = "Protected backend features can reuse this saved session until you log out.";
 "profile.signed_in_status" = "Session restored and ready.";
 "profile.signed_in_title" = "Signed In";
 "profile.signed_out_body" = "Home stays local-first, but chat history and other protected backend features require authorization.";
 "profile.signed_out_title" = "Signed Out";
+"profile.terms_of_use" = "Terms of Use";
 "profile.title" = "Profile";
 "profile.try_sign_in_again_button" = "I've Verified, Continue";
 "profile.verify_hero_body" = "Open the verification email, confirm the address, then come back here to continue into the app.";
@@ -223,7 +242,7 @@
 "settings.achievements" = "Achievements";
 "settings.auth_status" = "Account";
 "settings.default_prompt_footer" = "This text is automatically added to every chat message and Rebalance request.";
-"settings.default_prompt_title" = "Default Prompt Template";
+"settings.default_prompt_title" = "Default Prompt";
 "settings.logout" = "Log Out";
 "settings.notifications_denied" = "Notifications are disabled because the system permission was denied.";
 "settings.notifications_enabled" = "Reminder Notifications";

@@ -123,7 +123,7 @@ struct HomeView: View {
             }
 
             todaySection
-            allEventsCard
+            rebalanceFeatureCard
 
             achievementsRail
         }
@@ -137,12 +137,7 @@ struct HomeView: View {
 
                 Spacer()
 
-                Button(L10n.Home.rebalanceButton) {
-                    store.send(.rebalanceTapped)
-                }
-                .buttonStyle(.plain)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                allEventsShortcut
             }
 
             if store.todayPreviewItems.isEmpty {
@@ -168,37 +163,71 @@ struct HomeView: View {
         }
     }
 
-    private var allEventsCard: some View {
+    @ViewBuilder
+    private var allEventsShortcut: some View {
+        if let accessToken = store.accessToken {
+            NavigationLink {
+                CalendarView(
+                    store: Store(initialState: CalendarState(accessToken: accessToken)) {
+                        CalendarReducer()
+                    }
+                )
+            } label: {
+                HStack(spacing: AppSpacing.small) {
+                    Text(L10n.Home.allEventsTitle)
+                        .font(.subheadline.weight(.semibold))
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, AppSpacing.medium)
+                .padding(.vertical, AppSpacing.small)
+                .background(
+                    RoundedRectangle(cornerRadius: 999, style: .continuous)
+                        .fill(Color.blue)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var rebalanceFeatureCard: some View {
         Group {
-            if let accessToken = store.accessToken {
-                NavigationLink {
-                    CalendarView(
-                        store: Store(initialState: CalendarState(accessToken: accessToken)) {
-                            CalendarReducer()
-                        }
-                    )
-                } label: {
-                    HStack(spacing: AppSpacing.medium) {
-                        VStack(alignment: .leading, spacing: AppSpacing.small) {
-                            Text(L10n.Home.allEventsTitle)
-                                .font(.headline)
-                            Text(L10n.Home.allEventsBody)
+            Button {
+                store.send(.rebalanceTapped)
+            } label: {
+                VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                    HStack(alignment: .top) {
+                        VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                            Text(L10n.Home.rebalanceTitle)
+                                .font(.title3.weight(.bold))
+                            Text(L10n.Home.rebalanceFeatureBody)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
 
                         Spacer()
 
-                        Image(systemName: "calendar")
-                            .font(.title3.weight(.semibold))
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(Color.blue)
+                    }
+
+                    HStack {
+                        Text(L10n.Home.rebalanceButton)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.blue)
+
+                        Spacer()
 
                         Image(systemName: "chevron.right")
                             .font(.footnote.weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
-                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .buttonStyle(.plain)
         }
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
@@ -264,29 +293,33 @@ struct HomeView: View {
     }
 
     private func metricCard(model: HomeState.MetricCardModel) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(model.title)
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: AppSpacing.medium) {
+            HStack(alignment: .center, spacing: AppSpacing.small) {
+                Text(model.title)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
 
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
+                Spacer()
+
                 if let systemImage = model.systemImage {
                     Image(systemName: systemImage)
-                        .font(.title3.weight(.semibold))
+                        .font(.headline.weight(.semibold))
                         .foregroundStyle(model.tint)
                 }
-
-                Text(model.value)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(model.tint)
             }
+
+            Text(model.value)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(model.tint)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text(model.detail)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .lineLimit(3)
         }
-        .frame(maxWidth: .infinity, minHeight: 104, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
     }

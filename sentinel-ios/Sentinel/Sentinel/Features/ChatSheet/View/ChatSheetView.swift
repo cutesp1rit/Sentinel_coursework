@@ -31,6 +31,7 @@ struct ChatSheetView: View {
             if store.detent == .collapsed {
                 store.send(.chatListPresentationChanged(false))
             }
+            store.send(.sheetPresented)
         }
     }
 }

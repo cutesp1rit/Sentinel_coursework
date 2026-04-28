@@ -43,6 +43,7 @@ struct ChatComposerAttachment: Equatable, Identifiable {
         ChatImageAttachment(
             url: "",
             filename: filename,
+            localData: data,
             mimeType: mimeType,
             previewData: previewData ?? data
         )
@@ -166,6 +167,7 @@ struct ChatThreadMessage: Equatable, Identifiable {
 
     enum DeliveryState: Equatable {
         case delivered
+        case failed
         case sending
     }
 
@@ -217,8 +219,24 @@ struct ChatThreadMessage: Equatable, Identifiable {
         role == .user
     }
 
+    var failedComposerAttachments: [ChatComposerAttachment] {
+        images.compactMap { image in
+            guard let data = image.localData ?? image.previewData else { return nil }
+            return ChatComposerAttachment(
+                data: data,
+                previewData: image.previewData ?? data,
+                filename: image.filename,
+                mimeType: image.mimeType
+            )
+        }
+    }
+
     var hasBubbleContent: Bool {
         markdownText != nil || !images.isEmpty
+    }
+
+    var isFailedToSend: Bool {
+        deliveryState == .failed
     }
 }
 

@@ -3,17 +3,43 @@ import Foundation
 
 extension ChatThreadFeature {
     func sendMessage(state: inout State) -> Effect<Action> {
+        sendMessage(
+            state: &state,
+            draft: state.draft,
+            attachments: state.composerAttachments,
+            localMessageID: nil
+        )
+    }
+
+    func retryFailedMessage(state: inout State, messageID: ChatThreadMessage.ID) -> Effect<Action> {
+        guard let message = state.messages.first(where: { $0.id == messageID }),
+              message.isFailedToSend else { return .none }
+
+        return sendMessage(
+            state: &state,
+            draft: message.markdownText ?? "",
+            attachments: message.failedComposerAttachments,
+            localMessageID: messageID
+        )
+    }
+
+    private func sendMessage(
+        state: inout State,
+        draft: String,
+        attachments: [ChatComposerAttachment],
+        localMessageID: ChatThreadMessage.ID?
+    ) -> Effect<Action> {
         guard let accessToken = state.accessToken else {
             state.errorMessage = L10n.ChatSheet.authRequiredBody
             return .none
         }
         guard !state.isSending else { return .none }
 
-        let trimmedDraft = state.draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let composerAttachments = state.composerAttachments
+        let trimmedDraft = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let composerAttachments = attachments
         guard !trimmedDraft.isEmpty || !composerAttachments.isEmpty else { return .none }
 
-        let pendingLocalMessageID = UUID()
+        let pendingLocalMessageID = localMessageID ?? UUID()
         let requestID = UUID()
         let existingActiveChatID = state.activeChatID
         state.isSending = true
@@ -21,15 +47,36 @@ extension ChatThreadFeature {
         state.activeSendRequestID = requestID
         state.pendingLocalMessageID = pendingLocalMessageID
         state.sendStage = .delivering
-        state.messages.append(.init(id: pendingLocalMessageID, role: .user, text: trimmedDraft, images: composerAttachments.map(\.imageAttachment), deliveryState: .sending))
+        if let localMessageID,
+           let index = state.messages.firstIndex(where: { $0.id == localMessageID }) {
+            state.messages[index].deliveryState = .sending
+        } else {
+            state.messages.append(
+                .init(
+                    id: pendingLocalMessageID,
+                    role: .user,
+                    text: trimmedDraft,
+                    images: composerAttachments.map(\.imageAttachment),
+                    deliveryState: .sending
+                )
+            )
+        }
         state.shouldAutoScrollToBottom = true
-        state.draft = ""
-        state.composerAttachments = []
+        if localMessageID == nil {
+            state.draft = ""
+            state.composerAttachments = []
+        }
 
-        return .run { [chatClient] send in
+        return .run { [appSettingsClient, chatClient] send in
             var activeChatID = existingActiveChatID
             var uploadedImages: [ChatImageAttachment] = []
             do {
+                let settings = await appSettingsClient.load()
+                let contentText = DefaultPromptEnvelope.applying(
+                    prompt: settings.defaultPromptTemplate,
+                    to: trimmedDraft.isEmpty ? nil : trimmedDraft
+                )
+
                 if activeChatID == nil {
                     let createdChat = try await chatClient.createChat(Self.chatTitle(from: trimmedDraft), accessToken)
                     activeChatID = createdChat.id
@@ -41,13 +88,20 @@ extension ChatThreadFeature {
                         ChatImageAttachment(
                             url: image.url,
                             filename: image.filename,
+                            localData: nil,
                             mimeType: image.mimeType,
                             previewData: attachment.previewData ?? attachment.data
                         )
                     )
                 }
 
-                let assistantMessage = try await chatClient.sendMessage(activeChatID!, "user", trimmedDraft.isEmpty ? nil : trimmedDraft, uploadedImages, accessToken)
+                let assistantMessage = try await chatClient.sendMessage(
+                    activeChatID!,
+                    "user",
+                    contentText,
+                    uploadedImages,
+                    accessToken
+                )
                 await send(.sendResponseReceived(requestID: requestID, activeChatID: activeChatID!, assistantMessage: assistantMessage, requestToken: accessToken))
                 await send(.sendStageChanged(.syncing, requestID: requestID))
                 let chats = try await chatClient.listChats(accessToken)
@@ -80,7 +134,7 @@ extension ChatThreadFeature {
         state.messages[index].suggestionsPayload = payload
         state.errorMessage = nil
 
-        return .run { [calendarSyncClient, chatClient, eventsClient, localNotificationsClient] send in
+        return .run { [calendarSyncClient, chatClient, eventsClient] send in
             do {
                 let updatedMessage = try await chatClient.applyActions(activeChatID, messageID, applyPlan.acceptedIndices, accessToken)
                 var canonicalEventsByID: [UUID: Event] = [:]
@@ -98,7 +152,6 @@ extension ChatThreadFeature {
                     _ = try await calendarSyncClient.sync(.init(deletedEventIDs: applyPlan.deletedEventIDs, events: Array(canonicalEventsByID.values)))
                 }
 
-                await localNotificationsClient.syncReminderNotifications(Array(canonicalEventsByID.values), applyPlan.deletedEventIDs)
                 await send(.suggestionApplyCompleted(messageID: messageID, updatedMessage: updatedMessage, requestToken: accessToken))
             } catch {
                 await send(.suggestionApplyFailed(messageID: messageID, message: Self.errorMessage(for: error), requestToken: accessToken))
@@ -181,6 +234,7 @@ extension ChatThreadFeature {
             ChatImageAttachment(
                 url: image.url,
                 filename: image.filename,
+                localData: nil,
                 mimeType: image.mimeType,
                 previewData: image.previewData ?? previewDataByFilename[image.filename] ?? nil
             )

@@ -8,6 +8,5 @@ struct SettingsState: Equatable {
 
     var defaultPromptTemplate = ""
     var isLoading = false
-    var notificationsEnabled = false
     var statusMessage: String?
 }

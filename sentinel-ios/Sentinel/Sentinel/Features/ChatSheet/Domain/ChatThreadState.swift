@@ -37,6 +37,8 @@ extension ChatThreadFeature {
         case autoScrollCompleted
         case composerFocusChanged
         case draftChanged(String)
+        case failedMessageRemoveTapped(ChatThreadMessage.ID)
+        case failedMessageRetryTapped(ChatThreadMessage.ID)
         case loadMessagesRequested(reset: Bool)
         case loadMoreHistoryTapped
         case messagesFailed(String, chatID: UUID, requestToken: String)
@@ -99,7 +101,7 @@ extension ChatThreadFeature {
     }
 
     enum Constants {
-        static let attachmentLimit = 10
+        static let attachmentLimit = 5
         static let maxAttachmentSize = 10 * 1024 * 1024
         static let pageSize = 100
     }

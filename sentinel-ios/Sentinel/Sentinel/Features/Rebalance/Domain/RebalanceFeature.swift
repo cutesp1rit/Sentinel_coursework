@@ -7,7 +7,6 @@ struct RebalanceFeature {
     @Dependency(\.batteryClient) var batteryClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.eventsClient) var eventsClient
-    @Dependency(\.localNotificationsClient) var localNotificationsClient
     @Dependency(\.rebalanceClient) var rebalanceClient
 
     @ObservableState
@@ -233,12 +232,11 @@ struct RebalanceFeature {
                 let selectedDates = state.selectedDays.map(\.date)
                 let accessToken = state.accessToken
                 let range = Self.visibleRange(for: selectedDates)
-                return .run { [calendarSyncClient, eventsClient, localNotificationsClient, rebalanceClient] send in
+                return .run { [calendarSyncClient, eventsClient, rebalanceClient] send in
                     do {
                         try await rebalanceClient.apply(changedEvents, accessToken)
                         let refreshedEvents = try await eventsClient.listEvents(range.lowerBound, range.upperBound, accessToken)
                         _ = try await calendarSyncClient.sync(.init(events: refreshedEvents))
-                        await localNotificationsClient.syncReminderNotifications(refreshedEvents, [])
                         await send(.applyCompleted)
                     } catch {
                         await send(.applyFailed(Self.errorMessage(for: error)))

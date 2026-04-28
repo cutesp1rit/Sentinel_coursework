@@ -110,7 +110,7 @@ struct HomeState: Equatable {
     var resourceBatteryValueText: String {
         switch battery {
         case .hidden:
-            return ""
+            return L10n.Home.batteryUnavailableValue
         case .placeholder:
             return L10n.Home.batteryPendingValue
         case .setupRequired(.downloadModel):
@@ -146,7 +146,7 @@ struct HomeState: Equatable {
     }
 
     var showsBatteryMetricCard: Bool {
-        battery.isVisible
+        isAuthenticated
     }
 
     var isBatteryMetricActionable: Bool {
@@ -266,12 +266,22 @@ struct HomeState: Equatable {
     }
 
     var scheduleMetricCard: MetricCardModel {
-        MetricCardModel(
-            detail: todayTitle,
-            systemImage: nil,
+        if let nextItem = schedule.upcomingItems.first {
+            return MetricCardModel(
+                detail: "\(nextItem.timeText) • \(todayTitle)",
+                systemImage: "calendar.badge.clock",
+                tint: .primary,
+                title: L10n.Home.metricTodayTitle,
+                value: nextItem.title
+            )
+        }
+
+        return MetricCardModel(
+            detail: L10n.Home.emptyTodayBody,
+            systemImage: "calendar",
             tint: .primary,
             title: L10n.Home.metricTodayTitle,
-            value: "\(todayItems.count)"
+            value: L10n.Home.noEventsToday
         )
     }
 

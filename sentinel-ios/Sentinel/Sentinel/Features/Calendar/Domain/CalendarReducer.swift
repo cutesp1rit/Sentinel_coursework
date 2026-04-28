@@ -6,7 +6,6 @@ struct CalendarReducer {
     @Dependency(\.batteryClient) var batteryClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.eventsClient) var eventsClient
-    @Dependency(\.localNotificationsClient) var localNotificationsClient
 
     var body: some Reducer<CalendarState, CalendarAction> {
         Reduce { state, action in
@@ -67,12 +66,11 @@ struct CalendarReducer {
                 state.isLoading = true
                 let range = Self.visibleRange(for: state.selectedDate)
                 let accessToken = state.accessToken
-                return .run { [calendarSyncClient, eventsClient, localNotificationsClient] send in
+                return .run { [calendarSyncClient, eventsClient] send in
                     do {
                         try await eventsClient.deleteEvent(eventID, accessToken)
                         let events = try await eventsClient.listEvents(range.lowerBound, range.upperBound, accessToken)
                         _ = try await calendarSyncClient.sync(.init(deletedEventIDs: [eventID], events: events))
-                        await localNotificationsClient.syncReminderNotifications(events, [eventID])
                         await send(.eventsLoaded(events))
                     } catch {
                         await send(.deleteFailed(Self.errorMessage(for: error)))
@@ -177,7 +175,7 @@ struct CalendarReducer {
                 let payload = editor.payload
                 let range = Self.visibleRange(for: state.selectedDate)
                 let accessToken = state.accessToken
-                return .run { [calendarSyncClient, eventsClient, localNotificationsClient] send in
+                return .run { [calendarSyncClient, eventsClient] send in
                     do {
                         if let eventID = editorEventID {
                             _ = try await eventsClient.updateEvent(eventID, payload, accessToken)
@@ -186,7 +184,6 @@ struct CalendarReducer {
                         }
                         let events = try await eventsClient.listEvents(range.lowerBound, range.upperBound, accessToken)
                         _ = try await calendarSyncClient.sync(.init(events: events))
-                        await localNotificationsClient.syncReminderNotifications(events, [])
                         await send(.eventsLoaded(events))
                         await send(.saveSucceeded)
                     } catch {

@@ -4,6 +4,7 @@ import SwiftUI
 struct ProfileSheetView: View {
     let onClose: () -> Void
     let store: StoreOf<ProfileFeature>
+    @FocusState private var isPromptFocused: Bool
 
     private var promptBinding: Binding<String> {
         Binding(
@@ -34,20 +35,37 @@ struct ProfileSheetView: View {
                     }
                 }
 
+                #if DEBUG
+                Section {
+                    NavigationLink {
+                        EnvironmentSelectionView(
+                            selectedEnvironment: store.selectedEnvironment,
+                            onSelect: { store.send(.environmentChanged($0)) }
+                        )
+                    } label: {
+                        HStack {
+                            Text(L10n.Profile.environmentTitle)
+                            Spacer()
+                            Text(environmentTitle(store.selectedEnvironment))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                #endif
+
                 Section(L10n.Settings.defaultPromptTitle) {
-                    TextField(L10n.Settings.defaultPromptTitle, text: promptBinding, axis: .vertical)
-                        .textFieldStyle(.plain)
-                        .padding(.vertical, AppSpacing.small)
+                    TextEditor(text: promptBinding)
+                        .frame(minHeight: 132)
+                        .focused($isPromptFocused)
+                        .onChange(of: isPromptFocused) { _, isFocused in
+                            if !isFocused {
+                                store.send(.promptEditingEnded)
+                            }
+                        }
 
                     Text(L10n.Settings.defaultPromptFooter)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-
-                    PrimaryButton(L10n.Settings.savePromptButton, isEnabled: !store.isSavingPrompt) {
-                        store.send(.savePromptTapped)
-                    }
-                    .listRowInsets(EdgeInsets(top: AppSpacing.small, leading: AppSpacing.medium, bottom: AppSpacing.small, trailing: AppSpacing.medium))
-                    .listRowBackground(Color.clear)
                 }
 
                 if let accessToken = store.accessToken {
@@ -65,7 +83,16 @@ struct ProfileSheetView: View {
                 }
 
                 Section {
+                    NavigationLink {
+                        LegalDocumentsView()
+                    } label: {
+                        Text(L10n.Profile.legalTitle)
+                    }
+                }
+
+                Section {
                     Button(L10n.Profile.logoutButton) {
+                        store.send(.promptEditingEnded)
                         store.send(.logoutTapped)
                     }
                     .foregroundStyle(.primary)
@@ -98,6 +125,9 @@ struct ProfileSheetView: View {
             .task {
                 store.send(.onAppear)
             }
+            .onDisappear {
+                store.send(.promptEditingEnded)
+            }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
@@ -111,5 +141,16 @@ struct ProfileSheetView: View {
             .padding(.vertical, AppSpacing.small)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(tint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func environmentTitle(_ environment: AppEnvironment) -> String {
+        switch environment {
+        case .local:
+            return L10n.Profile.environmentLocal
+        case .testing:
+            return L10n.Profile.environmentTesting
+        case .production:
+            return L10n.Profile.environmentProduction
+        }
     }
 }

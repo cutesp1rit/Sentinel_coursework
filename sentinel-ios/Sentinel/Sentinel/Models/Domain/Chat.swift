@@ -12,6 +12,7 @@ struct Chat: Equatable, Identifiable {
 struct ChatImageAttachment: Equatable, Identifiable {
     let url: String
     let filename: String
+    let localData: Data?
     let mimeType: String
     let previewData: Data?
 

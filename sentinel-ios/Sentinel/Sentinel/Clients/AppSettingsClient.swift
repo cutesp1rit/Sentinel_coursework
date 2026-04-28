@@ -3,12 +3,50 @@ import Foundation
 
 struct AppSettings: Codable, Equatable, Sendable {
     var defaultPromptTemplate: String
-    var notificationsEnabled: Bool
+    var lastActiveChatID: UUID?
+    var lastActiveChatOpenedAt: Date?
+    var selectedEnvironment: AppEnvironment
 
     nonisolated static let `default` = AppSettings(
         defaultPromptTemplate: "",
-        notificationsEnabled: false
+        lastActiveChatID: nil,
+        lastActiveChatOpenedAt: nil,
+        selectedEnvironment: .local
     )
+
+    func recentActiveChatID(referenceDate: Date = .now) -> UUID? {
+        guard let lastActiveChatID,
+              let lastActiveChatOpenedAt,
+              referenceDate.timeIntervalSince(lastActiveChatOpenedAt) < 10 * 60 else {
+            return nil
+        }
+        return lastActiveChatID
+    }
+
+    mutating func markActiveChat(_ chatID: UUID?, at date: Date = .now) {
+        lastActiveChatID = chatID
+        lastActiveChatOpenedAt = chatID == nil ? nil : date
+    }
+
+    init(
+        defaultPromptTemplate: String,
+        lastActiveChatID: UUID?,
+        lastActiveChatOpenedAt: Date?,
+        selectedEnvironment: AppEnvironment
+    ) {
+        self.defaultPromptTemplate = defaultPromptTemplate
+        self.lastActiveChatID = lastActiveChatID
+        self.lastActiveChatOpenedAt = lastActiveChatOpenedAt
+        self.selectedEnvironment = selectedEnvironment
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        defaultPromptTemplate = try container.decodeIfPresent(String.self, forKey: .defaultPromptTemplate) ?? ""
+        lastActiveChatID = try container.decodeIfPresent(UUID.self, forKey: .lastActiveChatID)
+        lastActiveChatOpenedAt = try container.decodeIfPresent(Date.self, forKey: .lastActiveChatOpenedAt)
+        selectedEnvironment = try container.decodeIfPresent(AppEnvironment.self, forKey: .selectedEnvironment) ?? .local
+    }
 }
 
 enum AppSettingsStorage {

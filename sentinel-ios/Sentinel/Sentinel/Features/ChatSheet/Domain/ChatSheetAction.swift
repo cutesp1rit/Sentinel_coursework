@@ -8,6 +8,7 @@ enum ChatSheetAction: Equatable {
     case chatListPresentationChanged(Bool)
     case detentChanged(ChatSheetState.Detent)
     case list(ChatListFeature.Action)
+    case sheetPresented
     case thread(ChatThreadFeature.Action)
     case delegate(ChatSheetDelegate)
 }

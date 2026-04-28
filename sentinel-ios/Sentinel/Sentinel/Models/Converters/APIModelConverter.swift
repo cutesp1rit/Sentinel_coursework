@@ -112,6 +112,7 @@ enum APIModelConverter {
         ChatImageAttachment(
             url: dto.url,
             filename: dto.filename,
+            localData: nil,
             mimeType: dto.mimeType,
             previewData: nil
         )
@@ -131,7 +132,9 @@ enum APIModelConverter {
             chatId: dto.chatId,
             role: role,
             content: ChatMessage.Content(
-                markdownText: dto.contentText,
+                markdownText: role == .user
+                    ? DefaultPromptEnvelope.displayText(from: dto.contentText)
+                    : dto.contentText,
                 eventActions: dto.contentStructured?.eventActionsDTO.map(convert),
                 images: dto.contentStructured?.imageMessageDTO?.images.map(convert) ?? []
             ),

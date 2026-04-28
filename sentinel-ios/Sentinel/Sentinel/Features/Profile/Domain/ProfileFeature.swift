@@ -17,6 +17,8 @@ struct ProfileFeature {
         var isDeletingAccount = false
         var isLoading = false
         var isSavingPrompt = false
+        var lastSavedDefaultPromptTemplate = ""
+        var selectedEnvironment: AppEnvironment = .local
         var userEmail: String?
 
         var displayName: String {
@@ -36,12 +38,13 @@ struct ProfileFeature {
         case deleteAccountTapped
         case deletePromptVisibilityChanged(Bool)
         case defaultPromptChanged(String)
+        case environmentChanged(AppEnvironment)
         case loaded(AppSettings)
         case logoutFailed(String)
         case logoutTapped
         case onAppear
-        case promptSaved
-        case savePromptTapped
+        case promptEditingEnded
+        case promptPersisted(String)
         case sessionChanged(AuthenticatedSession?)
         case delegate(Delegate)
     }
@@ -94,8 +97,20 @@ struct ProfileFeature {
                 state.defaultPromptTemplate = value
                 return .none
 
+            case let .environmentChanged(environment):
+                guard environment.isSelectable else { return .none }
+                state.selectedEnvironment = environment
+                return .run { [appSettingsClient] send in
+                    var settings = await appSettingsClient.load()
+                    settings.selectedEnvironment = environment
+                    await appSettingsClient.save(settings)
+                    await send(.loaded(settings))
+                }
+
             case let .loaded(settings):
                 state.defaultPromptTemplate = settings.defaultPromptTemplate
+                state.lastSavedDefaultPromptTemplate = settings.defaultPromptTemplate
+                state.selectedEnvironment = settings.selectedEnvironment
                 state.isLoading = false
                 state.isSavingPrompt = false
                 return .none
@@ -120,19 +135,22 @@ struct ProfileFeature {
                     await send(.loaded(settings))
                 }
 
-            case .promptSaved:
-                state.isSavingPrompt = false
-                return .none
-
-            case .savePromptTapped:
-                state.isSavingPrompt = true
+            case .promptEditingEnded:
                 let prompt = state.defaultPromptTemplate.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard prompt != state.lastSavedDefaultPromptTemplate else { return .none }
+                state.isSavingPrompt = true
                 return .run { [appSettingsClient] send in
                     var settings = await appSettingsClient.load()
                     settings.defaultPromptTemplate = prompt
                     await appSettingsClient.save(settings)
-                    await send(.promptSaved)
+                    await send(.promptPersisted(prompt))
                 }
+
+            case let .promptPersisted(prompt):
+                state.lastSavedDefaultPromptTemplate = prompt
+                state.defaultPromptTemplate = prompt
+                state.isSavingPrompt = false
+                return .none
 
             case let .sessionChanged(session):
                 state.accessToken = session?.accessToken

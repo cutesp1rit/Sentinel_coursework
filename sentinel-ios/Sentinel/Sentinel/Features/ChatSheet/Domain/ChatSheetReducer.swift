@@ -20,6 +20,10 @@ struct ChatSheetReducer {
                     .send(.thread(.accessTokenChanged(token)))
                 )
 
+            case .sheetPresented:
+                guard state.isSignedIn else { return .none }
+                return .send(.list(.sheetPresented))
+
             case .chatListButtonTapped:
                 guard state.isSignedIn else { return .none }
                 state.isChatListPresented = true

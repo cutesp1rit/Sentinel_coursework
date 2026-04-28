@@ -3,10 +3,10 @@ import Foundation
 
 @Reducer
 struct ChatThreadFeature {
+    @Dependency(\.appSettingsClient) var appSettingsClient
     @Dependency(\.calendarSyncClient) var calendarSyncClient
     @Dependency(\.chatClient) var chatClient
     @Dependency(\.eventsClient) var eventsClient
-    @Dependency(\.localNotificationsClient) var localNotificationsClient
 
     var body: some Reducer<State, Action> {
         Reduce { state, action in
@@ -61,6 +61,13 @@ struct ChatThreadFeature {
             case let .draftChanged(draft):
                 state.draft = draft
                 return .none
+
+            case let .failedMessageRemoveTapped(messageID):
+                state.messages.removeAll { $0.id == messageID }
+                return .none
+
+            case let .failedMessageRetryTapped(messageID):
+                return retryFailedMessage(state: &state, messageID: messageID)
 
             case let .loadMessagesRequested(reset):
                 guard let accessToken = state.accessToken, let activeChatID = state.activeChatID else { return .none }
@@ -154,18 +161,15 @@ struct ChatThreadFeature {
                 guard state.accessToken == requestToken, state.activeSendRequestID == requestID else { return .none }
                 state.isSending = false
                 state.sendStage = nil
-                state.activeSendRequestID = nil
-                state.pendingLocalMessageID = nil
                 state.errorMessage = message
-                if let restoreDraft { state.draft = restoreDraft }
-                if !restoreAttachments.isEmpty { state.composerAttachments = restoreAttachments }
                 if let activeChatID { state.activeChatID = activeChatID }
-                if let messages {
-                    state.messages = messagePersisted ? messages.map(ChatThreadMessage.init) : state.messages.dropLast().map { $0 }
-                } else if !messagePersisted, !state.messages.isEmpty {
-                    state.messages.removeLast()
+                if let pendingLocalMessageID = state.pendingLocalMessageID,
+                   let index = state.messages.firstIndex(where: { $0.id == pendingLocalMessageID }) {
+                    state.messages[index].deliveryState = .failed
                 }
                 if let hasMore { state.hasMoreHistory = hasMore }
+                state.activeSendRequestID = nil
+                state.pendingLocalMessageID = nil
                 return .none
 
             case let .sendResponseReceived(requestID, activeChatID, assistantMessage, requestToken):
