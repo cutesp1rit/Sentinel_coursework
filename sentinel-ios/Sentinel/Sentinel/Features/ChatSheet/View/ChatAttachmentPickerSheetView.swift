@@ -119,6 +119,15 @@ struct ChatAttachmentPickerSheetView: View {
             .scaledToFill()
             .frame(width: 78, height: 78)
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        #elseif canImport(AppKit)
+        Image(nsImage: photo.thumbnail)
+            .resizable()
+            .scaledToFill()
+            .frame(width: 78, height: 78)
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        #else
+        Color.clear
+            .frame(width: 78, height: 78)
         #endif
     }
 }

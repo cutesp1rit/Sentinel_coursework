@@ -2,6 +2,9 @@ import ComposableArchitecture
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(iOS)
+import UIKit
+#endif
 
 struct ChatThreadScreenView: View {
     private enum ScrollAnchor {
@@ -21,6 +24,7 @@ struct ChatThreadScreenView: View {
     @State private var isCameraPickerPresented = false
     @State private var isFileImporterPresented = false
     @State private var isLoadingRecentLibraryPhotos = false
+    @State private var shouldPresentAttachmentPickerAfterConsent = false
     @State private var recentLibraryPhotos: [RecentLibraryPhoto] = []
     @State private var isPhotosPickerPresented = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
@@ -131,8 +135,7 @@ struct ChatThreadScreenView: View {
             ) {
                 Button(L10n.ChatSheet.attachmentConsentConfirm) {
                     hasAttachmentProcessingConsent = true
-                    isAttachmentPickerPresented = true
-                    refreshRecentLibraryPhotos()
+                    shouldPresentAttachmentPickerAfterConsent = true
                 }
                 Button(L10n.Profile.cancelButton, role: .cancel) {}
             } message: {
@@ -164,6 +167,11 @@ struct ChatThreadScreenView: View {
             .onChange(of: isPhotosPickerPresented) { _, isPresented in
                 guard !isPresented else { return }
                 importSelectedPhotoItemsIfNeeded()
+            }
+            .onChange(of: isAttachmentConsentAlertPresented) { _, isPresented in
+                guard !isPresented, shouldPresentAttachmentPickerAfterConsent else { return }
+                shouldPresentAttachmentPickerAfterConsent = false
+                presentAttachmentPicker()
             }
         }
     }
@@ -259,8 +267,7 @@ struct ChatThreadScreenView: View {
                 }
                 if store.isSignedIn {
                     if hasAttachmentProcessingConsent {
-                        isAttachmentPickerPresented = true
-                        refreshRecentLibraryPhotos()
+                        presentAttachmentPicker()
                     } else {
                         isAttachmentConsentAlertPresented = true
                     }
@@ -280,10 +287,12 @@ struct ChatThreadScreenView: View {
 }
 
 private extension ChatThreadScreenView {
+    #if os(iOS)
     func importCapturedCameraImage(_ image: UIImage) {
         guard let attachment = makeComposerAttachment(from: image, index: store.composerAttachments.count) else { return }
         store.send(.attachmentsAdded([attachment]))
     }
+    #endif
 
     func importRecentPhoto(_ recentPhoto: RecentLibraryPhoto) {
         let index = store.composerAttachments.count
@@ -291,7 +300,7 @@ private extension ChatThreadScreenView {
         Task {
             guard let attachment = await makeComposerAttachment(from: recentPhoto, index: index) else { return }
             await MainActor.run {
-                store.send(.attachmentsAdded([attachment]))
+                _ = store.send(.attachmentsAdded([attachment]))
             }
         }
     }
@@ -344,6 +353,13 @@ private extension ChatThreadScreenView {
                 recentLibraryPhotos = photos
                 isLoadingRecentLibraryPhotos = false
             }
+        }
+    }
+
+    func presentAttachmentPicker() {
+        refreshRecentLibraryPhotos()
+        DispatchQueue.main.async {
+            isAttachmentPickerPresented = true
         }
     }
 }

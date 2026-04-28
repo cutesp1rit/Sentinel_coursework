@@ -1,22 +1,26 @@
-import PhotosUI
 import Photos
+import PhotosUI
 import SwiftUI
-import UniformTypeIdentifiers
 import ImageIO
+import UniformTypeIdentifiers
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 #elseif canImport(AppKit)
 import AppKit
 #endif
 
-#if canImport(UIKit)
 struct RecentLibraryPhoto: Identifiable {
     let assetIdentifier: String
-    let thumbnail: UIImage
+    let thumbnail: PlatformRecentPhotoImage
 
     var id: String { assetIdentifier }
 }
+
+#if os(iOS)
+typealias PlatformRecentPhotoImage = UIImage
+#elseif canImport(AppKit)
+typealias PlatformRecentPhotoImage = NSImage
 #endif
 
 extension ChatThreadScreenView {
@@ -40,10 +44,12 @@ extension ChatThreadScreenView {
         return makeComposerAttachment(from: data, contentType: contentType, index: index)
     }
 
+    #if os(iOS)
     func makeComposerAttachment(from image: UIImage, index: Int) -> ChatComposerAttachment? {
         guard let data = image.jpegData(compressionQuality: 0.92), !data.isEmpty else { return nil }
         return makeComposerAttachment(from: data, contentType: .jpeg, index: index)
     }
+    #endif
 
     func makeComposerAttachment(from fileURL: URL, index: Int) -> ChatComposerAttachment? {
         guard let contentType = UTType(filenameExtension: fileURL.pathExtension),
@@ -140,7 +146,7 @@ extension ChatThreadScreenView {
         return status
     }
 
-    private func thumbnailImage(for asset: PHAsset) -> UIImage? {
+    private func thumbnailImage(for asset: PHAsset) -> PlatformRecentPhotoImage? {
         let manager = PHCachingImageManager()
         let options = PHImageRequestOptions()
         options.deliveryMode = .fastFormat
@@ -149,7 +155,7 @@ extension ChatThreadScreenView {
         options.resizeMode = .exact
 
         let targetSize = CGSize(width: 180, height: 180)
-        var thumbnail: UIImage?
+        var thumbnail: PlatformRecentPhotoImage?
         manager.requestImage(
             for: asset,
             targetSize: targetSize,

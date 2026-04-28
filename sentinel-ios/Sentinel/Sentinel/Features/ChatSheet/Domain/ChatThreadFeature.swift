@@ -157,7 +157,7 @@ struct ChatThreadFeature {
                     refreshSuggestions
                 )
 
-            case let .sendFlowFailed(requestID, message, restoreDraft, restoreAttachments, activeChatID, messages, hasMore, messagePersisted, requestToken):
+            case let .sendFlowFailed(requestID, message, _, _, activeChatID, _, hasMore, _, requestToken):
                 guard state.accessToken == requestToken, state.activeSendRequestID == requestID else { return .none }
                 state.isSending = false
                 state.sendStage = nil

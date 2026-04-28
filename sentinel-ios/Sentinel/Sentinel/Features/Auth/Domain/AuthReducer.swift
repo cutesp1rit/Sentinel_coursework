@@ -423,8 +423,7 @@ private extension AuthReducer {
 }
 
 private func clearedState() -> AuthState {
-    var state = AuthState()
-    return state
+    AuthState()
 }
 
 private func validateEmail(_ email: String) -> String? {

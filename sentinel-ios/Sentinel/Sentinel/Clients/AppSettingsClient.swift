@@ -7,14 +7,16 @@ struct AppSettings: Codable, Equatable, Sendable {
     var lastActiveChatOpenedAt: Date?
     var selectedEnvironment: AppEnvironment
 
-    nonisolated static let `default` = AppSettings(
-        defaultPromptTemplate: "",
-        lastActiveChatID: nil,
-        lastActiveChatOpenedAt: nil,
-        selectedEnvironment: .local
-    )
+    static var defaultValue: Self {
+        Self(
+            defaultPromptTemplate: "",
+            lastActiveChatID: nil,
+            lastActiveChatOpenedAt: nil,
+            selectedEnvironment: .local
+        )
+    }
 
-    func recentActiveChatID(referenceDate: Date = .now) -> UUID? {
+    nonisolated func recentActiveChatID(referenceDate: Date = .now) -> UUID? {
         guard let lastActiveChatID,
               let lastActiveChatOpenedAt,
               referenceDate.timeIntervalSince(lastActiveChatOpenedAt) < 10 * 60 else {
@@ -23,7 +25,7 @@ struct AppSettings: Codable, Equatable, Sendable {
         return lastActiveChatID
     }
 
-    mutating func markActiveChat(_ chatID: UUID?, at date: Date = .now) {
+    nonisolated mutating func markActiveChat(_ chatID: UUID?, at date: Date = .now) {
         lastActiveChatID = chatID
         lastActiveChatOpenedAt = chatID == nil ? nil : date
     }
@@ -64,7 +66,7 @@ extension AppSettingsClient: DependencyKey {
             await MainActor.run {
                 guard let data = UserDefaults.standard.data(forKey: AppSettingsStorage.key),
                       let settings = try? JSONDecoder().decode(AppSettings.self, from: data) else {
-                    return .default
+                    return .defaultValue
                 }
                 return settings
             }

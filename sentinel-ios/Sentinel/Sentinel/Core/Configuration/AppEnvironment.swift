@@ -12,7 +12,7 @@ enum AppEnvironment: String, CaseIterable, Codable, Equatable, Identifiable, Sen
         case .local:
             URL(string: "http://localhost:8000/api/v1")
         case .testing:
-            nil
+            URL(string: "http://localhost:8000/api/v1")
         case .production:
             URL(string: "https://sentinel-ai.tech/api/v1")
         }
@@ -23,15 +23,13 @@ enum AppEnvironment: String, CaseIterable, Codable, Equatable, Identifiable, Sen
         case .local:
             URL(string: "http://localhost:8000/docs")
         case .testing:
-            nil
+            URL(string: "http://localhost:8000/docs")
         case .production:
             URL(string: "https://sentinel-ai.tech/docs")
         }
     }
 
-    var isSelectable: Bool {
-        apiBaseURL != nil
-    }
+    var isSelectable: Bool { true }
 }
 
 struct LegalDocumentLink: Equatable, Identifiable, Sendable {

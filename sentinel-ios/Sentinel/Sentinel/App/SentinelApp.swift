@@ -4,7 +4,11 @@ import SwiftUI
 struct SentinelApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+                EmptyView()
+            } else {
+                ContentView()
+            }
         }
     }
 }

@@ -1,13 +1,12 @@
 import Foundation
 
 enum DefaultPromptEnvelope {
-    private static let startMarker = "<sentinel_default_prompt>"
-    private static let endMarker = "</sentinel_default_prompt>"
-
-    static func applying(prompt: String, to userMessage: String?) -> String? {
+    nonisolated static func applying(prompt: String, to userMessage: String?) -> String? {
+        let startMarker = "<sentinel_default_prompt>"
+        let endMarker = "</sentinel_default_prompt>"
         let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPrompt.isEmpty else {
-            return userMessage?.nilIfEmpty
+            return normalized(userMessage)
         }
 
         let promptBlock = "\(startMarker)\n\(trimmedPrompt)\n\(endMarker)"
@@ -20,23 +19,26 @@ enum DefaultPromptEnvelope {
         return "\(promptBlock)\n\n\(trimmedMessage)"
     }
 
-    static func displayText(from rawText: String?) -> String? {
+    nonisolated static func displayText(from rawText: String?) -> String? {
+        let startMarker = "<sentinel_default_prompt>"
+        let endMarker = "</sentinel_default_prompt>"
         guard let rawText else { return nil }
 
         guard rawText.hasPrefix(startMarker),
               let endRange = rawText.range(of: endMarker) else {
-            return rawText.nilIfEmpty
+            return normalized(rawText)
         }
 
         let visibleText = rawText[endRange.upperBound...]
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
-        return String(visibleText).nilIfEmpty
+        return normalized(String(visibleText))
     }
-}
 
-private extension String {
-    var nilIfEmpty: String? {
-        isEmpty ? nil : self
+    private nonisolated static func normalized(_ value: String?) -> String? {
+        guard let value, !value.isEmpty else {
+            return nil
+        }
+        return value
     }
 }

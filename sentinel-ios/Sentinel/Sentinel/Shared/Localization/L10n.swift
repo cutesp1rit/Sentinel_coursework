@@ -283,13 +283,8 @@ enum L10n {
 
     enum Settings {
         static let achievements = String(localized: "settings.achievements")
-        static let authStatus = String(localized: "settings.auth_status")
         static let defaultPromptFooter = String(localized: "settings.default_prompt_footer")
         static let defaultPromptTitle = String(localized: "settings.default_prompt_title")
-        static let logout = String(localized: "settings.logout")
-        static let savePromptButton = String(localized: "settings.save_prompt_button")
-        static let savedStatus = String(localized: "settings.saved_status")
-        static let title = String(localized: "settings.title")
     }
 
     enum Calendar {

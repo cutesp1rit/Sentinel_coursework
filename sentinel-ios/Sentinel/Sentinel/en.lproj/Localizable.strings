@@ -83,7 +83,7 @@
 "home.view_all_button" = "View all";
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
-"chat_sheet.add_files" = "Add files";
+"chat_sheet.add_files" = "Add images from Files";
 "chat_sheet.all_photos" = "All Photos";
 "chat_sheet.attachment_consent_body" = "Images you attach are uploaded to Sentinel servers so the assistant can use them while processing your request.";
 "chat_sheet.attachment_consent_confirm" = "Allow Processing";
@@ -170,7 +170,7 @@
 "profile.environment_production" = "Production";
 "profile.environment_production_body" = "Uses the live backend at https://sentinel-ai.tech/api/v1 and docs at https://sentinel-ai.tech/docs.";
 "profile.environment_testing" = "Testing";
-"profile.environment_testing_body" = "Testing environment is listed here, but its backend URL is not configured in the client yet.";
+"profile.environment_testing_body" = "Uses the current sandbox endpoint. Until a dedicated testing backend is configured, it mirrors the Local environment.";
 "profile.environment_title" = "Environment";
 "profile.forgot_password_button" = "Forgot Password?";
 "profile.forgot_password_body" = "Request a reset link by email. For local testing, you can also paste the token from the reset URL below.";
@@ -240,16 +240,8 @@
 "profile.step_progress_format" = "Step %lld of %lld";
 
 "settings.achievements" = "Achievements";
-"settings.auth_status" = "Account";
 "settings.default_prompt_footer" = "This text is automatically added to every chat message and Rebalance request.";
 "settings.default_prompt_title" = "Default Prompt";
-"settings.logout" = "Log Out";
-"settings.notifications_denied" = "Notifications are disabled because the system permission was denied.";
-"settings.notifications_enabled" = "Reminder Notifications";
-"settings.notifications_title" = "Notifications";
-"settings.save_prompt_button" = "Save Prompt";
-"settings.saved_status" = "Saved on this device.";
-"settings.title" = "Settings";
 
 "calendar.all_day" = "All Day";
 "calendar.delete_event" = "Delete Event";

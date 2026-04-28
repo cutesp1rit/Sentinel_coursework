@@ -68,7 +68,7 @@
 "home.view_all_button" = "Смотреть всё";
 
 "chat_sheet.add_attachment_accessibility" = "Добавить вложение";
-"chat_sheet.add_files" = "Добавить файлы";
+"chat_sheet.add_files" = "Добавить изображения из Files";
 "chat_sheet.all_photos" = "Все фото";
 "chat_sheet.attachment_consent_body" = "Изображения, которые вы прикрепляете, загружаются на серверы Sentinel, чтобы ассистент мог использовать их при обработке запроса.";
 "chat_sheet.attachment_consent_confirm" = "Разрешить обработку";
@@ -155,7 +155,7 @@
 "profile.environment_production" = "Production";
 "profile.environment_production_body" = "Использует live-backend https://sentinel-ai.tech/api/v1 и документацию https://sentinel-ai.tech/docs.";
 "profile.environment_testing" = "Testing";
-"profile.environment_testing_body" = "Testing-окружение уже показано в клиенте, но его backend URL пока не настроен.";
+"profile.environment_testing_body" = "Использует текущий sandbox endpoint. Пока отдельный testing backend не настроен, это окружение зеркалирует Local.";
 "profile.environment_title" = "Environment";
 "profile.forgot_password_button" = "Забыли пароль?";
 "profile.forgot_password_body" = "Запросите ссылку для сброса по email. Для локального тестирования можно также вставить токен из reset URL ниже.";
@@ -225,16 +225,8 @@
 "profile.step_progress_format" = "Шаг %lld из %lld";
 
 "settings.achievements" = "Достижения";
-"settings.auth_status" = "Аккаунт";
 "settings.default_prompt_footer" = "Этот текст автоматически добавляется к каждому сообщению чата и каждому запросу Rebalance.";
 "settings.default_prompt_title" = "Default Prompt";
-"settings.logout" = "Выйти";
-"settings.notifications_denied" = "Уведомления отключены, потому что системное разрешение не было выдано.";
-"settings.notifications_enabled" = "Уведомления о напоминаниях";
-"settings.notifications_title" = "Уведомления";
-"settings.save_prompt_button" = "Сохранить prompt";
-"settings.saved_status" = "Сохранено на этом устройстве.";
-"settings.title" = "Настройки";
 
 "calendar.all_day" = "Весь день";
 "calendar.delete_event" = "Удалить событие";
