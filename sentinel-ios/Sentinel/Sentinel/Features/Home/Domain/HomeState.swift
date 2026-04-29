@@ -5,11 +5,15 @@ import SwiftUI
 @ObservableState
 struct HomeState: Equatable {
     struct SummaryRowModel: Equatable {
+        enum Leading: Equatable {
+            case icon(String, Color)
+            case value(String, Color)
+        }
+
         let detail: String
-        let systemImage: String?
-        let tint: Color
+        let leading: Leading
         let title: String
-        let value: String
+        let titleTint: Color
     }
 
     struct MetricCardModel: Equatable {

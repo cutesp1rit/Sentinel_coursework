@@ -451,10 +451,10 @@ struct ResourceBatteryInlineBadge: View {
                 Text("\(percentage)%")
                     .font(.caption.weight(.semibold))
             }
-            .foregroundStyle(.green)
+            .foregroundStyle(Self.tint(for: percentage))
             .padding(.horizontal, AppSpacing.small)
             .padding(.vertical, AppSpacing.xSmall)
-            .background(Color.green.opacity(0.10), in: Capsule())
+            .background(Self.tint(for: percentage).opacity(0.10), in: Capsule())
         }
     }
 
@@ -470,6 +470,17 @@ struct ResourceBatteryInlineBadge: View {
             return "battery.75percent"
         default:
             return "battery.100percent"
+        }
+    }
+
+    private static func tint(for percentage: Int) -> Color {
+        switch percentage {
+        case ..<20:
+            return .red
+        case ..<40:
+            return .orange
+        default:
+            return .green
         }
     }
 }

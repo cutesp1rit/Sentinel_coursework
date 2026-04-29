@@ -58,10 +58,6 @@ struct ChatThreadScreenView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 composerDock
             }
-            .presentationDetents([.chatCollapsed, .chatMedium, .large], selection: detentBinding)
-            .presentationBackgroundInteraction(.enabled(upThrough: .chatMedium))
-            .presentationContentInteraction(.scrolls)
-            .presentationDragIndicator(.visible)
             .navigationBarBackButtonHidden(true)
             .sentinelInlineNavigationTitle()
             .sentinelNavigationBarToolbarVisibility(detent == .collapsed ? .hidden : .visible)
@@ -79,11 +75,12 @@ struct ChatThreadScreenView: View {
                     VStack(spacing: 0) {
                         Text(L10n.ChatSheet.chatTitle)
                             .font(.headline.weight(.semibold))
-                        Text(activeChatTitle)
+                        Text(displayedChatTitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
+                    .frame(maxWidth: 180)
                 }
             }
             .photosPicker(
@@ -176,18 +173,17 @@ struct ChatThreadScreenView: View {
         }
     }
 
-    private var detentBinding: Binding<PresentationDetent> {
-        Binding(
-            get: { detent.presentationDetent },
-            set: { onDetentChanged(.init($0)) }
-        )
-    }
-
     private var draftBinding: Binding<String> {
         Binding(
             get: { store.draft },
             set: { store.send(.draftChanged($0)) }
         )
+    }
+
+    private var displayedChatTitle: String {
+        let trimmedTitle = activeChatTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedTitle.count > 30 else { return trimmedTitle }
+        return String(trimmedTitle.prefix(29)) + "…"
     }
 
     @ViewBuilder
@@ -296,7 +292,6 @@ private extension ChatThreadScreenView {
 
     func importRecentPhoto(_ recentPhoto: RecentLibraryPhoto) {
         let index = store.composerAttachments.count
-        isAttachmentPickerPresented = false
         Task {
             guard let attachment = await makeComposerAttachment(from: recentPhoto, index: index) else { return }
             await MainActor.run {

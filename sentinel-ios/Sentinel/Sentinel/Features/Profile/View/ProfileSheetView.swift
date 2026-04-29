@@ -76,7 +76,7 @@ struct ProfileSheetView: View {
                 } footer: {
                     Text(L10n.Settings.defaultPromptFooter)
                         .font(.footnote)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.primary.opacity(0.72))
                 }
 
                 if let accessToken = store.accessToken {

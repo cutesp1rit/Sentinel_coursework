@@ -96,11 +96,26 @@ enum L10n {
                 timing
             )
         }
+
+        static func batteryTitle(_ value: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "home.battery_title_format"),
+                value
+            )
+        }
+
+        static func eventsCountTitle(_ count: Int) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "home.events_count_title_format"),
+                count
+            )
+        }
     }
 
     enum ChatSheet {
         static let addAttachmentAccessibility = String(localized: "chat_sheet.add_attachment_accessibility")
         static let addFiles = String(localized: "chat_sheet.add_files")
+        static let addFilesSubtitle = String(localized: "chat_sheet.add_files_subtitle")
         static let allPhotos = String(localized: "chat_sheet.all_photos")
         static let attachmentConsentBody = String(localized: "chat_sheet.attachment_consent_body")
         static let attachmentConsentConfirm = String(localized: "chat_sheet.attachment_consent_confirm")

@@ -5,10 +5,9 @@ extension HomeState {
         guard showsBatteryMetricCard else { return nil }
         return SummaryRowModel(
             detail: resourceBatteryDetailText,
-            systemImage: resourceBatterySymbolName,
-            tint: resourceBatteryTint,
-            title: L10n.Home.batteryTitle,
-            value: resourceBatteryValueText
+            leading: .icon(resourceBatterySymbolName ?? "battery.100percent", resourceBatteryTint),
+            title: L10n.Home.batteryTitle(resourceBatteryValueText),
+            titleTint: resourceBatteryTint
         )
     }
 
@@ -82,8 +81,16 @@ extension HomeState {
             return .indigo
         case .setupRequired:
             return .orange
-        case .ready:
-            return .green
+        case let .ready(snapshot):
+            let percentage = snapshot.percentage ?? Int(resourceBatteryProgress * 100)
+            switch percentage {
+            case ..<20:
+                return .red
+            case ..<40:
+                return .orange
+            default:
+                return .green
+            }
         }
     }
 

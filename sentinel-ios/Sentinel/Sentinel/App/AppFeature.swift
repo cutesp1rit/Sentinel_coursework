@@ -134,7 +134,12 @@ struct AppFeature: Reducer {
                 state.wasChatSheetPresentedBeforeRebalance = state.isChatSheetPresented
                 state.isChatSheetPresented = false
                 state.isProfileSheetPresented = false
-                state.rebalance = RebalanceFeature.State(accessToken: state.auth.session?.accessToken ?? "")
+                let accessToken = state.auth.session?.accessToken ?? ""
+                if state.rebalance.accessToken != accessToken {
+                    state.rebalance = RebalanceFeature.State(accessToken: accessToken)
+                } else {
+                    state.rebalance.accessToken = accessToken
+                }
                 state.isRebalanceSheetPresented = true
                 return .none
 

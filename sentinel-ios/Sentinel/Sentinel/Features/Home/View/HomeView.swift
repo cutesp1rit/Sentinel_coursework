@@ -180,6 +180,7 @@ struct HomeView: View {
                         .font(.caption.weight(.semibold))
                 }
                 .foregroundStyle(Color.blue)
+                .padding(.trailing, AppSpacing.small)
             }
             .buttonStyle(.plain)
         }
@@ -238,9 +239,14 @@ struct HomeView: View {
                             }
                         )
                     } label: {
-                        Text(L10n.Home.viewAllButton)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.blue)
+                        HStack(spacing: AppSpacing.xSmall) {
+                            Text(L10n.Home.viewAllButton)
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Color.blue)
+                        .padding(.trailing, AppSpacing.small)
                     }
                     .buttonStyle(.plain)
                 }
@@ -292,23 +298,14 @@ struct HomeView: View {
 
     private func summaryRowContent(model: HomeState.SummaryRowModel) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.medium) {
-            Text(model.value)
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(model.tint)
-                .fixedSize()
+            leadingSummaryView(model.leading)
+                .frame(width: 72, alignment: .topLeading)
 
             VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
-                    Text(model.title)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-
-                    if let systemImage = model.systemImage {
-                        Image(systemName: systemImage)
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(model.tint)
-                    }
-                }
+                Text(model.title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(model.titleTint)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(model.detail)
                     .font(.footnote)
@@ -321,6 +318,23 @@ struct HomeView: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
+    }
+
+    @ViewBuilder
+    private func leadingSummaryView(_ leading: HomeState.SummaryRowModel.Leading) -> some View {
+        switch leading {
+        case let .value(value, tint):
+            Text(value)
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
+                .fixedSize()
+
+        case let .icon(systemImage, tint):
+            Image(systemName: systemImage)
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 44, height: 44, alignment: .topLeading)
+        }
     }
 
     private func openSystemSettings() {

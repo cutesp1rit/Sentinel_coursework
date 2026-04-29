@@ -5,10 +5,9 @@ extension HomeState {
     var scheduleSummaryRowModel: SummaryRowModel {
         SummaryRowModel(
             detail: scheduleSummaryDetail,
-            systemImage: "calendar.badge.clock",
-            tint: .primary,
-            title: L10n.Home.eventsRowTitle,
-            value: todayItems.count.formatted()
+            leading: .value(todayItems.count.formatted(), .primary),
+            title: L10n.Home.eventsCountTitle(todayItems.count),
+            titleTint: .primary
         )
     }
 

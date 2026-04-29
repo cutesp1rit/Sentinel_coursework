@@ -26,7 +26,7 @@ struct ChatSheetComposerView: View {
     }
 
     private var expandedComposer: some View {
-        HStack(alignment: .top, spacing: AppSpacing.medium) {
+        HStack(alignment: .center, spacing: AppSpacing.medium) {
             Button(action: onAttachmentTap) {
                 Image(systemName: "plus")
                     .font(.system(size: 22, weight: .regular))
@@ -68,17 +68,17 @@ struct ChatSheetComposerView: View {
         .contentMargins(.top, AppSpacing.medium, for: .scrollContent)
         .contentMargins(.horizontal, AppSpacing.medium, for: .scrollContent)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .scrollClipDisabled()
     }
 
     private var composerTextRow: some View {
-        HStack(alignment: .top, spacing: AppSpacing.small) {
+        HStack(alignment: .center, spacing: AppSpacing.small) {
             TextField(L10n.ChatSheet.composerPlaceholder, text: $draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1 ... 5)
                 .font(.callout)
                 .frame(minHeight: 20)
-                .padding(.top, 7)
-                .padding(.bottom, 5)
+                .padding(.vertical, AppSpacing.small)
                 .focused(composerFocus)
                 .onTapGesture(perform: onComposerTap)
                 .disabled(!isComposerEnabled)
@@ -96,10 +96,9 @@ struct ChatSheetComposerView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.ChatSheet.sendMessageAccessibility)
             .allowsHitTesting(isSendEnabled && isComposerEnabled)
-            .padding(.top, 8)
         }
         .padding(.horizontal, AppSpacing.medium)
-        .frame(maxWidth: .infinity, minHeight: 42, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 42, alignment: .center)
     }
 
     private var hasAttachmentStrip: Bool {

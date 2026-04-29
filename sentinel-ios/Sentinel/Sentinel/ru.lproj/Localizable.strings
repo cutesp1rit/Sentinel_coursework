@@ -19,6 +19,8 @@
 "home.calendar_title" = "Календарь";
 "home.battery_title" = "Resource Battery";
 "home.events_row_title" = "События";
+"home.battery_title_format" = "Resource Battery %@";
+"home.events_count_title_format" = "%lld событий";
 "home.actions_title" = "Действия";
 "home.connect_calendar_title" = "Доступ к календарю будет подключён позже";
 "home.connect_calendar_body" = "Сначала эта часть фиксирует структуру главного экрана. Права EventKit и живые события приходят в следующем срезе синхронизации.";
@@ -73,6 +75,7 @@
 
 "chat_sheet.add_attachment_accessibility" = "Добавить вложение";
 "chat_sheet.add_files" = "Добавить изображения из Files";
+"chat_sheet.add_files_subtitle" = "Прикрепите скриншоты и другие изображения из Files.";
 "chat_sheet.all_photos" = "Все фото";
 "chat_sheet.attachment_consent_body" = "Изображения, которые вы прикрепляете, загружаются на серверы Sentinel, чтобы ассистент мог использовать их при обработке запроса.";
 "chat_sheet.attachment_consent_confirm" = "Разрешить обработку";
