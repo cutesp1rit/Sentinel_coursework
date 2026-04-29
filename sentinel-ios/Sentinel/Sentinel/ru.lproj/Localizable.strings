@@ -209,6 +209,7 @@
 "profile.attachment_processing_notice" = "Уведомление об AI / обработке вложений";
 "profile.personal_data_consent" = "Согласие на обработку персональных данных";
 "profile.privacy_policy" = "Политика конфиденциальности";
+"profile.privacy_choices_and_account_deletion" = "Управление данными и удаление аккаунта";
 "profile.send_reset_link_button" = "Отправить ссылку для сброса";
 "profile.session_stored_body" = "Защищённые backend-функции могут использовать эту сохранённую сессию, пока вы не выйдете.";
 "profile.signed_in_status" = "Сессия восстановлена и готова.";

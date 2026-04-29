@@ -224,6 +224,7 @@
 "profile.attachment_processing_notice" = "AI / Attachment Processing Notice";
 "profile.personal_data_consent" = "Consent to Personal Data Processing";
 "profile.privacy_policy" = "Privacy Policy";
+"profile.privacy_choices_and_account_deletion" = "Privacy Choices And Account Deletion";
 "profile.send_reset_link_button" = "Send Reset Link";
 "profile.session_stored_body" = "Protected backend features can reuse this saved session until you log out.";
 "profile.signed_in_status" = "Session restored and ready.";

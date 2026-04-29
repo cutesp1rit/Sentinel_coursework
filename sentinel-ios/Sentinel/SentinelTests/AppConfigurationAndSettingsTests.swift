@@ -51,12 +51,13 @@ struct AppConfigurationAndSettingsTests {
     @Test
     func appConfigurationLegalDocumentsAndCodersAreConfigured() throws {
         let links = AppConfiguration.legalDocuments
-        #expect(links.count == 4)
+        #expect(links.count == 5)
         #expect(links.map(\.kind) == [
             .privacyPolicy,
             .termsOfUse,
             .personalDataConsent,
-            .attachmentProcessingNotice
+            .attachmentProcessingNotice,
+            .privacyChoicesAndAccountDeletion
         ])
         #expect(links.allSatisfy { $0.url.absoluteString.hasPrefix("https://sentinel-ai.tech/") })
 

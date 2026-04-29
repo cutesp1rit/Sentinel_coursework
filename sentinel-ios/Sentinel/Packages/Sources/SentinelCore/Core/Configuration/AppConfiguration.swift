@@ -38,6 +38,10 @@ public enum AppConfiguration: Sendable {
             .init(
                 kind: .attachmentProcessingNotice,
                 url: legalWebsiteBaseURL.appending(path: "attachment-processing-notice")
+            ),
+            .init(
+                kind: .privacyChoicesAndAccountDeletion,
+                url: legalWebsiteBaseURL.appending(path: "privacy-choices-and-account-deletion")
             )
         ]
     }

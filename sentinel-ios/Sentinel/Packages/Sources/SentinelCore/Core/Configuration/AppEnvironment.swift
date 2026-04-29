@@ -38,6 +38,7 @@ public struct LegalDocumentLink: Equatable, Identifiable, Sendable {
         case termsOfUse
         case personalDataConsent
         case attachmentProcessingNotice
+        case privacyChoicesAndAccountDeletion
     }
 
     public let kind: Kind

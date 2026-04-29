@@ -265,6 +265,7 @@ enum L10n {
         static let attachmentProcessingNotice = String(localized: "profile.attachment_processing_notice")
         static let personalDataConsent = String(localized: "profile.personal_data_consent")
         static let privacyPolicy = String(localized: "profile.privacy_policy")
+        static let privacyChoicesAndAccountDeletion = String(localized: "profile.privacy_choices_and_account_deletion")
         static let sendResetLinkButton = String(localized: "profile.send_reset_link_button")
         static let sessionStoredBody = String(localized: "profile.session_stored_body")
         static let signedInStatus = String(localized: "profile.signed_in_status")

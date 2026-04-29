@@ -105,6 +105,8 @@ struct LegalDocumentsView: View {
             return L10n.Profile.personalDataConsent
         case .attachmentProcessingNotice:
             return L10n.Profile.attachmentProcessingNotice
+        case .privacyChoicesAndAccountDeletion:
+            return L10n.Profile.privacyChoicesAndAccountDeletion
         }
     }
 }
