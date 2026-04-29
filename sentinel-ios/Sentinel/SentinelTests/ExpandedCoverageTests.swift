@@ -292,4 +292,428 @@ struct ExpandedCoverageTests {
         #expect(saveCalls.value.isEmpty == false)
         #expect(saveCalls.value.last?.lastActiveChatID == Fixture.secondUserID)
     }
+
+    @Test
+    func authSupportHelpersValidateAndResetFields() {
+        #expect(validateEmail("") == L10n.Profile.emailRequired)
+        #expect(validateEmail("invalid") == L10n.Profile.emailInvalid)
+        #expect(validateEmail("jane@example.com") == nil)
+
+        #expect(validateLogin(email: "invalid", password: "secret") == L10n.Profile.emailInvalid)
+        #expect(validateLogin(email: "jane@example.com", password: "") == L10n.Profile.passwordRequired)
+        #expect(validateLogin(email: "jane@example.com", password: "secret") == nil)
+
+        #expect(validateRegistration(email: "jane@example.com", password: "", confirmPassword: "") == L10n.Profile.passwordTooShort)
+        #expect(validateRegistration(email: "jane@example.com", password: "short", confirmPassword: "short") == L10n.Profile.passwordTooShort)
+        #expect(validateRegistration(email: "jane@example.com", password: "longenough", confirmPassword: "") == L10n.Profile.confirmPasswordRequired)
+        #expect(validateRegistration(email: "jane@example.com", password: "longenough", confirmPassword: "different") == L10n.Profile.passwordsDoNotMatch)
+        #expect(validateRegistration(email: "jane@example.com", password: "longenough", confirmPassword: "longenough") == nil)
+
+        #expect(validateResetPassword(token: "", password: "longenough", confirmPassword: "longenough") == L10n.Profile.resetTokenRequired)
+        #expect(validateResetPassword(token: "token", password: "short", confirmPassword: "short") == L10n.Profile.passwordTooShort)
+        #expect(validateResetPassword(token: "token", password: "longenough", confirmPassword: "") == L10n.Profile.confirmPasswordRequired)
+        #expect(validateResetPassword(token: "token", password: "longenough", confirmPassword: "different") == L10n.Profile.passwordsDoNotMatch)
+        #expect(validateResetPassword(token: "token", password: "longenough", confirmPassword: "longenough") == nil)
+
+        #expect(isVerificationRequiredError(.init(code: "FORBIDDEN", message: "Please verify your email", details: nil)))
+        #expect(isVerificationRequiredError(.init(code: "HTTP_403", message: "verify account first", details: nil)))
+        #expect(isVerificationRequiredError(.init(code: "FORBIDDEN", message: "Access denied", details: nil)) == false)
+
+        struct SampleError: LocalizedError {
+            var errorDescription: String? { "Fallback auth error" }
+        }
+        #expect(errorMessage(for: SampleError()) == "Fallback auth error")
+
+        var state = AuthState()
+        state.registerStep = .credentials
+        state.password = "secret"
+        state.confirmPassword = "secret"
+        state.resetToken = "token"
+        state.verificationToken = "verify"
+        state.errorMessage = "boom"
+        state.statusMessage = "done"
+
+        let reducer = AuthReducer()
+        reducer.resetMessages(state: &state)
+        #expect(state.errorMessage == nil)
+        #expect(state.statusMessage == nil)
+
+        reducer.resetAuthFlowState(state: &state)
+        #expect(state.registerStep == .email)
+        #expect(state.password.isEmpty)
+        #expect(state.confirmPassword.isEmpty)
+        #expect(state.resetToken.isEmpty)
+        #expect(state.verificationToken.isEmpty)
+    }
+
+    @Test
+    func chatStateHelpersCoverFallbackBranchesAndTitles() {
+        var threadState = ChatThreadFeature.State()
+        #expect(threadState.hasComposerContent == false)
+        #expect(threadState.isSignedIn == false)
+
+        threadState.draft = "   "
+        #expect(threadState.hasComposerContent == false)
+
+        threadState.composerAttachments = [
+            ChatComposerAttachment(
+                data: Data([0x01]),
+                previewData: nil,
+                filename: "note.png",
+                mimeType: "image/png"
+            )
+        ]
+        #expect(threadState.hasComposerContent)
+
+        threadState.accessToken = "token"
+        #expect(threadState.isSignedIn)
+
+        let emptyAssistant = ChatThreadMessage(
+            chatMessage: ChatMessage(
+                id: UUID(),
+                chatId: Fixture.chatID,
+                role: .assistant,
+                content: .init(markdownText: nil, eventActions: nil, images: []),
+                aiModel: nil,
+                createdAt: Fixture.referenceDate
+            )
+        )
+        #expect(emptyAssistant.hasBubbleContent == false)
+        #expect(emptyAssistant.failedComposerAttachments.isEmpty)
+
+        var payload = ChatThreadMessage.SuggestionsPayload(
+            isApplying: true,
+            suggestions: [ChatSuggestion(actionIndex: 0, action: Fixture.eventAction(kind: .create, eventId: nil, title: "Plan"))]
+        )
+        #expect(payload.addToCalendarTitle == L10n.ChatSheet.syncingToCalendar)
+        #expect(payload.canAddToCalendar == false)
+
+        payload.isApplying = false
+        payload.selectedSuggestionIDs = []
+        #expect(payload.isSingleSuggestion)
+        #expect(payload.selectedPendingCount == 0)
+        #expect(payload.addToCalendarTitle == L10n.ChatSheet.addToCalendar)
+        #expect(payload.canAddToCalendar)
+
+        let listState = ChatListFeature.State(accessToken: "token", activeChatID: nil, chats: [], errorMessage: nil, hasLoaded: false, isLoading: false)
+        var sheetState = ChatSheetState.initial
+        sheetState.list = listState
+        sheetState.thread = threadState
+        #expect(sheetState.activeChatTitle == L10n.ChatSheet.newChat)
+        #expect(sheetState.isSignedIn)
+
+        let item = ChatListItem(chat: Chat(
+            id: Fixture.chatID,
+            userId: Fixture.userID,
+            title: "Inbox",
+            lastMessageAt: nil,
+            createdAt: Fixture.referenceDate,
+            updatedAt: Fixture.referenceDate
+        ))
+        #expect(item.subtitle == nil)
+    }
+
+    @Test
+    func chatThreadMergingOlderMessagesPreservesOrderAndPreviewData() {
+        let existing = ChatThreadMessage(
+            id: Fixture.messageID,
+            role: .user,
+            text: "Hello",
+            images: [
+                ChatImageAttachment(
+                    url: "https://example.com/hello.png",
+                    filename: "hello.png",
+                    localData: nil,
+                    mimeType: "image/png",
+                    previewData: Data([0xAA])
+                )
+            ]
+        )
+        let older = ChatThreadMessage(role: .assistant, text: "Earlier")
+        let loadedDuplicate = ChatThreadMessage(
+            id: UUID(),
+            role: .user,
+            text: "Hello",
+            images: [
+                ChatImageAttachment(
+                    url: "https://example.com/hello.png",
+                    filename: "hello.png",
+                    localData: nil,
+                    mimeType: "image/png",
+                    previewData: nil
+                )
+            ]
+        )
+
+        let merged = ChatThreadFeature.mergingOlderMessages(existing: [existing], olderMessages: [older, loadedDuplicate])
+        #expect(merged.count == 3)
+        #expect(merged[0].markdownText == "Earlier")
+        #expect(merged[1].images.first?.previewData == Data([0xAA]))
+        #expect(merged[2].id == Fixture.messageID)
+    }
+
+    @Test
+    func homeScheduleFallbacksAndMarkersCoverAdditionalBranches() {
+        var schedule = HomeScheduleState()
+        #expect(schedule.emptyStateCopy.title == L10n.Home.connectCalendarTitle)
+
+        schedule.isLoading = true
+        #expect(schedule.emptyStateCopy.title == L10n.Home.loadingTitle)
+
+        schedule.isLoading = false
+        schedule.errorMessage = "boom"
+        #expect(schedule.emptyStateCopy.title == L10n.Home.calendarErrorTitle)
+
+        schedule.errorMessage = nil
+        schedule.access = .denied
+        #expect(schedule.emptyStateCopy.title == L10n.Home.calendarDeniedTitle)
+
+        schedule.access = .granted
+        #expect(schedule.emptyStateCopy.title == L10n.Home.noEventsTitle)
+
+        #expect(HomeDayMarker.previewWeek.count == 5)
+        #expect(HomeDayMarker.previewWeek.first?.isToday == true)
+        #expect(HomeDayMarker.previewWeek.first?.isSelected == true)
+
+        let section = HomeEventDaySection(
+            id: "today",
+            date: Fixture.referenceDate,
+            items: [Fixture.homeItem(title: "Planning", startDate: Fixture.referenceDate)]
+        )
+        #expect(section.titleText.isEmpty == false)
+
+        var state = HomeState()
+        state.accessToken = "token"
+        state.dayStrip = [
+            .init(id: 1, title: "Mon", dayNumber: "1", isToday: false),
+            .init(id: 2, title: "Tue", dayNumber: "2", isToday: true)
+        ]
+        state.selectedDayID = 2
+        #expect(state.displayDayStrip.map(\.isSelected) == [false, true])
+        #expect(state.scheduleMetricCard.value == L10n.Home.noEventsToday)
+        #expect(state.scheduleSummaryRowModel.title == L10n.Home.eventsRowTitle)
+    }
+
+    @Test
+    func homeScheduleSummaryBranchesCoverInProgressAndFallbackItems() {
+        var state = HomeState()
+        let today = Calendar.current.startOfDay(for: .now)
+        let inProgressStart = today.addingTimeInterval(60 * 60)
+        let inProgressEnd = Date().addingTimeInterval(60 * 60)
+        state.schedule.upcomingItems = [
+            Fixture.homeItem(title: "Focus", startDate: inProgressStart, endDate: inProgressEnd)
+        ]
+        #expect(state.scheduleSummaryRowModel.detail.contains(L10n.Home.inProgress))
+
+        state.schedule.upcomingItems = [
+            Fixture.homeItem(
+                title: "Tomorrow",
+                startDate: Calendar.current.date(byAdding: .day, value: 1, to: today) ?? today
+            )
+        ]
+        #expect(state.scheduleSummaryRowModel.detail.contains("Tomorrow"))
+        #expect(state.todayTitle == L10n.Home.noEventsToday)
+    }
+
+    @Test
+    func rebalanceStateDerivedHelpersCoverSelectionPreviewAndBatteryCache() {
+        let firstRequest = BatteryDayRequest(
+            dayID: "day-1",
+            endDate: Fixture.secondaryDate,
+            entries: [],
+            startDate: Fixture.referenceDate
+        )
+        let secondRequest = BatteryDayRequest(
+            dayID: "day-2",
+            endDate: Fixture.tertiaryDate,
+            entries: [],
+            startDate: Fixture.secondaryDate
+        )
+        let first = RebalanceFeature.State.DayItem(
+            batteryRequest: firstRequest,
+            id: "day-1",
+            date: Fixture.referenceDate,
+            eventCount: 1,
+            isToday: true
+        )
+        let second = RebalanceFeature.State.DayItem(
+            batteryRequest: secondRequest,
+            id: "day-2",
+            date: Fixture.secondaryDate,
+            eventCount: 0,
+            isToday: false
+        )
+
+        var state = RebalanceFeature.State(accessToken: "token")
+        state.availableDays = [first, second]
+        state.selectedDayIDs = ["day-2", "day-1"]
+        #expect(state.canPreview)
+        #expect(state.canApply == false)
+        #expect(state.selectedDays.map(\.id) == ["day-1", "day-2"])
+        #expect(state.batteryRequest(for: "day-1")?.dayID == "day-1")
+        #expect(state.dayBatteryState(for: "missing") == .hidden)
+        #expect(state.batteryScore(for: "day-1") == nil)
+
+        state.dayBatteryCache["day-1"] = .init(signature: "sig", state: .ready(64))
+        #expect(state.batteryScore(for: "day-1") == 0.64)
+
+        state.preview = .init(proposed: [], summary: "Ready", changedCount: 2, unchangedCount: 0)
+        #expect(state.canApply)
+        state.isApplying = true
+        #expect(state.canApply == false)
+        #expect(state.canPreview == false)
+
+        #expect(first.dayNumber.isEmpty == false)
+        #expect(first.monthText.isEmpty == false)
+        #expect(first.weekdayText.isEmpty == false)
+    }
+
+    @Test
+    func calendarPresentationHelpersCoverNegativeOffsetsAndCacheState() {
+        var state = CalendarState(accessToken: "token")
+        state.selectedDate = Fixture.referenceDate
+        state.events = [
+            Fixture.event(id: Fixture.eventID, title: "Later", startAt: Fixture.secondaryDate, endAt: Fixture.tertiaryDate),
+            Fixture.event(id: Fixture.secondEventID, title: "Earlier", startAt: Fixture.referenceDate, endAt: Fixture.secondaryDate)
+        ]
+
+        let sectionID = state.selectedSectionID
+        state.dayBatteryCache[sectionID] = .init(signature: "sig", state: .ready(88))
+        #expect(state.dayBatteryState(for: sectionID) == .ready(88))
+        #expect(state.selectedDayRows.map(\.title) == ["Earlier", "Later"])
+        #expect(state.visibleSectionDate(for: [sectionID: -5]) == Calendar.current.startOfDay(for: Fixture.referenceDate))
+        #expect(state.hasSection(for: Fixture.referenceDate.addingTimeInterval(60 * 60 * 24 * 90)) == false)
+
+        let visibleRange = CalendarReducer.visibleRange(for: Fixture.referenceDate)
+        #expect(visibleRange.lowerBound < visibleRange.upperBound)
+    }
+
+    @Test
+    func chatSheetReducerHandlesDetentsPresentationAndDelegates() async {
+        let store = TestStore(initialState: ChatSheetState.initial) {
+            ChatSheetReducer()
+        } withDependencies: {
+            $0.appSettingsClient.load = { await MainActor.run { .defaultValue } }
+            $0.appSettingsClient.save = { _ in }
+            $0.chatClient.listChats = { _ in [] }
+        }
+        store.exhaustivity = .off
+
+        await store.send(.sheetPresented)
+        #expect(store.state.isChatListPresented == false)
+
+        await store.send(.accessTokenChanged("token"))
+        await store.receive(.list(.accessTokenChanged("token"))) {
+            $0.list.accessToken = "token"
+            $0.list.hasLoaded = false
+        }
+        await store.receive(.thread(.accessTokenChanged("token"))) {
+            $0.thread.accessToken = "token"
+        }
+
+        await store.send(.chatListButtonTapped) {
+            $0.isChatListPresented = true
+        }
+
+        await store.send(.detentChanged(.collapsed)) {
+            $0.detent = .collapsed
+            $0.isChatListPresented = false
+        }
+
+        await store.send(.thread(.delegate(.expandRequested))) {
+            $0.detent = .large
+        }
+
+        await store.send(.detentChanged(.collapsed)) {
+            $0.detent = .collapsed
+            $0.isChatListPresented = false
+        }
+
+        await store.send(.thread(.delegate(.attachmentFlowRequested))) {
+            $0.detent = .medium
+        }
+
+        await store.send(.list(.delegate(.activeChatChanged(Fixture.chatID)))) {
+            $0.isChatListPresented = false
+        }
+        await store.receive(.thread(.activeChatChanged(Fixture.chatID))) {
+            $0.thread.activeChatID = Fixture.chatID
+        }
+        await store.receive(.list(.activeChatChanged(Fixture.chatID))) {
+            $0.list.activeChatID = Fixture.chatID
+        }
+
+        await store.send(.thread(.delegate(.chatActivated(nil))))
+        await store.receive(.list(.activeChatChanged(nil))) {
+            $0.list.activeChatID = nil
+        }
+
+        await store.send(.thread(.delegate(.chatListShouldReload(Fixture.secondUserID))))
+        await store.receive(.list(.reload(preferredActiveChatID: Fixture.secondUserID, forceNewChat: false))) {
+            $0.list.errorMessage = nil
+            $0.list.isLoading = true
+        }
+
+        await store.send(.thread(.delegate(.suggestionsApplied)))
+        await store.receive(.delegate(.suggestionApplyCompleted))
+    }
+
+    @Test
+    func chatThreadSendSupportGuardBranchesMutateStateSafely() {
+        let feature = ChatThreadFeature()
+
+        var noAuth = ChatThreadFeature.State()
+        noAuth.draft = "Hello"
+        let noAuthEffect = feature.sendMessage(state: &noAuth)
+        #expect(noAuth.errorMessage == L10n.ChatSheet.authRequiredBody)
+        #expect(String(describing: noAuthEffect).contains("Operation.none"))
+
+        var alreadySending = ChatThreadFeature.State()
+        alreadySending.accessToken = "token"
+        alreadySending.draft = "Hello"
+        alreadySending.isSending = true
+        let alreadySendingEffect = feature.sendMessage(state: &alreadySending)
+        #expect(alreadySending.errorMessage == nil)
+        #expect(String(describing: alreadySendingEffect).contains("Operation.none"))
+
+        var emptyComposer = ChatThreadFeature.State()
+        emptyComposer.accessToken = "token"
+        emptyComposer.draft = "   "
+        let emptyComposerEffect = feature.sendMessage(state: &emptyComposer)
+        #expect(emptyComposer.messages.isEmpty)
+        #expect(String(describing: emptyComposerEffect).contains("Operation.none"))
+
+        var deliveredMessageState = ChatThreadFeature.State()
+        deliveredMessageState.accessToken = "token"
+        deliveredMessageState.messages = [ChatThreadMessage(role: .user, text: "Done")]
+        let retryEffect = feature.retryFailedMessage(state: &deliveredMessageState, messageID: deliveredMessageState.messages[0].id)
+        #expect(deliveredMessageState.messages[0].deliveryState == .delivered)
+        #expect(String(describing: retryEffect).contains("Operation.none"))
+    }
+
+    @Test
+    func homeReducerSupportHelpersCoverTimedAndUntimedEffects() async {
+        let effect = HomeReducer.evaluateBatteryEffect(
+            batteryClient: BatteryClient(
+                evaluate: { items, access in
+                    #expect(items.count == 1)
+                    switch access {
+                    case .granted:
+                        break
+                    case .denied, .notRequested:
+                        Issue.record("Expected granted access")
+                    }
+                    return .ready(.init(headline: "55%", detail: "Steady", percentage: 55))
+                },
+                evaluateDay: { _ in .hidden }
+            ),
+            items: [Fixture.homeItem(title: "Planning", startDate: Fixture.referenceDate, endDate: Fixture.secondaryDate)],
+            access: .granted
+        )
+        #expect(String(describing: effect).isEmpty == false)
+
+        let untimed = HomeReducer.timeText(startAt: Fixture.referenceDate, endAt: nil)
+        #expect(untimed.isEmpty == false)
+        #expect(untimed.contains("-") == false)
+    }
 }
