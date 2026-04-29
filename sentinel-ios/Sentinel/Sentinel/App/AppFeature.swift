@@ -14,6 +14,8 @@ struct AppFeature: Reducer {
         var isChatSheetPresented = false
         var isProfileSheetPresented = false
         var isRebalanceSheetPresented = false
+        var wasChatSheetPresentedBeforeProfile = false
+        var wasChatSheetPresentedBeforeRebalance = false
 
         func chatSheetInsetHeight(containerHeight: CGFloat) -> CGFloat {
             guard isChatSheetPresented else { return 0 }
@@ -108,6 +110,7 @@ struct AppFeature: Reducer {
                     state.isAuthFlowPresented = true
                     return .none
                 }
+                state.wasChatSheetPresentedBeforeProfile = state.isChatSheetPresented
                 state.isChatSheetPresented = false
                 state.isProfileSheetPresented = true
                 return .none
@@ -128,6 +131,7 @@ struct AppFeature: Reducer {
 
             case .home(.rebalanceTapped):
                 guard state.auth.session != nil else { return .none }
+                state.wasChatSheetPresentedBeforeRebalance = state.isChatSheetPresented
                 state.isChatSheetPresented = false
                 state.isProfileSheetPresented = false
                 state.rebalance = RebalanceFeature.State(accessToken: state.auth.session?.accessToken ?? "")
@@ -144,9 +148,8 @@ struct AppFeature: Reducer {
 
             case .profileSheetDismissed:
                 state.isProfileSheetPresented = false
-                if state.auth.session != nil {
-                    state.isChatSheetPresented = true
-                }
+                state.isChatSheetPresented = state.auth.session != nil && state.wasChatSheetPresentedBeforeProfile
+                state.wasChatSheetPresentedBeforeProfile = false
                 return .none
 
             case let .profileSheetPresentationChanged(isPresented):
@@ -155,21 +158,20 @@ struct AppFeature: Reducer {
 
             case .rebalance(.delegate(.applied)):
                 state.isRebalanceSheetPresented = false
-                state.isChatSheetPresented = true
+                state.isChatSheetPresented = false
+                state.wasChatSheetPresentedBeforeRebalance = false
                 return .send(.home(.onAppear))
 
             case .rebalance(.delegate(.close)):
                 state.isRebalanceSheetPresented = false
-                if state.auth.session != nil {
-                    state.isChatSheetPresented = true
-                }
+                state.isChatSheetPresented = state.auth.session != nil && state.wasChatSheetPresentedBeforeRebalance
+                state.wasChatSheetPresentedBeforeRebalance = false
                 return .none
 
             case .rebalanceSheetDismissed:
                 state.isRebalanceSheetPresented = false
-                if state.auth.session != nil {
-                    state.isChatSheetPresented = true
-                }
+                state.isChatSheetPresented = state.auth.session != nil && state.wasChatSheetPresentedBeforeRebalance
+                state.wasChatSheetPresentedBeforeRebalance = false
                 return .none
 
             case let .rebalanceSheetPresentationChanged(isPresented):
