@@ -53,7 +53,9 @@ struct RebalanceSheetView: View {
         .sentinelInlineNavigationTitle()
         .toolbar {
             ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
-                Button(L10n.Profile.closeButton, action: onClose)
+                Button(action: onClose) {
+                    ToolbarTextLabel(L10n.Profile.closeButton)
+                }
             }
         }
     }
@@ -121,6 +123,7 @@ struct RebalanceSheetView: View {
                 Button(L10n.Rebalance.refreshButton) {
                     store.send(.previewTapped)
                 }
+                .labelStyle(.titleOnly)
                 .disabled(store.isLoading || store.isApplying)
             }
         }

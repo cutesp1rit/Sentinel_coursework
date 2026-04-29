@@ -4,6 +4,14 @@ import SwiftUI
 
 @ObservableState
 struct HomeState: Equatable {
+    struct SummaryRowModel: Equatable {
+        let detail: String
+        let systemImage: String?
+        let tint: Color
+        let title: String
+        let value: String
+    }
+
     struct MetricCardModel: Equatable {
         let detail: String
         let systemImage: String?

@@ -1,6 +1,17 @@
 import Foundation
+import SwiftUI
 
 extension HomeState {
+    var scheduleSummaryRowModel: SummaryRowModel {
+        SummaryRowModel(
+            detail: scheduleSummaryDetail,
+            systemImage: "calendar.badge.clock",
+            tint: .primary,
+            title: L10n.Home.eventsRowTitle,
+            value: todayItems.count.formatted()
+        )
+    }
+
     var allEventSections: [HomeEventDaySection] {
         let grouped = Dictionary(grouping: schedule.upcomingItems) { item in
             Calendar.current.startOfDay(for: item.startDate)
@@ -62,5 +73,35 @@ extension HomeState {
             return L10n.Home.noEventsToday
         }
         return L10n.Home.todayCount(count)
+    }
+
+    private var scheduleSummaryDetail: String {
+        guard let item = nextRelevantScheduleItem else {
+            return L10n.Home.emptyTodayBody
+        }
+
+        let now = Date()
+        let relativeText: String
+        if let endDate = item.endDate, item.startDate <= now, endDate > now {
+            relativeText = L10n.Home.inProgress
+        } else if abs(item.startDate.timeIntervalSince(now)) < 60 {
+            relativeText = L10n.Home.startsNow
+        } else {
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .full
+            relativeText = formatter.localizedString(for: item.startDate, relativeTo: now)
+        }
+
+        return L10n.Home.scheduleDetail(item.title, relativeText)
+    }
+
+    private var nextRelevantScheduleItem: HomeScheduleItem? {
+        let now = Date()
+        return todayItems.first { item in
+            if let endDate = item.endDate {
+                return endDate > now
+            }
+            return item.startDate >= now
+        } ?? schedule.upcomingItems.first
     }
 }

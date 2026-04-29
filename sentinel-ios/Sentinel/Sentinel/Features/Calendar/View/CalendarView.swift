@@ -257,14 +257,18 @@ private struct CalendarEditorView: View {
             .sentinelInlineNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: sentinelToolbarLeadingPlacement) {
-                    Button(L10n.Profile.closeButton) {
+                    Button {
                         store.send(.editorDismissed)
+                    } label: {
+                        ToolbarTextLabel(L10n.Profile.closeButton)
                     }
                 }
 
                 ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
-                    Button(L10n.Calendar.saveEvent) {
+                    Button {
                         store.send(.saveTapped)
+                    } label: {
+                        ToolbarTextLabel(L10n.Calendar.saveEvent)
                     }
                 }
             }

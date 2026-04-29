@@ -24,6 +24,7 @@ enum L10n {
         static let eventsTitle = String(localized: "home.events_title")
         static let calendarTitle = String(localized: "home.calendar_title")
         static let batteryTitle = String(localized: "home.battery_title")
+        static let eventsRowTitle = String(localized: "home.events_row_title")
         static let actionsTitle = String(localized: "home.actions_title")
         static let connectCalendarTitle = String(localized: "home.connect_calendar_title")
         static let connectCalendarBody = String(localized: "home.connect_calendar_body")
@@ -70,6 +71,8 @@ enum L10n {
         static let signedOutHeroBody = String(localized: "home.signed_out_hero_body")
         static let signedOutHeroEyebrow = String(localized: "home.signed_out_hero_eyebrow")
         static let signedOutHeroTitle = String(localized: "home.signed_out_hero_title")
+        static let startsNow = String(localized: "home.starts_now")
+        static let inProgress = String(localized: "home.in_progress")
         static let viewAllButton = String(localized: "home.view_all_button")
 
         static func heroSubtitle(_ name: String) -> String {
@@ -83,6 +86,14 @@ enum L10n {
             String.localizedStringWithFormat(
                 String(localized: "home.today_count_format"),
                 count
+            )
+        }
+
+        static func scheduleDetail(_ title: String, _ timing: String) -> String {
+            String.localizedStringWithFormat(
+                String(localized: "home.schedule_detail_format"),
+                title,
+                timing
             )
         }
     }

@@ -37,32 +37,43 @@ struct ProfileSheetView: View {
 
                 #if DEBUG
                 Section {
-                    NavigationLink {
-                        EnvironmentSelectionView(
-                            selectedEnvironment: store.selectedEnvironment,
-                            onSelect: { store.send(.environmentChanged($0)) }
-                        )
-                    } label: {
-                        HStack {
-                            Text(L10n.Profile.environmentTitle)
-                            Spacer()
-                            Text(environmentTitle(store.selectedEnvironment))
-                                .foregroundStyle(.secondary)
+                    HStack {
+                        Text(L10n.Profile.environmentTitle)
+                        Spacer()
+                        Picker(
+                            L10n.Profile.environmentTitle,
+                            selection: Binding(
+                                get: { store.selectedEnvironment },
+                                set: { store.send(.environmentChanged($0)) }
+                            )
+                        ) {
+                            ForEach(AppEnvironment.allCases) { environment in
+                                Text(environmentTitle(environment))
+                                    .tag(environment)
+                            }
                         }
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .tint(.secondary)
                     }
                 }
                 #endif
 
-                Section(L10n.Settings.defaultPromptTitle) {
-                    TextEditor(text: promptBinding)
-                        .frame(minHeight: 132)
+                Section {
+                    TextField("", text: promptBinding, axis: .vertical)
+                        .textFieldStyle(.plain)
+                        .font(.body)
+                        .lineLimit(1 ... 6)
                         .focused($isPromptFocused)
+                        .padding(.vertical, AppSpacing.small)
                         .onChange(of: isPromptFocused) { _, isFocused in
                             if !isFocused {
                                 store.send(.promptEditingEnded)
                             }
                         }
-
+                } header: {
+                    Text(L10n.Settings.defaultPromptTitle)
+                } footer: {
                     Text(L10n.Settings.defaultPromptFooter)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -115,11 +126,12 @@ struct ProfileSheetView: View {
             .scrollContentBackground(.hidden)
             .background(AppPlatformColor.systemGroupedBackground.ignoresSafeArea())
             .navigationTitle(L10n.Profile.title)
-            .sentinelInlineNavigationTitle()
+            .sentinelLargeNavigationTitle()
             .toolbar {
                 ToolbarItem(placement: sentinelToolbarTrailingPlacement) {
-                    Button(L10n.Profile.closeButton, action: onClose)
-                        .buttonStyle(.plain)
+                    Button(action: onClose) {
+                        ToolbarTextLabel(L10n.Profile.closeButton)
+                    }
                 }
             }
             .task {

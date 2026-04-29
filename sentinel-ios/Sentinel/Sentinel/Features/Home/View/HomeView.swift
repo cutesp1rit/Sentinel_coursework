@@ -108,24 +108,24 @@ struct HomeView: View {
                 profileButton
             }
 
-            if let batteryCard = store.batteryMetricCard {
-                HStack(spacing: AppSpacing.medium) {
-                    metricCard(
-                        model: store.scheduleMetricCard
-                    )
+            summaryRows
 
-                    batteryMetricCard(model: batteryCard)
-                }
-            } else {
-                metricCard(
-                    model: store.scheduleMetricCard
-                )
+            VStack(alignment: .leading, spacing: AppSpacing.medium) {
+                todaySection
+                rebalanceFeatureCard
             }
 
-            todaySection
-            rebalanceFeatureCard
-
             achievementsRail
+        }
+    }
+
+    private var summaryRows: some View {
+        VStack(spacing: AppSpacing.medium) {
+            summaryRow(model: store.scheduleSummaryRowModel)
+
+            if let batteryRow = store.batterySummaryRowModel {
+                batterySummaryRow(model: batteryRow)
+            }
         }
     }
 
@@ -179,13 +179,7 @@ struct HomeView: View {
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, AppSpacing.medium)
-                .padding(.vertical, AppSpacing.small)
-                .background(
-                    RoundedRectangle(cornerRadius: 999, style: .continuous)
-                        .fill(Color.blue)
-                )
+                .foregroundStyle(Color.blue)
             }
             .buttonStyle(.plain)
         }
@@ -196,40 +190,36 @@ struct HomeView: View {
             Button {
                 store.send(.rebalanceTapped)
             } label: {
-                VStack(alignment: .leading, spacing: AppSpacing.medium) {
-                    HStack(alignment: .top) {
-                        VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                            Text(L10n.Home.rebalanceTitle)
-                                .font(.title3.weight(.bold))
-                            Text(L10n.Home.rebalanceFeatureBody)
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
+                HStack(alignment: .top, spacing: AppSpacing.medium) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.blue)
+                        .frame(width: 28)
 
-                        Spacer()
+                    VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                        Text(L10n.Home.rebalanceTitle)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
 
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .font(.title2.weight(.semibold))
-                            .foregroundStyle(Color.blue)
-                    }
-
-                    HStack {
-                        Text(L10n.Home.rebalanceButton)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(Color.blue)
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.footnote.weight(.semibold))
+                        Text(L10n.Home.rebalanceFeatureBody)
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+
+                    Spacer(minLength: AppSpacing.medium)
+
+                    Image(systemName: "chevron.right")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, AppSpacing.xSmall)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .buttonStyle(.plain)
         }
-        .padding(AppSpacing.large)
+        .padding(.horizontal, AppSpacing.large)
+        .padding(.vertical, AppSpacing.medium)
         .background(SentinelSurfaceCard())
     }
 
@@ -250,6 +240,7 @@ struct HomeView: View {
                     } label: {
                         Text(L10n.Home.viewAllButton)
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.blue)
                     }
                     .buttonStyle(.plain)
                 }
@@ -261,8 +252,11 @@ struct HomeView: View {
                         HomeAchievementCard(highlight: highlight)
                     }
                 }
+                .padding(.horizontal, AppSpacing.large)
                 .padding(.vertical, AppSpacing.small)
             }
+            .padding(.horizontal, -AppSpacing.large)
+            .scrollClipDisabled()
         }
     }
     private var profileButton: some View {
@@ -278,48 +272,53 @@ struct HomeView: View {
     }
 
     @ViewBuilder
-    private func batteryMetricCard(model: HomeState.MetricCardModel) -> some View {
+    private func batterySummaryRow(model: HomeState.SummaryRowModel) -> some View {
         if store.isBatteryMetricActionable {
             Button {
                 openSystemSettings()
             } label: {
-                metricCard(model: model)
+                summaryRowContent(model: model)
             }
             .buttonStyle(.plain)
             .accessibilityHint(L10n.Home.batteryOpenSettingsHint)
         } else {
-            metricCard(model: model)
+            summaryRowContent(model: model)
         }
     }
 
-    private func metricCard(model: HomeState.MetricCardModel) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            HStack(alignment: .center, spacing: AppSpacing.small) {
-                Text(model.title)
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.secondary)
+    private func summaryRow(model: HomeState.SummaryRowModel) -> some View {
+        summaryRowContent(model: model)
+    }
 
-                Spacer()
+    private func summaryRowContent(model: HomeState.SummaryRowModel) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.medium) {
+            Text(model.value)
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(model.tint)
+                .fixedSize()
 
-                if let systemImage = model.systemImage {
-                    Image(systemName: systemImage)
+            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.small) {
+                    Text(model.title)
                         .font(.headline.weight(.semibold))
-                        .foregroundStyle(model.tint)
+                        .foregroundStyle(.primary)
+
+                    if let systemImage = model.systemImage {
+                        Image(systemName: systemImage)
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(model.tint)
+                    }
                 }
+
+                Text(model.detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Text(model.value)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(model.tint)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Text(model.detail)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .lineLimit(3)
+            Spacer(minLength: AppSpacing.medium)
         }
-        .frame(maxWidth: .infinity, minHeight: 128, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(AppSpacing.large)
         .background(SentinelSurfaceCard())
     }

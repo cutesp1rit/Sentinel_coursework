@@ -1,6 +1,17 @@
 import SwiftUI
 
 extension HomeState {
+    var batterySummaryRowModel: SummaryRowModel? {
+        guard showsBatteryMetricCard else { return nil }
+        return SummaryRowModel(
+            detail: resourceBatteryDetailText,
+            systemImage: resourceBatterySymbolName,
+            tint: resourceBatteryTint,
+            title: L10n.Home.batteryTitle,
+            value: resourceBatteryValueText
+        )
+    }
+
     var resourceBatteryProgress: Double {
         switch battery {
         case .hidden, .placeholder, .setupRequired:

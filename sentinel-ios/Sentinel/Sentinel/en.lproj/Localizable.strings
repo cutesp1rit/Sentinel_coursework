@@ -18,6 +18,7 @@
 "home.events_title" = "Upcoming";
 "home.calendar_title" = "Calendar";
 "home.battery_title" = "Resource Battery";
+"home.events_row_title" = "Events";
 "home.actions_title" = "Actions";
 "home.connect_calendar_title" = "Calendar access will plug in next";
 "home.connect_calendar_body" = "This slice establishes the home structure first. EventKit permissions and live events land in the calendar sync slice.";
@@ -79,6 +80,9 @@
 "home.signed_out_hero_body" = "Build your day with AI suggestions, review them calmly, and save only what fits.";
 "home.signed_out_hero_eyebrow" = "Sentinel";
 "home.signed_out_hero_title" = "Plan the day before it plans you";
+"home.starts_now" = "starts now";
+"home.in_progress" = "in progress";
+"home.schedule_detail_format" = "%1$@ • %2$@";
 "home.today_count_format" = "%lld events today";
 "home.view_all_button" = "View all";
 

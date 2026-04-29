@@ -474,6 +474,19 @@ struct ResourceBatteryInlineBadge: View {
     }
 }
 
+struct ToolbarTextLabel: View {
+    let title: String
+
+    init(_ title: String) {
+        self.title = title
+    }
+
+    var body: some View {
+        Text(title)
+            .padding(.horizontal, AppSpacing.xSmall)
+    }
+}
+
 struct AgendaDayHeader<Trailing: View>: View {
     let title: String
     let subtitle: String

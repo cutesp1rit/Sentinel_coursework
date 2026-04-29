@@ -26,7 +26,7 @@ struct ChatSheetComposerView: View {
     }
 
     private var expandedComposer: some View {
-        HStack(alignment: .bottom, spacing: AppSpacing.medium) {
+        HStack(alignment: .top, spacing: AppSpacing.medium) {
             Button(action: onAttachmentTap) {
                 Image(systemName: "plus")
                     .font(.system(size: 22, weight: .regular))
@@ -71,12 +71,14 @@ struct ChatSheetComposerView: View {
     }
 
     private var composerTextRow: some View {
-        HStack(alignment: .bottom, spacing: AppSpacing.small) {
+        HStack(alignment: .top, spacing: AppSpacing.small) {
             TextField(L10n.ChatSheet.composerPlaceholder, text: $draft, axis: .vertical)
                 .textFieldStyle(.plain)
                 .lineLimit(1 ... 5)
                 .font(.callout)
                 .frame(minHeight: 20)
+                .padding(.top, 7)
+                .padding(.bottom, 5)
                 .focused(composerFocus)
                 .onTapGesture(perform: onComposerTap)
                 .disabled(!isComposerEnabled)
@@ -94,11 +96,10 @@ struct ChatSheetComposerView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.ChatSheet.sendMessageAccessibility)
             .allowsHitTesting(isSendEnabled && isComposerEnabled)
+            .padding(.top, 8)
         }
         .padding(.horizontal, AppSpacing.medium)
-        .padding(.top, hasAttachmentStrip ? 0 : AppSpacing.small)
-        .padding(.bottom, AppSpacing.small)
-        .frame(maxWidth: .infinity, minHeight: 42, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: 42, alignment: .topLeading)
     }
 
     private var hasAttachmentStrip: Bool {

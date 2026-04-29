@@ -18,6 +18,7 @@
 "home.events_title" = "Ближайшее";
 "home.calendar_title" = "Календарь";
 "home.battery_title" = "Resource Battery";
+"home.events_row_title" = "События";
 "home.actions_title" = "Действия";
 "home.connect_calendar_title" = "Доступ к календарю будет подключён позже";
 "home.connect_calendar_body" = "Сначала эта часть фиксирует структуру главного экрана. Права EventKit и живые события приходят в следующем срезе синхронизации.";
@@ -64,6 +65,9 @@
 "home.signed_out_hero_body" = "Собирайте день из AI-предложений, спокойно проверяйте их и сохраняйте только то, что подходит.";
 "home.signed_out_hero_eyebrow" = "Sentinel";
 "home.signed_out_hero_title" = "Спланируйте день, пока он не спланировал вас";
+"home.starts_now" = "вот-вот начнётся";
+"home.in_progress" = "уже идёт";
+"home.schedule_detail_format" = "%1$@ • %2$@";
 "home.today_count_format" = "Сегодня %lld событий";
 "home.view_all_button" = "Смотреть всё";
 
