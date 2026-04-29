@@ -1,4 +1,5 @@
 import SwiftUI
+import SentinelCore
 
 struct HomeBatterySectionView: View {
     let battery: HomeBatteryState

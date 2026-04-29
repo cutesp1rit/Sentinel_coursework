@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import SwiftUI
 
 #if canImport(UIKit)
@@ -115,14 +117,17 @@ private struct ComposerAttachmentPreview: View {
             attachmentImage
                 .frame(width: 72, height: 72)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: AppRadius.large, style: .continuous))
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(.white, .black.opacity(0.75))
-                    .padding(4)
+                    .padding(6)
             }
             .buttonStyle(.plain)
+            .contentShape(Rectangle())
+            .zIndex(1)
             .accessibilityLabel(L10n.ChatSheet.removeAttachmentAccessibility)
         }
     }

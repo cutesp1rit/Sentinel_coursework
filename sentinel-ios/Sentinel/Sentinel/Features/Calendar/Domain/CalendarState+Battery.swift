@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 extension CalendarState {
     func batteryRequest(for sectionID: AgendaSection.ID) -> BatteryDayRequest? {

@@ -1,4 +1,5 @@
 import SwiftUI
+import SentinelCore
 
 struct HomeTodaySnapshotSectionView: View {
     let snapshot: HomeSnapshot

@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import ComposableArchitecture
 import SwiftUI
 
@@ -79,14 +81,19 @@ struct ProfileSheetView: View {
                         .foregroundStyle(.primary.opacity(0.72))
                 }
 
-                if let accessToken = store.accessToken {
+                if store.accessToken != nil {
                     Section {
-                        NavigationLink {
-                            AchievementsView(
-                                store: Store(initialState: AchievementsState(accessToken: accessToken)) {
-                                    AchievementsReducer()
-                                }
+                        NavigationLink(
+                            isActive: Binding(
+                                get: { store.achievements != nil },
+                                set: { store.send(.achievementsNavigationChanged($0)) }
                             )
+                        ) {
+                            IfLetStore(
+                                store.scope(state: \.achievements, action: \.achievements)
+                            ) { achievementsStore in
+                                AchievementsView(store: achievementsStore)
+                            }
                         } label: {
                             Text(L10n.Settings.achievements)
                         }
@@ -139,6 +146,16 @@ struct ProfileSheetView: View {
             }
             .onDisappear {
                 store.send(.promptEditingEnded)
+            }
+        }
+        .navigationDestination(
+            isPresented: Binding(
+                get: { store.achievements != nil },
+                set: { store.send(.achievementsNavigationChanged($0)) }
+            )
+        ) {
+            if let achievementsStore = store.scope(state: \.achievements, action: \.achievements) {
+                AchievementsView(store: achievementsStore)
             }
         }
         .presentationDetents([.large])

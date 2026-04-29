@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import SwiftUI
 
 struct HomeAllEventsView: View {

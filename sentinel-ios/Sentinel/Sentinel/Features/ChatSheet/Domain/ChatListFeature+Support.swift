@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SentinelCore
 import Foundation
 
 extension ChatListFeature {

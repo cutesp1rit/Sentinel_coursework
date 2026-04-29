@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import ComposableArchitecture
 import SwiftUI
 
@@ -92,244 +94,66 @@ struct AuthFlowView: View {
     private var formCard: some View {
         AuthFormCard {
             if let statusMessage = store.statusMessage {
-                authBanner(statusMessage, tint: .secondary.opacity(0.12), foreground: .secondary)
+                AuthStatusBanner(message: statusMessage, tint: .secondary.opacity(0.12), foreground: .secondary)
             }
 
             if let errorMessage = store.errorMessage {
-                authBanner(errorMessage, tint: .red.opacity(0.12), foreground: .red)
+                AuthStatusBanner(message: errorMessage, tint: .red.opacity(0.12), foreground: .red)
             }
 
             switch (store.flow, store.mode, store.registerStep) {
             case (.auth, .login, _):
-                loginForm
+                AuthLoginFormView(
+                    email: emailBinding,
+                    password: passwordBinding,
+                    isSubmitting: store.isSubmitting,
+                    onForgotPassword: { store.send(.forgotPasswordTapped) },
+                    onLogin: { store.send(.submitTapped) },
+                    onSwitchToRegister: { store.send(.modeChanged(.register)) }
+                )
 
             case (.auth, .register, .email):
-                registerEmailForm
+                AuthRegisterEmailFormView(
+                    email: emailBinding,
+                    isSubmitting: store.isSubmitting,
+                    onContinue: { store.send(.submitTapped) },
+                    onSwitchToLogin: { store.send(.modeChanged(.login)) }
+                )
 
             case (.auth, .register, .credentials):
-                registerPasswordForm
+                AuthRegisterPasswordFormView(
+                    confirmPassword: confirmPasswordBinding,
+                    isSubmitting: store.isSubmitting,
+                    password: passwordBinding,
+                    onBackToEmail: { store.send(.registerStepChanged(.email)) },
+                    onRegister: { store.send(.submitTapped) }
+                )
 
             case (.verificationPending, _, _):
-                verificationForm
+                AuthVerificationFormView(
+                    email: store.verificationRequiredEmail ?? store.email,
+                    isResendingVerification: store.isResendingVerification,
+                    isSubmitting: store.isSubmitting,
+                    onBackToLogin: { store.send(.modeChanged(.login)) },
+                    onResend: { store.send(.resendVerificationTapped) },
+                    onRetryLogin: { store.send(.retryVerificationLoginTapped) },
+                    onVerify: { store.send(.verifyEmailTapped) },
+                    verificationToken: verificationTokenBinding
+                )
 
             case (.forgotPassword, _, _):
-                forgotPasswordForm
-            }
-        }
-    }
-
-    private var loginForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            formField(title: L10n.Profile.emailPlaceholder) {
-                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                    .sentinelEmailField()
-            }
-
-            formField(title: L10n.Profile.passwordPlaceholder) {
-                SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
-                    .textContentType(.password)
-            }
-
-            PrimaryButton(L10n.Profile.loginButton, isEnabled: !store.isSubmitting) {
-                store.send(.submitTapped)
-            }
-
-            VStack(alignment: .leading, spacing: AppSpacing.small) {
-                SecondaryTextAction(
-                    L10n.Profile.registerInlineButton,
-                    prompt: L10n.Profile.noAccountPrompt
-                ) {
-                    store.send(.modeChanged(.register))
-                }
-
-                SecondaryTextAction(L10n.Profile.forgotPasswordButton) {
-                    store.send(.forgotPasswordTapped)
-                }
-            }
-        }
-    }
-
-    private var registerEmailForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            formField(title: L10n.Profile.emailPlaceholder) {
-                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                    .sentinelEmailField()
-            }
-
-            PrimaryButton(L10n.Profile.continueButton, isEnabled: !store.isSubmitting) {
-                store.send(.submitTapped)
-            }
-
-            SecondaryTextAction(
-                L10n.Profile.loginInlineButton,
-                prompt: L10n.Profile.alreadyHaveAccountPrompt
-            ) {
-                store.send(.modeChanged(.login))
-            }
-        }
-    }
-
-    private var registerPasswordForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            formField(title: L10n.Profile.passwordPlaceholder) {
-                SecureField(L10n.Profile.passwordPlaceholder, text: passwordBinding)
-                    .textContentType(.newPassword)
-            }
-
-            formField(title: L10n.Profile.confirmPasswordPlaceholder) {
-                SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
-                    .textContentType(.newPassword)
-            }
-
-            PrimaryButton(L10n.Profile.registerButton, isEnabled: !store.isSubmitting) {
-                store.send(.submitTapped)
-            }
-
-            Button(L10n.Profile.backToEmailButton) {
-                store.send(.registerStepChanged(.email))
-            }
-            .buttonStyle(.plain)
-            .font(.subheadline.weight(.semibold))
-        }
-    }
-
-    private var verificationForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            EmptyStateCard(
-                title: L10n.Profile.verificationRequiredTitle,
-                bodyText: L10n.Profile.verificationPendingBody(store.verificationRequiredEmail ?? store.email)
-            )
-
-            Text(L10n.Profile.manualVerificationHint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            formField(title: L10n.Profile.verificationTokenPlaceholder) {
-                TextField(L10n.Profile.verificationTokenPlaceholder, text: verificationTokenBinding)
-                    .sentinelTokenField()
-            }
-
-            PrimaryButton(L10n.Profile.verifyEmailButton, isEnabled: !store.isSubmitting) {
-                store.send(.verifyEmailTapped)
-            }
-
-            PrimaryButton(L10n.Profile.trySignInAgainButton, isEnabled: !store.isSubmitting) {
-                store.send(.retryVerificationLoginTapped)
-            }
-
-            Button(L10n.Profile.resendVerificationButton) {
-                store.send(.resendVerificationTapped)
-            }
-            .buttonStyle(.plain)
-            .font(.subheadline.weight(.semibold))
-            .disabled(store.isResendingVerification)
-            .opacity(store.isResendingVerification ? AppOpacity.disabled : 1)
-
-            SecondaryTextAction(L10n.Profile.backToSignInButton) {
-                store.send(.modeChanged(.login))
-            }
-        }
-    }
-
-    private var forgotPasswordForm: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.large) {
-            formField(title: L10n.Profile.emailPlaceholder) {
-                TextField(L10n.Profile.emailPlaceholder, text: emailBinding)
-                    .sentinelEmailField()
-            }
-
-            PrimaryButton(L10n.Profile.sendResetLinkButton, isEnabled: !store.isSubmitting) {
-                store.send(.sendPasswordResetEmailTapped)
-            }
-
-            Text(L10n.Profile.manualResetHint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            formField(title: L10n.Profile.resetTokenPlaceholder) {
-                TextField(L10n.Profile.resetTokenPlaceholder, text: resetTokenBinding)
-                    .sentinelTokenField()
-            }
-
-            formField(title: L10n.Profile.newPasswordPlaceholder) {
-                SecureField(L10n.Profile.newPasswordPlaceholder, text: passwordBinding)
-                    .textContentType(.newPassword)
-            }
-
-            formField(title: L10n.Profile.confirmPasswordPlaceholder) {
-                SecureField(L10n.Profile.confirmPasswordPlaceholder, text: confirmPasswordBinding)
-                    .textContentType(.newPassword)
-            }
-
-            PrimaryButton(L10n.Profile.resetPasswordButton, isEnabled: !store.isSubmitting) {
-                store.send(.resetPasswordTapped)
-            }
-
-            SecondaryTextAction(L10n.Profile.backToSignInButton) {
-                store.send(.modeChanged(.login))
-            }
-        }
-    }
-
-    private func authBanner(
-        _ message: String,
-        tint: Color,
-        foreground: Color
-    ) -> some View {
-        Text(message)
-            .font(.footnote)
-            .foregroundStyle(foreground)
-            .padding(.horizontal, AppSpacing.medium)
-            .padding(.vertical, AppSpacing.small)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(tint, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-
-    private func formField<Content: View>(
-        title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.small) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            content()
-                .padding(.horizontal, AppSpacing.large)
-                .frame(height: 54)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(AppPlatformColor.secondaryGroupedBackground.opacity(0.84))
+                AuthForgotPasswordFormView(
+                    confirmPassword: confirmPasswordBinding,
+                    email: emailBinding,
+                    isSubmitting: store.isSubmitting,
+                    onBackToLogin: { store.send(.modeChanged(.login)) },
+                    onResetPassword: { store.send(.resetPasswordTapped) },
+                    onSendResetEmail: { store.send(.sendPasswordResetEmailTapped) },
+                    password: passwordBinding,
+                    resetToken: resetTokenBinding
                 )
+            }
         }
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func sentinelEmailField() -> some View {
-        #if os(iOS)
-        self
-            .textInputAutocapitalization(.never)
-            .keyboardType(.emailAddress)
-            .textContentType(.username)
-            .autocorrectionDisabled()
-        #else
-        self
-        #endif
-    }
-
-    @ViewBuilder
-    func sentinelTokenField() -> some View {
-        #if os(iOS)
-        self
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-        #else
-        self
-        #endif
     }
 }
 

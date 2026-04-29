@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SentinelCore
 import SwiftUI
 
 struct ContentView: View {

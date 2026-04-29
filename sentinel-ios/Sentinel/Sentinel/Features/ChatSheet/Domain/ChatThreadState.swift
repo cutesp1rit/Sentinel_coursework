@@ -1,4 +1,6 @@
 import ComposableArchitecture
+import SentinelPlatformiOS
+import SentinelCore
 import Foundation
 
 extension ChatThreadFeature {
@@ -6,6 +8,7 @@ extension ChatThreadFeature {
     struct State: Equatable {
         var accessToken: String?
         var activeChatID: UUID?
+        var attachmentPicker = ChatAttachmentPickerFeature.State()
         var composerAttachments: [ChatComposerAttachment] = []
         var draft = ""
         var errorMessage: String?
@@ -14,6 +17,7 @@ extension ChatThreadFeature {
         var isLoadingMoreHistory = false
         var isSending = false
         var messages: [ChatThreadMessage] = []
+        var recentPhotoAttachmentIDs: [RecentLibraryPhoto.ID: ChatComposerAttachment.ID] = [:]
         var activeSendRequestID: UUID?
         var pendingLocalMessageID: ChatThreadMessage.ID?
         var sendStage: ChatSendStage?
@@ -28,9 +32,12 @@ extension ChatThreadFeature {
         }
     }
 
+    @CasePathable
     enum Action: Equatable {
         case accessTokenChanged(String?)
         case activeChatChanged(UUID?)
+        case attachmentButtonTapped
+        case attachmentPicker(ChatAttachmentPickerFeature.Action)
         case attachmentsAdded([ChatComposerAttachment])
         case attachmentRemoved(ChatComposerAttachment.ID)
         case addSelectedSuggestionsTapped(ChatThreadMessage.ID)
@@ -46,6 +53,7 @@ extension ChatThreadFeature {
         case onAppear
         case refreshSuggestionConflictsRequested(ChatThreadMessage.ID)
         case retryTapped
+        case recentPhotoAttachmentLoaded(RecentLibraryPhoto.ID, ChatComposerAttachment?)
         case sendButtonTapped
         case sendFlowCompleted(
             requestID: UUID,
@@ -94,6 +102,7 @@ extension ChatThreadFeature {
     }
 
     enum Delegate: Equatable {
+        case attachmentFlowRequested
         case chatActivated(UUID?)
         case chatListShouldReload(UUID?)
         case expandRequested

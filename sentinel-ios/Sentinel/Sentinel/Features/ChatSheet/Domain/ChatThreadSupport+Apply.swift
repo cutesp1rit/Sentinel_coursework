@@ -1,4 +1,6 @@
 import ComposableArchitecture
+import SentinelPlatformiOS
+import SentinelCore
 import Foundation
 
 extension ChatThreadFeature {

@@ -90,7 +90,7 @@
 
 "chat_sheet.add_attachment_accessibility" = "Add attachment";
 "chat_sheet.add_files" = "Add images from Files";
-"chat_sheet.add_files_subtitle" = "Attach screenshots or other images stored in Files.";
+"chat_sheet.add_files_subtitle" = "Attach images from Files.";
 "chat_sheet.all_photos" = "All Photos";
 "chat_sheet.attachment_consent_body" = "Images you attach are uploaded to Sentinel servers so the assistant can use them while processing your request.";
 "chat_sheet.attachment_consent_confirm" = "Allow Processing";

@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import ComposableArchitecture
 import SwiftUI
 
@@ -5,7 +7,7 @@ struct AchievementsView: View {
     let store: StoreOf<AchievementsReducer>
 
     var body: some View {
-        ScrollView {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
                 summaryCard
 

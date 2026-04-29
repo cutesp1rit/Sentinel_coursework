@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SentinelCore
 import Foundation
 import SwiftUI
 
@@ -32,9 +33,11 @@ struct HomeState: Equatable {
     }
 
     var accessToken: String?
+    var achievements: AchievementsState?
     var achievementGroups: [AchievementGroup] = []
     var schedule = HomeScheduleState()
     var battery = HomeBatteryState.hidden
+    var calendar: CalendarState?
     var dayStrip = HomeDayMarker.previewWeek
     var selectedDayID = 0
     var userEmail: String?

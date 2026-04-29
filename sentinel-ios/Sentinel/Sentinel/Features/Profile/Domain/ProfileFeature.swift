@@ -1,4 +1,6 @@
 import ComposableArchitecture
+import SentinelPlatformiOS
+import SentinelCore
 import Foundation
 
 @Reducer
@@ -10,6 +12,7 @@ struct ProfileFeature {
     @ObservableState
     struct State: Equatable {
         var accessToken: String?
+        var achievements: AchievementsState?
         var deleteAccountPassword = ""
         var defaultPromptTemplate = ""
         var errorMessage: String?
@@ -31,7 +34,11 @@ struct ProfileFeature {
         }
     }
 
+    @CasePathable
     enum Action: Equatable {
+        case achievements(AchievementsAction)
+        case achievementsNavigationChanged(Bool)
+        case achievementsTapped
         case deleteAccountCompleted
         case deleteAccountFailed(String)
         case deleteAccountPasswordChanged(String)
@@ -56,6 +63,18 @@ struct ProfileFeature {
     var body: some Reducer<State, Action> {
         Reduce { state, action in
             switch action {
+            case .achievementsNavigationChanged(false):
+                state.achievements = nil
+                return .none
+
+            case .achievementsNavigationChanged(true):
+                return .send(.achievementsTapped)
+
+            case .achievementsTapped:
+                guard let accessToken = state.accessToken else { return .none }
+                state.achievements = AchievementsState(accessToken: accessToken)
+                return .none
+
             case .deleteAccountCompleted:
                 return .send(.delegate(.sessionEnded))
 
@@ -160,9 +179,15 @@ struct ProfileFeature {
                 }
                 return .none
 
+            case .achievements:
+                return .none
+
             case .delegate:
                 return .none
             }
+        }
+        .ifLet(\.achievements, action: \.achievements) {
+            AchievementsReducer()
         }
     }
 }

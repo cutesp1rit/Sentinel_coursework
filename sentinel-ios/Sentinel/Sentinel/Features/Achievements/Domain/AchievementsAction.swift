@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 enum AchievementsAction: Equatable {
     case achievementsFailed(String)

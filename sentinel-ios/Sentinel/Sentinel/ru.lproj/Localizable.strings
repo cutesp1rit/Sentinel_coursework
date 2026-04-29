@@ -75,7 +75,7 @@
 
 "chat_sheet.add_attachment_accessibility" = "Добавить вложение";
 "chat_sheet.add_files" = "Добавить изображения из Files";
-"chat_sheet.add_files_subtitle" = "Прикрепите скриншоты и другие изображения из Files.";
+"chat_sheet.add_files_subtitle" = "Прикрепите изображения из Files.";
 "chat_sheet.all_photos" = "Все фото";
 "chat_sheet.attachment_consent_body" = "Изображения, которые вы прикрепляете, загружаются на серверы Sentinel, чтобы ассистент мог использовать их при обработке запроса.";
 "chat_sheet.attachment_consent_confirm" = "Разрешить обработку";

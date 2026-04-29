@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 extension HomeState {
     var nextAchievementHighlights: [HomeAchievementHighlight] {

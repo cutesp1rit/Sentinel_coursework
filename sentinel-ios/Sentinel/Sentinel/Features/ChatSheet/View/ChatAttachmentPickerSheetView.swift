@@ -1,24 +1,25 @@
+import SentinelUI
+import SentinelPlatformiOS
+import SentinelCore
 import SwiftUI
-#if canImport(UIKit)
 import UIKit
-#endif
 
 struct ChatAttachmentPickerSheetView: View {
     let canOpenCamera: Bool
     let isLoadingRecentPhotos: Bool
     let recentPhotos: [RecentLibraryPhoto]
+    let selectedRecentPhotoIDs: [RecentLibraryPhoto.ID]
     let onAddFilesTap: () -> Void
     let onAllPhotosTap: () -> Void
     let onCameraTap: () -> Void
     let onRecentPhotoTap: (RecentLibraryPhoto) -> Void
-    @State private var selectedRecentPhotoIDs: [RecentLibraryPhoto.ID] = []
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: AppSpacing.large) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(L10n.App.title)
-                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .font(.headline.weight(.semibold))
 
                     Spacer()
 
@@ -30,12 +31,12 @@ struct ChatAttachmentPickerSheetView: View {
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: AppSpacing.medium) {
-                        cameraTile
+                        if canOpenCamera {
+                            cameraTile
+                        }
 
                         ForEach(recentPhotos) { photo in
                             Button {
-                                guard !selectedRecentPhotoIDs.contains(photo.id) else { return }
-                                selectedRecentPhotoIDs.append(photo.id)
                                 onRecentPhotoTap(photo)
                             } label: {
                                 recentPhotoTile(
@@ -48,7 +49,7 @@ struct ChatAttachmentPickerSheetView: View {
 
                         if isLoadingRecentPhotos {
                             ProgressView()
-                                .frame(width: 124, height: 124)
+                                .frame(width: 72, height: 72)
                         }
                     }
                     .padding(.horizontal, 2)
@@ -62,7 +63,7 @@ struct ChatAttachmentPickerSheetView: View {
                 Button(action: onAddFilesTap) {
                     HStack(spacing: AppSpacing.medium) {
                         Image(systemName: "folder.badge.plus")
-                            .font(.system(size: 28, weight: .semibold))
+                            .font(.system(size: 22, weight: .semibold))
                             .frame(width: 32)
 
                         VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
@@ -82,16 +83,12 @@ struct ChatAttachmentPickerSheetView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, AppSpacing.large)
-                    .frame(minHeight: 82)
+                    .frame(minHeight: 72)
                 }
                 .buttonStyle(.plain)
             }
             .padding(.horizontal, AppSpacing.large)
             .padding(.vertical, AppSpacing.xLarge)
-            .background(
-                RoundedRectangle(cornerRadius: 34, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
             .padding(.horizontal, AppSpacing.medium)
             .padding(.top, AppSpacing.small)
         }
@@ -108,10 +105,10 @@ struct ChatAttachmentPickerSheetView: View {
                     .fill(AppPlatformColor.secondaryGroupedBackground)
 
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 32, weight: .semibold))
+                    .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(canOpenCamera ? .primary : .secondary)
             }
-            .frame(width: 124, height: 124)
+            .frame(width: 72, height: 72)
         }
         .buttonStyle(.plain)
         .disabled(!canOpenCamera)
@@ -120,46 +117,50 @@ struct ChatAttachmentPickerSheetView: View {
 
     @ViewBuilder
     private func recentPhotoTile(_ photo: RecentLibraryPhoto, selectionIndex: Int?) -> some View {
-        #if canImport(UIKit)
         ZStack(alignment: .topTrailing) {
-            Image(uiImage: photo.thumbnail)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 124, height: 124)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(selectionIndex == nil ? Color.clear : Color.blue, lineWidth: 4)
+            if let image = UIImage(data: photo.thumbnailData) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(selectionIndex == nil ? Color.clear : Color.blue, lineWidth: 4)
+                    }
+            } else {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppPlatformColor.secondaryGroupedBackground)
+                    .frame(width: 72, height: 72)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(selectionIndex == nil ? Color.clear : Color.blue, lineWidth: 4)
+                    }
                 }
 
             selectionBadge(selectionIndex: selectionIndex)
-                .padding(10)
+                .padding(6)
         }
-        #elseif canImport(AppKit)
-        Image(nsImage: photo.thumbnail)
-            .resizable()
-            .scaledToFill()
-            .frame(width: 124, height: 124)
-            .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        #else
-        Color.clear
-            .frame(width: 124, height: 124)
-        #endif
     }
 
     @ViewBuilder
     private func selectionBadge(selectionIndex: Int?) -> some View {
         if let selectionIndex {
             Text(selectionIndex.formatted())
-                .font(.headline.weight(.bold))
+                .font(.caption.weight(.bold))
                 .foregroundStyle(.primary)
-                .frame(width: 40, height: 40)
-                .background(Color.white, in: Circle())
+                .frame(width: 28, height: 28)
+                .background(.ultraThinMaterial, in: Circle())
         } else {
             Circle()
-                .stroke(Color.white, lineWidth: 4)
-                .frame(width: 32, height: 32)
-                .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+                .stroke(Color.primary.opacity(0.8), lineWidth: 2.5)
+                .frame(width: 24, height: 24)
+                .background(.ultraThinMaterial.opacity(0.45), in: Circle())
         }
     }
 }

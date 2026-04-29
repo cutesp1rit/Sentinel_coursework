@@ -1,4 +1,5 @@
 import ComposableArchitecture
+import SentinelCore
 
 @Reducer
 struct ChatSheetReducer {
@@ -56,6 +57,12 @@ struct ChatSheetReducer {
             case .thread(.delegate(.expandRequested)):
                 if state.detent == .collapsed {
                     state.detent = .large
+                }
+                return .none
+
+            case .thread(.delegate(.attachmentFlowRequested)):
+                if state.detent == .collapsed {
+                    state.detent = .medium
                 }
                 return .none
 

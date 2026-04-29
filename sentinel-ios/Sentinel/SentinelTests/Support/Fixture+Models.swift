@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import Foundation
 @testable import Sentinel
 

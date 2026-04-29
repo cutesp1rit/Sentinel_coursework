@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 struct ChatListItem: Equatable, Identifiable {
     let id: UUID

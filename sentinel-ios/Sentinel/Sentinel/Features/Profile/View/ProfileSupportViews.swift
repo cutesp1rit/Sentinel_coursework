@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import SwiftUI
 #if canImport(SafariServices)
 import SafariServices

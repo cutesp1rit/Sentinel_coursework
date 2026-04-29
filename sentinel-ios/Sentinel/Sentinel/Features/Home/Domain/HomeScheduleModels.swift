@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 enum HomeScheduleAccess: Equatable, Sendable {
     case notRequested

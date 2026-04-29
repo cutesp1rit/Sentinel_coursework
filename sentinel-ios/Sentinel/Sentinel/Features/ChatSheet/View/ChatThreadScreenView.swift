@@ -1,10 +1,11 @@
+import SentinelUI
+import SentinelCore
+import SentinelPlatformiOS
 import ComposableArchitecture
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
-#if os(iOS)
 import UIKit
-#endif
 
 struct ChatThreadScreenView: View {
     private enum ScrollAnchor {
@@ -17,18 +18,8 @@ struct ChatThreadScreenView: View {
     let onOpenChatList: () -> Void
     let store: StoreOf<ChatThreadFeature>
 
-    @AppStorage("chat.attachments.processingConsentAccepted") private var hasAttachmentProcessingConsent = false
     @FocusState private var isComposerFocused: Bool
-    @State private var isAttachmentConsentAlertPresented = false
-    @State private var isAttachmentPickerPresented = false
-    @State private var isCameraPickerPresented = false
-    @State private var isFileImporterPresented = false
-    @State private var isLoadingRecentLibraryPhotos = false
-    @State private var shouldPresentAttachmentPickerAfterConsent = false
-    @State private var recentLibraryPhotos: [RecentLibraryPhoto] = []
-    @State private var isPhotosPickerPresented = false
     @State private var selectedPhotoItems: [PhotosPickerItem] = []
-    @State private var isImportingAttachments = false
     @State private var transcriptOpacity: CGFloat = 1
 
     var body: some View {
@@ -84,63 +75,78 @@ struct ChatThreadScreenView: View {
                 }
             }
             .photosPicker(
-                isPresented: $isPhotosPickerPresented,
+                isPresented: Binding(
+                    get: { store.attachmentPicker.isPhotosPickerPresented },
+                    set: { store.send(.attachmentPicker(.photosPickerPresentationChanged($0))) }
+                ),
                 selection: $selectedPhotoItems,
                 maxSelectionCount: max(1, ChatThreadFeature.Constants.attachmentLimit - store.composerAttachments.count),
                 matching: .images
             )
             .fileImporter(
-                isPresented: $isFileImporterPresented,
+                isPresented: Binding(
+                    get: { store.attachmentPicker.isFileImporterPresented },
+                    set: { store.send(.attachmentPicker(.fileImporterPresentationChanged($0))) }
+                ),
                 allowedContentTypes: [.image],
                 allowsMultipleSelection: true
             ) { result in
                 importSelectedFiles(result)
             }
-            #if os(iOS)
-            .sheet(isPresented: $isAttachmentPickerPresented) {
+            .sheet(
+                isPresented: Binding(
+                    get: { store.attachmentPicker.isAttachmentPickerPresented },
+                    set: { store.send(.attachmentPicker(.attachmentPickerPresentationChanged($0))) }
+                )
+            ) {
                 ChatAttachmentPickerSheetView(
                     canOpenCamera: UIImagePickerController.isSourceTypeAvailable(.camera),
-                    isLoadingRecentPhotos: isLoadingRecentLibraryPhotos,
-                    recentPhotos: recentLibraryPhotos,
+                    isLoadingRecentPhotos: store.attachmentPicker.isLoadingRecentPhotos,
+                    recentPhotos: store.attachmentPicker.recentPhotos,
+                    selectedRecentPhotoIDs: store.attachmentPicker.selectedRecentPhotoIDs,
                     onAddFilesTap: {
-                        isAttachmentPickerPresented = false
-                        isFileImporterPresented = true
+                        store.send(.attachmentPicker(.addFilesTapped))
                     },
                     onAllPhotosTap: {
-                        isAttachmentPickerPresented = false
-                        isPhotosPickerPresented = true
+                        store.send(.attachmentPicker(.allPhotosTapped))
                     },
                     onCameraTap: {
-                        isAttachmentPickerPresented = false
                         if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                            isCameraPickerPresented = true
+                            store.send(.attachmentPicker(.cameraTapped))
                         }
                     },
                     onRecentPhotoTap: { recentPhoto in
-                        importRecentPhoto(recentPhoto)
+                        store.send(.attachmentPicker(.recentPhotoTapped(recentPhoto.id)))
                     }
                 )
             }
-            .sheet(isPresented: $isCameraPickerPresented) {
+            .sheet(
+                isPresented: Binding(
+                    get: { store.attachmentPicker.isCameraPickerPresented },
+                    set: { store.send(.attachmentPicker(.cameraPickerPresentationChanged($0))) }
+                )
+            ) {
                 CameraImagePicker { image in
                     importCapturedCameraImage(image)
                 }
             }
             .alert(
                 L10n.ChatSheet.attachmentConsentTitle,
-                isPresented: $isAttachmentConsentAlertPresented
+                isPresented: Binding(
+                    get: { store.attachmentPicker.isConsentAlertPresented },
+                    set: { store.send(.attachmentPicker(.consentAlertPresentationChanged($0))) }
+                )
             ) {
                 Button(L10n.ChatSheet.attachmentConsentConfirm) {
-                    hasAttachmentProcessingConsent = true
-                    shouldPresentAttachmentPickerAfterConsent = true
+                    store.send(.attachmentPicker(.consentConfirmed))
                 }
                 Button(L10n.Profile.cancelButton, role: .cancel) {}
             } message: {
                 Text(L10n.ChatSheet.attachmentConsentBody)
             }
-            #endif
             .onAppear {
                 store.send(.onAppear)
+                store.send(.attachmentPicker(.task))
                 transcriptOpacity = detent == .collapsed ? 0 : 1
             }
             .background(AppPlatformColor.systemBackground)
@@ -161,14 +167,9 @@ struct ChatThreadScreenView: View {
                     scrollToBottom(scrollProxy)
                 }
             }
-            .onChange(of: isPhotosPickerPresented) { _, isPresented in
+            .onChange(of: store.attachmentPicker.isPhotosPickerPresented) { _, isPresented in
                 guard !isPresented else { return }
                 importSelectedPhotoItemsIfNeeded()
-            }
-            .onChange(of: isAttachmentConsentAlertPresented) { _, isPresented in
-                guard !isPresented, shouldPresentAttachmentPickerAfterConsent else { return }
-                shouldPresentAttachmentPickerAfterConsent = false
-                presentAttachmentPicker()
             }
         }
     }
@@ -258,16 +259,7 @@ struct ChatThreadScreenView: View {
             isSendEnabled: store.isSignedIn && !store.isSending && store.hasComposerContent,
             composerFocus: $isComposerFocused,
             onAttachmentTap: {
-                if detent == .collapsed {
-                    onDetentChanged(.medium)
-                }
-                if store.isSignedIn {
-                    if hasAttachmentProcessingConsent {
-                        presentAttachmentPicker()
-                    } else {
-                        isAttachmentConsentAlertPresented = true
-                    }
-                }
+                store.send(.attachmentButtonTapped)
             },
             onRemoveAttachment: { store.send(.attachmentRemoved($0)) },
             onComposerTap: {
@@ -283,28 +275,16 @@ struct ChatThreadScreenView: View {
 }
 
 private extension ChatThreadScreenView {
-    #if os(iOS)
     func importCapturedCameraImage(_ image: UIImage) {
         guard let attachment = makeComposerAttachment(from: image, index: store.composerAttachments.count) else { return }
         store.send(.attachmentsAdded([attachment]))
     }
-    #endif
-
-    func importRecentPhoto(_ recentPhoto: RecentLibraryPhoto) {
-        let index = store.composerAttachments.count
-        Task {
-            guard let attachment = await makeComposerAttachment(from: recentPhoto, index: index) else { return }
-            await MainActor.run {
-                _ = store.send(.attachmentsAdded([attachment]))
-            }
-        }
-    }
 
     func importSelectedPhotoItemsIfNeeded() {
         let items = selectedPhotoItems
-        guard !isImportingAttachments, !items.isEmpty else { return }
+        guard !store.attachmentPicker.isImportingAttachments, !items.isEmpty else { return }
         selectedPhotoItems = []
-        isImportingAttachments = true
+        store.send(.attachmentPicker(.attachmentImportStarted))
         Task {
             for (index, item) in items.enumerated() {
                 if let attachment = await makeComposerAttachment(from: item, index: index) {
@@ -315,7 +295,7 @@ private extension ChatThreadScreenView {
             }
 
             await MainActor.run {
-                isImportingAttachments = false
+                store.send(.attachmentPicker(.attachmentImportFinished))
             }
         }
     }
@@ -337,29 +317,8 @@ private extension ChatThreadScreenView {
         guard !attachments.isEmpty else { return }
         store.send(.attachmentsAdded(attachments))
     }
-
-    func refreshRecentLibraryPhotos() {
-        guard !isLoadingRecentLibraryPhotos else { return }
-
-        isLoadingRecentLibraryPhotos = true
-        Task {
-            let photos = await loadRecentLibraryPhotos(limit: 20)
-            await MainActor.run {
-                recentLibraryPhotos = photos
-                isLoadingRecentLibraryPhotos = false
-            }
-        }
-    }
-
-    func presentAttachmentPicker() {
-        refreshRecentLibraryPhotos()
-        DispatchQueue.main.async {
-            isAttachmentPickerPresented = true
-        }
-    }
 }
 
-#if os(iOS)
 private struct CameraImagePicker: UIViewControllerRepresentable {
     let onImagePicked: (UIImage) -> Void
 
@@ -399,4 +358,3 @@ private struct CameraImagePicker: UIViewControllerRepresentable {
         }
     }
 }
-#endif

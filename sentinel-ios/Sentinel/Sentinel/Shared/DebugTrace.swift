@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 nonisolated func debugTrace(_ message: @autoclosure () -> String) {
 #if DEBUG

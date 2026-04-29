@@ -1,4 +1,6 @@
 import Foundation
+import SentinelPlatformiOS
+import SentinelCore
 
 struct ChatProposalApplyPlan: Equatable {
     let acceptedIndices: [Int]

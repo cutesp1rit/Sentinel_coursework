@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 import SwiftUI
 
 extension HomeState {
@@ -6,7 +7,7 @@ extension HomeState {
         SummaryRowModel(
             detail: scheduleSummaryDetail,
             leading: .value(todayItems.count.formatted(), .primary),
-            title: L10n.Home.eventsCountTitle(todayItems.count),
+            title: L10n.Home.eventsRowTitle,
             titleTint: .primary
         )
     }

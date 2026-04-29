@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 struct HomeDayMarker: Equatable, Identifiable, Sendable {
     let id: Int

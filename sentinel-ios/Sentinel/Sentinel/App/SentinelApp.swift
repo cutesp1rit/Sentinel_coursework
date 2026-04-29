@@ -1,4 +1,5 @@
 import SwiftUI
+import SentinelCore
 
 @main
 struct SentinelApp: App {

@@ -1,4 +1,5 @@
 import SwiftUI
+import SentinelCore
 
 extension HomeState {
     var batterySummaryRowModel: SummaryRowModel? {

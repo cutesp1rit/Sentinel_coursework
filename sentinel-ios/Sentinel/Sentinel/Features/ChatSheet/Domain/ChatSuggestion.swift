@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 import SwiftUI
 
 struct ChatSuggestion: Equatable, Identifiable {

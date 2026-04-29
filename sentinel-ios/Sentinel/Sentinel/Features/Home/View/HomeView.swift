@@ -1,3 +1,5 @@
+import SentinelUI
+import SentinelCore
 import ComposableArchitecture
 import SwiftUI
 #if canImport(UIKit)
@@ -32,6 +34,26 @@ struct HomeView: View {
                 .scrollIndicators(.hidden)
             }
             .sentinelHiddenNavigationBar()
+        }
+        .navigationDestination(
+            isPresented: Binding(
+                get: { store.calendar != nil },
+                set: { store.send(.calendarNavigationChanged($0)) }
+            )
+        ) {
+            if let calendarStore = store.scope(state: \.calendar, action: \.calendar) {
+                CalendarView(store: calendarStore)
+            }
+        }
+        .navigationDestination(
+            isPresented: Binding(
+                get: { store.achievements != nil },
+                set: { store.send(.achievementsNavigationChanged($0)) }
+            )
+        ) {
+            if let achievementsStore = store.scope(state: \.achievements, action: \.achievements) {
+                AchievementsView(store: achievementsStore)
+            }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if !store.isAuthenticated {
@@ -151,6 +173,7 @@ struct HomeView: View {
                         EventRowCard(
                             title: item.title,
                             badge: L10n.Calendar.eventTag,
+                            fixedTagTitle: L10n.Calendar.fixedTag,
                             isFixed: false,
                             time: item.time,
                             location: item.location,
@@ -165,13 +188,9 @@ struct HomeView: View {
 
     @ViewBuilder
     private var allEventsShortcut: some View {
-        if let accessToken = store.accessToken {
-            NavigationLink {
-                CalendarView(
-                    store: Store(initialState: CalendarState(accessToken: accessToken)) {
-                        CalendarReducer()
-                    }
-                )
+        if store.accessToken != nil {
+            Button {
+                store.send(.allEventsTapped)
             } label: {
                 HStack(spacing: AppSpacing.small) {
                     Text(L10n.Home.allEventsTitle)
@@ -191,15 +210,15 @@ struct HomeView: View {
             Button {
                 store.send(.rebalanceTapped)
             } label: {
-                HStack(alignment: .top, spacing: AppSpacing.medium) {
+                HStack(alignment: .center, spacing: AppSpacing.medium) {
                     Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.title3.weight(.semibold))
+                        .font(.system(size: 28, weight: .semibold))
                         .foregroundStyle(Color.blue)
-                        .frame(width: 28)
+                        .frame(width: 40, height: 40)
 
                     VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                         Text(L10n.Home.rebalanceTitle)
-                            .font(.body.weight(.semibold))
+                            .font(.headline.weight(.semibold))
                             .foregroundStyle(.primary)
 
                         Text(L10n.Home.rebalanceFeatureBody)
@@ -213,7 +232,6 @@ struct HomeView: View {
                     Image(systemName: "chevron.right")
                         .font(.footnote.weight(.semibold))
                         .foregroundStyle(.secondary)
-                        .padding(.top, AppSpacing.xSmall)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -231,13 +249,9 @@ struct HomeView: View {
                     .font(.title3.weight(.bold))
                 Spacer()
 
-                if let accessToken = store.accessToken {
-                    NavigationLink {
-                        AchievementsView(
-                            store: Store(initialState: AchievementsState(accessToken: accessToken)) {
-                                AchievementsReducer()
-                            }
-                        )
+                if store.accessToken != nil {
+                    Button {
+                        store.send(.achievementsTapped)
                     } label: {
                         HStack(spacing: AppSpacing.xSmall) {
                             Text(L10n.Home.viewAllButton)
@@ -297,9 +311,9 @@ struct HomeView: View {
     }
 
     private func summaryRowContent(model: HomeState.SummaryRowModel) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.medium) {
+        HStack(alignment: .center, spacing: AppSpacing.medium) {
             leadingSummaryView(model.leading)
-                .frame(width: 72, alignment: .topLeading)
+                .frame(width: 36, height: 36, alignment: .center)
 
             VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
                 Text(model.title)
@@ -325,15 +339,15 @@ struct HomeView: View {
         switch leading {
         case let .value(value, tint):
             Text(value)
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(tint)
                 .fixedSize()
 
         case let .icon(systemImage, tint):
             Image(systemName: systemImage)
-                .font(.system(size: 28, weight: .semibold))
+                .font(.system(size: 24, weight: .semibold))
                 .foregroundStyle(tint)
-                .frame(width: 44, height: 44, alignment: .topLeading)
+                .frame(width: 36, height: 36, alignment: .center)
         }
     }
 
@@ -352,77 +366,4 @@ struct HomeView: View {
             HomeReducer()
         }
     )
-}
-
-struct HomeTopGradientBackground: View {
-    var body: some View {
-        ZStack(alignment: .top) {
-            AppPlatformColor.systemGroupedBackground
-
-            LinearGradient(
-                colors: [
-                    Color(red: 0.78, green: 0.90, blue: 1.0),
-                    Color(red: 0.90, green: 0.88, blue: 1.0),
-                    Color(red: 0.93, green: 0.97, blue: 1.0),
-                    AppPlatformColor.systemGroupedBackground
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .frame(height: 420)
-            .mask {
-                LinearGradient(colors: [.white, .white, .clear], startPoint: .top, endPoint: .bottom)
-            }
-
-            Circle()
-                .fill(Color.cyan.opacity(0.18))
-                .frame(width: 280, height: 280)
-                .blur(radius: 34)
-                .offset(x: -110, y: -40)
-
-            Circle()
-                .fill(Color.pink.opacity(0.14))
-                .frame(width: 300, height: 300)
-                .blur(radius: 42)
-                .offset(x: 120, y: -30)
-        }
-    }
-}
-
-private struct SentinelSurfaceCard: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 30, style: .continuous)
-            .fill(AppPlatformColor.systemBackground)
-    }
-}
-
-private struct HomeAchievementCard: View {
-    let highlight: HomeAchievementHighlight
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.medium) {
-            Text(highlight.icon)
-                .font(.largeTitle)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xSmall) {
-                Text(highlight.title)
-                    .font(.body.weight(.semibold))
-                    .lineLimit(2)
-
-                Text(highlight.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            ProgressView(value: highlight.progressFraction)
-                .tint(.green)
-
-            Text(highlight.progressText)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-        }
-        .frame(width: 180, alignment: .leading)
-        .padding(AppSpacing.large)
-        .background(SentinelSurfaceCard())
-    }
 }

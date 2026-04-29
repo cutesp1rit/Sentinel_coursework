@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 struct HomeBatterySnapshot: Equatable, Sendable {
     var headline: String

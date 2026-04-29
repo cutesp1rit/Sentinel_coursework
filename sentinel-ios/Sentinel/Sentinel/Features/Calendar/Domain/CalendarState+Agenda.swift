@@ -1,4 +1,5 @@
 import Foundation
+import SentinelCore
 
 extension CalendarState {
     static func sectionID(for date: Date) -> AgendaSection.ID {
