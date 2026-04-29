@@ -24,6 +24,28 @@
 		6C5FD8812A0B380E94635324 /* APIModelConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B17B461954363F70BC1D60 /* APIModelConverterTests.swift */; };
 		94C148F2ACE98BF8E47C760E /* SessionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAD8E211650C7B8784AFF255 /* SessionModelTests.swift */; };
 		9881078085F354E1DF4C730D /* APIRequestAndErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FDEFE30B2D4D0197297B68 /* APIRequestAndErrorTests.swift */; };
+		A21F0011670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0010670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift */; };
+		A21F0021670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0020670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift */; };
+		A21F0031670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0030670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift */; };
+		A21F0071670D22288AA1101 /* ChatListFeatureBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0070670D22288AA1101 /* ChatListFeatureBranchCoverageTests.swift */; };
+		A21F0081670D22288AA1101 /* RebalanceFeatureBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0080670D22288AA1101 /* RebalanceFeatureBranchCoverageTests.swift */; };
+		A21F00A1670D35588AA1101 /* CalendarReducerBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F00A0670D35588AA1101 /* CalendarReducerBranchCoverageTests.swift */; };
+		A21F00B1670D35588AA1101 /* ChatThreadFeatureBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F00B0670D35588AA1101 /* ChatThreadFeatureBranchCoverageTests.swift */; };
+		A21F00D1670D4F188AA1101 /* CalendarReducerExtraCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F00D0670D4F188AA1101 /* CalendarReducerExtraCoverageTests.swift */; };
+		A21F00E1670D4F188AA1101 /* ChatThreadFeatureReducerExtraCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F00E0670D4F188AA1101 /* ChatThreadFeatureReducerExtraCoverageTests.swift */; };
+		A21F00F1670D6C588AA1101 /* HomeReducerBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F00F0670D6C588AA1101 /* HomeReducerBranchCoverageTests.swift */; };
+		A21F0111670D8D588AA1101 /* BatterySupportBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0110670D8D588AA1101 /* BatterySupportBranchCoverageTests.swift */; };
+		A21F0121670D8D588AA1101 /* HomeReducerExtraBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0120670D8D588AA1101 /* HomeReducerExtraBranchCoverageTests.swift */; };
+		A21F0131670D8D588AA1101 /* ChatThreadFeatureMismatchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0130670D8D588AA1101 /* ChatThreadFeatureMismatchCoverageTests.swift */; };
+		A21F0141670D8D588AA1101 /* AuthSubmissionVerificationNoopCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0140670D8D588AA1101 /* AuthSubmissionVerificationNoopCoverageTests.swift */; };
+		A21F0161670DB6088AA1101 /* AppFeatureCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0160670DB6088AA1101 /* AppFeatureCoordinatorTests.swift */; };
+		A21F0181670E3E088AA1101 /* LocalizationCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0180670E3E088AA1101 /* LocalizationCoverageTests.swift */; };
+		A21F01A1670E5B488AA1101 /* AuthSessionDirectCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01A0670E5B488AA1101 /* AuthSessionDirectCoverageTests.swift */; };
+		A21F01B1670E5B488AA1101 /* CalendarStateExtraCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01B0670E5B488AA1101 /* CalendarStateExtraCoverageTests.swift */; };
+		A21F01C1670E5B488AA1101 /* RebalanceSupportExtraCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01C0670E5B488AA1101 /* RebalanceSupportExtraCoverageTests.swift */; };
+		A21F01D1670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01D0670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift */; };
+		A21F01E1670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01E0670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift */; };
+		A21F01F1670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01F0670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift */; };
 		A1E5D9F1670C4B1188AA1101 /* ExpandedCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */; };
 		A1397BEA7019C34BE0955B8B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC37BEFFDEDF3CD16D025A10 /* Foundation.framework */; };
 		A18A7B03266B7E4896949A96 /* BranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */; };
@@ -61,6 +83,28 @@
 		83B17B461954363F70BC1D60 /* APIModelConverterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIModelConverterTests.swift; sourceTree = "<group>"; };
 		8496DB15551B05B69F73EC25 /* ChatThreadSupportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadSupportTests.swift; sourceTree = "<group>"; };
 		86E4A7F2B58707492C035938 /* HomeStateDerivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeStateDerivedTests.swift; sourceTree = "<group>"; };
+		A21F0010670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthInputAndSessionCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0020670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatSheetReducerAndPickerCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0030670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileFeatureBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0070670D22288AA1101 /* ChatListFeatureBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatListFeatureBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0080670D22288AA1101 /* RebalanceFeatureBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RebalanceFeatureBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F00A0670D35588AA1101 /* CalendarReducerBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarReducerBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F00B0670D35588AA1101 /* ChatThreadFeatureBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadFeatureBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F00D0670D4F188AA1101 /* CalendarReducerExtraCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarReducerExtraCoverageTests.swift; sourceTree = "<group>"; };
+		A21F00E0670D4F188AA1101 /* ChatThreadFeatureReducerExtraCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadFeatureReducerExtraCoverageTests.swift; sourceTree = "<group>"; };
+		A21F00F0670D6C588AA1101 /* HomeReducerBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeReducerBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0110670D8D588AA1101 /* BatterySupportBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BatterySupportBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0120670D8D588AA1101 /* HomeReducerExtraBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeReducerExtraBranchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0130670D8D588AA1101 /* ChatThreadFeatureMismatchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadFeatureMismatchCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0140670D8D588AA1101 /* AuthSubmissionVerificationNoopCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthSubmissionVerificationNoopCoverageTests.swift; sourceTree = "<group>"; };
+		A21F0160670DB6088AA1101 /* AppFeatureCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppFeatureCoordinatorTests.swift; sourceTree = "<group>"; };
+		A21F0180670E3E088AA1101 /* LocalizationCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalizationCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01A0670E5B488AA1101 /* AuthSessionDirectCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthSessionDirectCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01B0670E5B488AA1101 /* CalendarStateExtraCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CalendarStateExtraCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01C0670E5B488AA1101 /* RebalanceSupportExtraCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = RebalanceSupportExtraCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01D0670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthPasswordResetAndVerificationCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01E0670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeBatteryThresholdCoverageTests.swift; sourceTree = "<group>"; };
+		A21F01F0670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthVerificationPasswordResetEdgeCoverageTests.swift; sourceTree = "<group>"; };
 		A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExpandedCoverageTests.swift; sourceTree = "<group>"; };
 		9B8928AC138727B3C1D8706E /* Fixture+Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Fixture+Models.swift"; sourceTree = "<group>"; };
 		9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BranchCoverageTests.swift; sourceTree = "<group>"; };
@@ -123,9 +167,103 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
+		A21F0190670E3E088AA1101 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0180670E3E088AA1101 /* LocalizationCoverageTests.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		A21F0040670D0F0B88AA1101 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0010670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift */,
+				A21F01D0670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift */,
+				A21F01A0670E5B488AA1101 /* AuthSessionDirectCoverageTests.swift */,
+				A21F01F0670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift */,
+				A21F0140670D8D588AA1101 /* AuthSubmissionVerificationNoopCoverageTests.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
+		A21F0050670D0F0B88AA1101 /* ChatSheet */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0070670D22288AA1101 /* ChatListFeatureBranchCoverageTests.swift */,
+				A21F00B0670D35588AA1101 /* ChatThreadFeatureBranchCoverageTests.swift */,
+				A21F0130670D8D588AA1101 /* ChatThreadFeatureMismatchCoverageTests.swift */,
+				A21F00E0670D4F188AA1101 /* ChatThreadFeatureReducerExtraCoverageTests.swift */,
+				A21F0020670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift */,
+			);
+			path = ChatSheet;
+			sourceTree = "<group>";
+		};
+		A21F0060670D0F0B88AA1101 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0030670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+		A21F0090670D22288AA1101 /* Rebalance */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0080670D22288AA1101 /* RebalanceFeatureBranchCoverageTests.swift */,
+				A21F01C0670E5B488AA1101 /* RebalanceSupportExtraCoverageTests.swift */,
+			);
+			path = Rebalance;
+			sourceTree = "<group>";
+		};
+		A21F00C0670D35588AA1101 /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				A21F00A0670D35588AA1101 /* CalendarReducerBranchCoverageTests.swift */,
+				A21F00D0670D4F188AA1101 /* CalendarReducerExtraCoverageTests.swift */,
+				A21F01B0670E5B488AA1101 /* CalendarStateExtraCoverageTests.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		A21F0100670D6C588AA1101 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				A21F01E0670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift */,
+				A21F00F0670D6C588AA1101 /* HomeReducerBranchCoverageTests.swift */,
+				A21F0120670D8D588AA1101 /* HomeReducerExtraBranchCoverageTests.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		A21F0150670D8D588AA1101 /* Clients */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0110670D8D588AA1101 /* BatterySupportBranchCoverageTests.swift */,
+			);
+			path = Clients;
+			sourceTree = "<group>";
+		};
+		A21F0170670DB6088AA1101 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0160670DB6088AA1101 /* AppFeatureCoordinatorTests.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
 		A878770171B5B85D8E8E9559 /* SentinelTests */ = {
 			isa = PBXGroup;
 			children = (
+				A21F0170670DB6088AA1101 /* App */,
+				A21F0040670D0F0B88AA1101 /* Auth */,
+				A21F00C0670D35588AA1101 /* Calendar */,
+				A21F0050670D0F0B88AA1101 /* ChatSheet */,
+				A21F0150670D8D588AA1101 /* Clients */,
+				A21F0100670D6C588AA1101 /* Home */,
+				A21F0060670D0F0B88AA1101 /* Profile */,
+				A21F0090670D22288AA1101 /* Rebalance */,
+				A21F0190670E3E088AA1101 /* Shared */,
 				5A1CBCBBB7E319688270C682 /* Support */,
 				83B17B461954363F70BC1D60 /* APIModelConverterTests.swift */,
 				C0FDEFE30B2D4D0197297B68 /* APIRequestAndErrorTests.swift */,
@@ -301,9 +439,31 @@
 				6C5FD8812A0B380E94635324 /* APIModelConverterTests.swift in Sources */,
 				9881078085F354E1DF4C730D /* APIRequestAndErrorTests.swift in Sources */,
 				4AEECB3DF3373B249D293D00 /* AchievementAndAuthStateTests.swift in Sources */,
+				A21F0161670DB6088AA1101 /* AppFeatureCoordinatorTests.swift in Sources */,
 				26304D4298197A70C1D77A00 /* AppConfigurationAndSettingsTests.swift in Sources */,
+				A21F0011670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift in Sources */,
+				A21F01D1670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift in Sources */,
+				A21F01A1670E5B488AA1101 /* AuthSessionDirectCoverageTests.swift in Sources */,
+				A21F01F1670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift in Sources */,
+				A21F0141670D8D588AA1101 /* AuthSubmissionVerificationNoopCoverageTests.swift in Sources */,
+				A21F0111670D8D588AA1101 /* BatterySupportBranchCoverageTests.swift in Sources */,
+				A21F00A1670D35588AA1101 /* CalendarReducerBranchCoverageTests.swift in Sources */,
+				A21F00D1670D4F188AA1101 /* CalendarReducerExtraCoverageTests.swift in Sources */,
+				A21F01B1670E5B488AA1101 /* CalendarStateExtraCoverageTests.swift in Sources */,
 				CA05BA5C3E76D3ED2B5D1C15 /* ChatDomainModelTests.swift in Sources */,
+				A21F0071670D22288AA1101 /* ChatListFeatureBranchCoverageTests.swift in Sources */,
+				A21F00B1670D35588AA1101 /* ChatThreadFeatureBranchCoverageTests.swift in Sources */,
+				A21F0131670D8D588AA1101 /* ChatThreadFeatureMismatchCoverageTests.swift in Sources */,
+				A21F00E1670D4F188AA1101 /* ChatThreadFeatureReducerExtraCoverageTests.swift in Sources */,
+				A21F0021670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift in Sources */,
 				02139F792FDDB560116446A0 /* DTOCodingTests.swift in Sources */,
+				A21F01E1670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift in Sources */,
+				A21F00F1670D6C588AA1101 /* HomeReducerBranchCoverageTests.swift in Sources */,
+				A21F0121670D8D588AA1101 /* HomeReducerExtraBranchCoverageTests.swift in Sources */,
+				A21F0031670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift in Sources */,
+				A21F0081670D22288AA1101 /* RebalanceFeatureBranchCoverageTests.swift in Sources */,
+				A21F01C1670E5B488AA1101 /* RebalanceSupportExtraCoverageTests.swift in Sources */,
+				A21F0181670E3E088AA1101 /* LocalizationCoverageTests.swift in Sources */,
 				94C148F2ACE98BF8E47C760E /* SessionModelTests.swift in Sources */,
 				CB12729BFC55F56AFD0AA0B0 /* Fixture+Core.swift in Sources */,
 				2830722A875B572117C5C796 /* Fixture+Models.swift in Sources */,
