@@ -24,6 +24,12 @@
 		6C5FD8812A0B380E94635324 /* APIModelConverterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B17B461954363F70BC1D60 /* APIModelConverterTests.swift */; };
 		94C148F2ACE98BF8E47C760E /* SessionModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAD8E211650C7B8784AFF255 /* SessionModelTests.swift */; };
 		9881078085F354E1DF4C730D /* APIRequestAndErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0FDEFE30B2D4D0197297B68 /* APIRequestAndErrorTests.swift */; };
+		A1397BEA7019C34BE0955B8B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC37BEFFDEDF3CD16D025A10 /* Foundation.framework */; };
+		A18A7B03266B7E4896949A96 /* BranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */; };
+		A1B2C3D4E5F6012345678903 /* SentinelUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678902 /* SentinelUI */; };
+		A1B2C3D4E5F6012345678904 /* SentinelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678905 /* SentinelCore */; };
+		A1B2C3D4E5F6012345678906 /* SentinelPlatformiOS in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678907 /* SentinelPlatformiOS */; };
+		A1E5D9F1670C4B1188AA1101 /* ExpandedCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */; };
 		A21F0011670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0010670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift */; };
 		A21F0021670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0020670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift */; };
 		A21F0031670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F0030670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift */; };
@@ -46,12 +52,6 @@
 		A21F01D1670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01D0670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift */; };
 		A21F01E1670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01E0670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift */; };
 		A21F01F1670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21F01F0670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift */; };
-		A1E5D9F1670C4B1188AA1101 /* ExpandedCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */; };
-		A1397BEA7019C34BE0955B8B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FC37BEFFDEDF3CD16D025A10 /* Foundation.framework */; };
-		A18A7B03266B7E4896949A96 /* BranchCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */; };
-		A1B2C3D4E5F6012345678903 /* SentinelUI in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678902 /* SentinelUI */; };
-		A1B2C3D4E5F6012345678904 /* SentinelCore in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678905 /* SentinelCore */; };
-		A1B2C3D4E5F6012345678906 /* SentinelPlatformiOS in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F6012345678907 /* SentinelPlatformiOS */; };
 		BB377EB5836884F835CE5AB9 /* ComposableArchitecture in Frameworks */ = {isa = PBXBuildFile; productRef = A48611AB79F1B048159E4359 /* ComposableArchitecture */; };
 		CA05BA5C3E76D3ED2B5D1C15 /* ChatDomainModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BCAB68FE02BC621F2344D96 /* ChatDomainModelTests.swift */; };
 		CB12729BFC55F56AFD0AA0B0 /* Fixture+Core.swift in Sources */ = {isa = PBXBuildFile; fileRef = C43856AF6924CD847555EA53 /* Fixture+Core.swift */; };
@@ -83,6 +83,9 @@
 		83B17B461954363F70BC1D60 /* APIModelConverterTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = APIModelConverterTests.swift; sourceTree = "<group>"; };
 		8496DB15551B05B69F73EC25 /* ChatThreadSupportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadSupportTests.swift; sourceTree = "<group>"; };
 		86E4A7F2B58707492C035938 /* HomeStateDerivedTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeStateDerivedTests.swift; sourceTree = "<group>"; };
+		9B8928AC138727B3C1D8706E /* Fixture+Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Fixture+Models.swift"; sourceTree = "<group>"; };
+		9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BranchCoverageTests.swift; sourceTree = "<group>"; };
+		A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExpandedCoverageTests.swift; sourceTree = "<group>"; };
 		A21F0010670D0F0B88AA1101 /* AuthInputAndSessionCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthInputAndSessionCoverageTests.swift; sourceTree = "<group>"; };
 		A21F0020670D0F0B88AA1101 /* ChatSheetReducerAndPickerCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatSheetReducerAndPickerCoverageTests.swift; sourceTree = "<group>"; };
 		A21F0030670D0F0B88AA1101 /* ProfileFeatureBranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileFeatureBranchCoverageTests.swift; sourceTree = "<group>"; };
@@ -105,9 +108,6 @@
 		A21F01D0670E86A88AA1101 /* AuthPasswordResetAndVerificationCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthPasswordResetAndVerificationCoverageTests.swift; sourceTree = "<group>"; };
 		A21F01E0670EAA688AA1101 /* HomeBatteryThresholdCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = HomeBatteryThresholdCoverageTests.swift; sourceTree = "<group>"; };
 		A21F01F0670EAA688AA1101 /* AuthVerificationPasswordResetEdgeCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthVerificationPasswordResetEdgeCoverageTests.swift; sourceTree = "<group>"; };
-		A1E5D9F0670C4B1188AA1101 /* ExpandedCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExpandedCoverageTests.swift; sourceTree = "<group>"; };
-		9B8928AC138727B3C1D8706E /* Fixture+Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = "Fixture+Models.swift"; sourceTree = "<group>"; };
-		9CFDF72AA8F916A1D3F4D2CD /* BranchCoverageTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BranchCoverageTests.swift; sourceTree = "<group>"; };
 		AEC013A32E40E624DDEEA639 /* ChatThreadFeatureFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ChatThreadFeatureFlowTests.swift; sourceTree = "<group>"; };
 		AEC5947CEC5312D618D5ADB0 /* AuthReducerFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthReducerFlowTests.swift; sourceTree = "<group>"; };
 		AFDBAA088196E77FDF80B0B7 /* ReducerFlowTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ReducerFlowTests.swift; sourceTree = "<group>"; };
@@ -165,14 +165,6 @@
 				9B8928AC138727B3C1D8706E /* Fixture+Models.swift */,
 			);
 			path = Support;
-			sourceTree = "<group>";
-		};
-		A21F0190670E3E088AA1101 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				A21F0180670E3E088AA1101 /* LocalizationCoverageTests.swift */,
-			);
-			path = Shared;
 			sourceTree = "<group>";
 		};
 		A21F0040670D0F0B88AA1101 /* Auth */ = {
@@ -250,6 +242,14 @@
 				A21F0160670DB6088AA1101 /* AppFeatureCoordinatorTests.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		A21F0190670E3E088AA1101 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				A21F0180670E3E088AA1101 /* LocalizationCoverageTests.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		A878770171B5B85D8E8E9559 /* SentinelTests */ = {
@@ -401,7 +401,9 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				12A315C09E82B7EFA3401C0B /* XCRemoteSwiftPackageReference "swift-composable-architecture" */,
-				A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages" */,
+				A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages/SentinelUI" */,
+				A1B2C3D4E5F6012345678908 /* XCLocalSwiftPackageReference "Packages/SentinelCore" */,
+				A1B2C3D4E5F6012345678909 /* XCLocalSwiftPackageReference "Packages/SentinelPlatformiOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E8C537432F6E9DBA001637AB /* Products */;
@@ -798,9 +800,17 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages" */ = {
+		A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages/SentinelUI" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = Packages;
+			relativePath = Packages/SentinelUI;
+		};
+		A1B2C3D4E5F6012345678908 /* XCLocalSwiftPackageReference "Packages/SentinelCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SentinelCore;
+		};
+		A1B2C3D4E5F6012345678909 /* XCLocalSwiftPackageReference "Packages/SentinelPlatformiOS" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SentinelPlatformiOS;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -818,17 +828,17 @@
 /* Begin XCSwiftPackageProductDependency section */
 		A1B2C3D4E5F6012345678902 /* SentinelUI */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages" */;
+			package = A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages/SentinelUI" */;
 			productName = SentinelUI;
 		};
 		A1B2C3D4E5F6012345678905 /* SentinelCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages" */;
+			package = A1B2C3D4E5F6012345678908 /* XCLocalSwiftPackageReference "Packages/SentinelCore" */;
 			productName = SentinelCore;
 		};
 		A1B2C3D4E5F6012345678907 /* SentinelPlatformiOS */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = A1B2C3D4E5F6012345678901 /* XCLocalSwiftPackageReference "Packages" */;
+			package = A1B2C3D4E5F6012345678909 /* XCLocalSwiftPackageReference "Packages/SentinelPlatformiOS" */;
 			productName = SentinelPlatformiOS;
 		};
 		A48611AB79F1B048159E4359 /* ComposableArchitecture */ = {
