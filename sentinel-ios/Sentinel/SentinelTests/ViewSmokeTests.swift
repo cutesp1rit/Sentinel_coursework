@@ -79,6 +79,15 @@ struct ViewSmokeTests {
 
     @Test
     func achievementsCalendarProfileRebalanceAndChatBubbleViewsRender() {
+        render(
+            AuthFlowView(
+                onClose: {},
+                store: Store(initialState: AuthState()) {
+                    AuthReducer()
+                }
+            )
+        )
+
         let achievementGroups = [Fixture.achievementGroup()]
         let achievementsStore = Store(
             initialState: AchievementsState(

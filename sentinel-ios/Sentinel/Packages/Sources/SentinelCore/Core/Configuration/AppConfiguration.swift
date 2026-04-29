@@ -25,25 +25,29 @@ public enum AppConfiguration: Sendable {
         [
             .init(
                 kind: .privacyPolicy,
-                url: legalWebsiteBaseURL.appending(path: "privacy-policy")
+                url: legalWebsiteBaseURL.appending(path: "legal/privacy-policy/")
             ),
             .init(
                 kind: .termsOfUse,
-                url: legalWebsiteBaseURL.appending(path: "terms-of-use")
+                url: legalWebsiteBaseURL.appending(path: "legal/terms-of-use/")
             ),
             .init(
                 kind: .personalDataConsent,
-                url: legalWebsiteBaseURL.appending(path: "consent-to-personal-data-processing")
+                url: legalWebsiteBaseURL.appending(path: "legal/consent-to-personal-data-processing/")
             ),
             .init(
                 kind: .attachmentProcessingNotice,
-                url: legalWebsiteBaseURL.appending(path: "attachment-processing-notice")
+                url: legalWebsiteBaseURL.appending(path: "legal/attachment-processing-notice/")
             ),
             .init(
                 kind: .privacyChoicesAndAccountDeletion,
-                url: legalWebsiteBaseURL.appending(path: "privacy-choices-and-account-deletion")
+                url: legalWebsiteBaseURL.appending(path: "legal/privacy-choices-and-account-deletion/")
             )
         ]
+    }
+
+    public static func legalDocument(kind: LegalDocumentLink.Kind) -> LegalDocumentLink? {
+        legalDocuments.first { $0.kind == kind }
     }
 
     public static let jsonDecoder: JSONDecoder = {

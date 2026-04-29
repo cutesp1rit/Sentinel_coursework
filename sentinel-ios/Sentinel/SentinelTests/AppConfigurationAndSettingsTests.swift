@@ -60,6 +60,8 @@ struct AppConfigurationAndSettingsTests {
             .privacyChoicesAndAccountDeletion
         ])
         #expect(links.allSatisfy { $0.url.absoluteString.hasPrefix("https://sentinel-ai.tech/") })
+        #expect(AppConfiguration.legalDocument(kind: .privacyPolicy)?.url == links[0].url)
+        #expect(AppConfiguration.legalDocument(kind: .termsOfUse)?.url == links[1].url)
 
         let encoded = try AppConfiguration.jsonEncoder.encode(Fixture.session())
         let decoded = try AppConfiguration.jsonDecoder.decode(Session.self, from: encoded)

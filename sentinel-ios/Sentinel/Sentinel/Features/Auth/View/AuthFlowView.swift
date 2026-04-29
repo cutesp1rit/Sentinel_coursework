@@ -49,6 +49,7 @@ struct AuthFlowView: View {
                     topBar
                     header
                     formCard
+                    AuthLegalLinksView()
                 }
                 .padding(.horizontal, AppSpacing.large)
                 .padding(.top, AppSpacing.xLarge)
