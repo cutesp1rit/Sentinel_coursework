@@ -1,15 +1,14 @@
 import SwiftUI
-import SentinelCore
 
 #if os(iOS)
-let sentinelToolbarLeadingPlacement = ToolbarItemPlacement.topBarLeading
-let sentinelToolbarTrailingPlacement = ToolbarItemPlacement.topBarTrailing
+public nonisolated(unsafe) let sentinelToolbarLeadingPlacement = ToolbarItemPlacement.topBarLeading
+public nonisolated(unsafe) let sentinelToolbarTrailingPlacement = ToolbarItemPlacement.topBarTrailing
 #else
-let sentinelToolbarLeadingPlacement = ToolbarItemPlacement.automatic
-let sentinelToolbarTrailingPlacement = ToolbarItemPlacement.automatic
+public nonisolated(unsafe) let sentinelToolbarLeadingPlacement = ToolbarItemPlacement.automatic
+public nonisolated(unsafe) let sentinelToolbarTrailingPlacement = ToolbarItemPlacement.automatic
 #endif
 
-extension View {
+public extension View {
     @ViewBuilder
     func sentinelInlineNavigationTitle() -> some View {
         #if os(iOS)
