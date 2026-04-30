@@ -1,14 +1,13 @@
 :root {
-  --bg: #f5efe7;
-  --bg-alt: #efe4d1;
-  --surface: rgba(255, 255, 255, 0.92);
-  --surface-strong: #ffffff;
-  --text: #1d2430;
-  --muted: #5a6675;
-  --border: rgba(29, 36, 48, 0.12);
-  --accent: #b4532a;
-  --accent-soft: rgba(180, 83, 42, 0.1);
-  --shadow: 0 28px 80px rgba(29, 36, 48, 0.12);
+  --bg: #f7fafc;
+  --surface: #ffffff;
+  --surface-muted: #fbfdff;
+  --text: #142133;
+  --muted: #61758a;
+  --border: #d7e3ef;
+  --accent: #174f8a;
+  --accent-strong: #101820;
+  --shadow: 0 10px 30px rgba(20, 33, 51, 0.06);
 }
 
 * {
@@ -24,14 +23,12 @@ body {
   color: var(--text);
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   line-height: 1.65;
-  background:
-    radial-gradient(circle at top left, rgba(180, 83, 42, 0.16), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(28, 96, 145, 0.12), transparent 20%),
-    linear-gradient(160deg, var(--bg), var(--bg-alt));
+  background: var(--bg);
 }
 
 a {
   color: var(--accent);
+  text-decoration-color: rgba(23, 79, 138, 0.3);
 }
 
 .page {
@@ -42,7 +39,7 @@ a {
 
 .shell {
   border: 1px solid var(--border);
-  border-radius: 30px;
+  border-radius: 20px;
   background: var(--surface);
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -56,8 +53,7 @@ a {
   justify-content: space-between;
   padding: 18px 24px;
   border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(18px);
+  background: var(--surface);
 }
 
 .brand {
@@ -65,6 +61,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: var(--accent-strong);
 }
 
 .topnav {
@@ -77,11 +74,18 @@ a {
   display: inline-flex;
   padding: 8px 12px;
   border-radius: 999px;
-  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
   color: var(--accent);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.topnav a:hover {
+  background: #f1f7fd;
+  border-color: #bfd4e8;
 }
 
 .hero,
@@ -91,13 +95,14 @@ a {
 
 .hero {
   border-bottom: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .eyebrow {
   display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--accent-soft);
+  background: #eef5fb;
   color: var(--accent);
   font-size: 12px;
   font-weight: 700;
@@ -132,8 +137,8 @@ h1 {
 .summary {
   padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--surface-strong);
+  border-radius: 16px;
+  background: var(--surface-muted);
 }
 
 .meta-card strong,
@@ -161,14 +166,15 @@ h1 {
 .section {
   padding: 22px;
   border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface-strong);
+  border-radius: 18px;
+  background: var(--surface);
 }
 
 .section h2 {
   margin: 0 0 12px;
   font-size: 22px;
   line-height: 1.2;
+  color: var(--accent-strong);
 }
 
 .section p,
@@ -204,7 +210,7 @@ h1 {
   }
 
   .shell {
-    border-radius: 22px;
+    border-radius: 16px;
   }
 
   .topbar,
@@ -217,7 +223,7 @@ h1 {
 
   .section {
     padding: 18px;
-    border-radius: 20px;
+    border-radius: 14px;
   }
 
   .lead {
