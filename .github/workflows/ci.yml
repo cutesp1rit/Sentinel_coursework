@@ -88,7 +88,6 @@ jobs:
               region_name="us-east-1",
           )
           client.create_bucket(Bucket="sentinel-media")
-          client.put_bucket_acl(Bucket="sentinel-media", ACL="public-read")
           print("Bucket ready.")
           EOF
 
