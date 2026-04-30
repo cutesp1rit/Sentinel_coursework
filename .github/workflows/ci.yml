@@ -119,9 +119,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /app/sentinel-backend
-            git pull origin main
+            cd /app
+            git fetch origin main
+            git reset --hard origin/main
             cp -r /app/legal-site/. /var/www/legal-site/
+            cd /app/sentinel-backend
             docker compose -f docker-compose.prod.yml build app
             docker compose -f docker-compose.prod.yml up -d
             docker compose -f docker-compose.prod.yml exec -T app alembic upgrade head
