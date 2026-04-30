@@ -1,6 +1,7 @@
 import os
 import subprocess
 import uuid
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -41,6 +42,13 @@ def _run_migrations() -> None:
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     _run_migrations()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def mock_email_service():
+    with patch("app.core.services.email_service.FastMail") as mock_cls:
+        mock_cls.return_value.send_message = AsyncMock()
+        yield
 
 
 @pytest.fixture(scope="session")

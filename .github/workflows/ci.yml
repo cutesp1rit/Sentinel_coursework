@@ -96,6 +96,12 @@ jobs:
           cd sentinel-backend
           venv/bin/python -m pytest tests/unit -v
 
+      - name: Start app server for e2e tests
+        run: |
+          cd sentinel-backend
+          venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 3
+
       - name: Run integration tests
         run: |
           cd sentinel-backend
