@@ -64,6 +64,6 @@ class TestDecodeAccessToken:
         assert decode_access_token("") is None
 
     def test_sub_is_not_uuid_returns_none(self):
-        # Если кто-то выдаст токен с sub="admin" вместо UUID — должен отклоняться
+        # sub="admin" instead of a UUID must be rejected
         token = create_access_token({"sub": "admin"})
         assert decode_access_token(token) is None

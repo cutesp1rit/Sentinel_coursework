@@ -8,7 +8,6 @@ from app.core.services.llm_service import LLMService
 
 
 def svc() -> LLMService:
-    # client не используется в тестируемых методах
     return LLMService(client=None)
 
 
@@ -32,7 +31,7 @@ class TestParseDatetime:
         assert LLMService._parse_dt("") is None
 
     def test_partial_date_without_time(self):
-        # "2026-04-10" — не ISO datetime, но fromisoformat принимает
+        # "2026-04-10" is accepted by fromisoformat even without a time component
         result = LLMService._parse_dt("2026-04-10")
         assert result is not None
 
@@ -100,7 +99,7 @@ class TestBuildSystemPrompt:
     def test_prompt_contains_timezone(self):
         tz = ZoneInfo("Europe/Moscow")
         prompt = LLMService._build_system_prompt(tz, "Europe/Moscow")
-        assert "Europe/Moscow" in prompt
+        assert "UTC+03:00" in prompt
 
     def test_prompt_contains_utc_label(self):
         tz = ZoneInfo("UTC")

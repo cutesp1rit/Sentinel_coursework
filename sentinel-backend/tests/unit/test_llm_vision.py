@@ -44,7 +44,7 @@ class TestSystemPromptImageInstructions:
     def test_prompt_contains_timezone_label(self):
         tz = ZoneInfo("Europe/Moscow")
         prompt = LLMService._build_system_prompt(tz, "Europe/Moscow")
-        assert "Europe/Moscow" in prompt
+        assert "UTC+03:00" in prompt
 
 
 class TestVisionEnabledFlag:

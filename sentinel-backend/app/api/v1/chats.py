@@ -33,7 +33,6 @@ async def get_chats(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Список чатов текущего пользователя, отсортированных по последнему сообщению."""
     repo = ChatRepository(db)
     items = await repo.get_user_chats(current_user.id)
     return ChatList(items=items, total=len(items))
@@ -45,7 +44,6 @@ async def create_chat(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Создать новую чат-сессию."""
     repo = ChatRepository(db)
     return await repo.create(current_user.id, data)
 
@@ -53,19 +51,11 @@ async def create_chat(
 @router.get("/{chat_id}/messages", response_model=ChatMessageList)
 async def get_messages(
     chat_id: uuid.UUID,
-    limit: int = Query(100, ge=1, le=200, description="Количество сообщений"),
-    before: Optional[uuid.UUID] = Query(None, description="ID сообщения — вернуть сообщения старше него"),
+    limit: int = Query(100, ge=1, le=200),
+    before: Optional[uuid.UUID] = Query(None, description="Return messages older than this message ID"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    История сообщений чата. Сортировка: старые → новые.
-
-    - Без параметров — последние 100 сообщений.
-    - **before** — ID самого старого из уже загруженных сообщений;
-      вернёт следующую порцию ещё более старых (для подгрузки при скролле вверх).
-    - **has_more** — если True, есть ещё более старые сообщения.
-    """
     chat_repo = ChatRepository(db)
     chat = await chat_repo.get_by_id(chat_id, current_user.id)
     if not chat:
@@ -82,7 +72,6 @@ async def delete_chat(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Удалить чат вместе со всеми сообщениями."""
     repo = ChatRepository(db)
     deleted = await repo.delete(chat_id, current_user.id)
     if not deleted:
@@ -96,7 +85,6 @@ async def upload_chat_image(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Загрузить изображение для отправки в чат. Возвращает URL для последующей отправки в сообщении."""
     chat_repo = ChatRepository(db)
     if not await chat_repo.get_by_id(chat_id, current_user.id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Chat not found")
@@ -135,11 +123,6 @@ async def create_message(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Отправить сообщение в чат.
-
-    Если role == "user" — сохраняет сообщение, вызывает LLM и возвращает ответ ассистента.
-    """
     chat_repo = ChatRepository(db)
     chat = await chat_repo.get_by_id(chat_id, current_user.id)
     if not chat:
@@ -150,10 +133,9 @@ async def create_message(
     if data.role != "user":
         return await msg_repo.create(chat_id, data)
 
-    # Загружаем историю до сохранения нового сообщения
+    # load history before saving the new message so it's not included
     history = await msg_repo.get_recent_for_llm(chat_id, limit=settings.LLM_HISTORY_LIMIT)
 
-    # Если пришли изображения — упаковываем их в content_structured
     user_msg_data = data
     if data.images:
         user_msg_data = ChatMessageCreate(
@@ -187,6 +169,7 @@ async def create_message(
             user_timezone=current_user.timezone,
             event_repo=EventRepository(db),
             images=images_for_llm,
+            ai_instructions=current_user.ai_instructions,
         )
     except Exception:
         raise HTTPException(
@@ -212,13 +195,6 @@ async def apply_actions(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Применить выбранные действия из сообщения ассистента.
-
-    Принимает список индексов действий которые пользователь подтвердил.
-    Остальные помечаются как rejected. Применённые действия (create/update/delete)
-    выполняются над таблицей events.
-    """
     chat_repo = ChatRepository(db)
     chat = await chat_repo.get_by_id(chat_id, current_user.id)
     if not chat:

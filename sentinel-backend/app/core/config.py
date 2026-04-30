@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Sentinel API"
     VERSION: str = "1.0.0"
-    DESCRIPTION: str = "Интеллектуальный тайм-менеджер API"
+    DESCRIPTION: str = "Intelligent time management API"
     
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = ""
     S3_REGION: str = "auto"
     S3_ENDPOINT_URL: str = ""   # https://<account_id>.r2.cloudflarestorage.com
-    S3_PUBLIC_URL: str = ""     # https://pub-xxx.r2.dev  (public bucket URL, для браузера)
+    S3_PUBLIC_URL: str = ""     # https://pub-xxx.r2.dev (public CDN URL for browser access)
     
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),

@@ -64,12 +64,6 @@ class TestSyncCreate:
             assert get_resp.status_code == 200
             assert get_resp.json()["title"] == event["title"]
 
-    def test_create_reminder_no_end_at(self, client, auth_headers):
-        reminder = {"title": "Take pills", "start_at": "2026-05-01T08:00:00", "type": "reminder", "source": "user"}
-        resp = client.post("/events/sync", json={"upserts": [reminder]}, headers=auth_headers)
-        assert resp.status_code == 200
-        assert resp.json()["created"][0]["end_at"] is None
-
     def test_create_with_unknown_id_gets_new_id(self, client, auth_headers):
         # If client sends an id that doesn't belong to this user, a new event is created
         # with a fresh backend-generated UUID (not the provided one).

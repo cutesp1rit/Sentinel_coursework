@@ -24,17 +24,11 @@ router = APIRouter(prefix="/events", tags=["Events"])
 
 @router.get("/", response_model=EventList)
 async def get_events(
-    date_from: Optional[datetime] = Query(None, description="Начало диапазона (ISO-8601)"),
-    date_to: Optional[datetime] = Query(None, description="Конец диапазона (ISO-8601)"),
+    date_from: Optional[datetime] = Query(None),
+    date_to: Optional[datetime] = Query(None),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    Получить события пользователя.
-
-    - Без параметров — все предстоящие события (от текущего момента).
-    - **date_from** / **date_to** — произвольный диапазон по start_at события.
-    """
     if date_from and date_to and date_to <= date_from:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -9,7 +9,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8, description="Пароль (минимум 8 символов)")
+    password: str = Field(..., min_length=8)
     timezone: str = Field(default="UTC", max_length=50)
 
 
@@ -23,10 +23,17 @@ class User(UserBase):
     timezone: str
     locale: str
     is_verified: bool
+    ai_instructions: Optional[str] = None
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class UpdateProfileRequest(BaseModel):
+    timezone: Optional[str] = Field(None, max_length=50)
+    locale: Optional[str] = Field(None, max_length=10)
+    ai_instructions: Optional[str] = Field(None, max_length=500)
 
 
 class Token(BaseModel):

@@ -21,8 +21,6 @@ MSK = ZoneInfo("Europe/Moscow")
 UTC = timezone.utc
 
 
-# --- Helpers ---
-
 def _event(
     *,
     event_id: uuid.UUID | None = None,
@@ -61,8 +59,6 @@ def _svc(llm_response: dict | None = None) -> RebalanceService:
     return RebalanceService(client)
 
 
-# --- Tests for _events_to_llm_list ---
-
 class TestEventsToLlmList:
     def _svc(self):
         return RebalanceService(MagicMock())
@@ -89,8 +85,6 @@ class TestEventsToLlmList:
         result = self._svc()._events_to_llm_list([e], MSK)
         assert "end_at" not in result[0]
 
-
-# --- Tests for _build_workload_summary ---
 
 class TestBuildWorkloadSummary:
     def _call(self, events_json, days):
@@ -133,8 +127,6 @@ class TestBuildWorkloadSummary:
         assert "2026-04-26" in summary
 
 
-# --- Tests for _exclude_multiday ---
-
 class TestExcludeMultiday:
     def _call(self, events, days, tz=MSK):
         return RebalanceService._exclude_multiday(events, days, tz)
@@ -172,8 +164,6 @@ class TestExcludeMultiday:
         result = self._call([e], days)
         assert e in result
 
-
-# --- Tests for _validate_llm_events ---
 
 class TestValidateLlmEvents:
     def _svc(self):
@@ -243,8 +233,6 @@ class TestValidateLlmEvents:
         ]
         self._svc()._validate_llm_events(llm, {str(id1): e1, str(id2): e2})
 
-
-# --- Tests for _build_response ---
 
 class TestBuildResponse:
     def _svc(self):
@@ -324,8 +312,6 @@ class TestBuildResponse:
         result = self._svc()._build_response([e], llm_output, MSK)
         assert result.proposed[0].end_at is None
 
-
-# --- Tests for propose (full flow with mocked LLM) ---
 
 class TestPropose:
     def _make_request(self, dates=None, resource_battery=None):
@@ -507,8 +493,6 @@ class TestPropose:
         assert "30%" in prompt_text or "0.3" in prompt_text
 
 
-# --- Tests for _compute_day_ranges_utc ---
-
 class TestComputeDayRanges:
     def test_moscow_day_converted_to_utc(self):
         days = [RebalanceDay(date=date(2026, 4, 25))]
@@ -524,8 +508,6 @@ class TestComputeDayRanges:
         ranges = RebalanceService._compute_day_ranges_utc(days, MSK)
         assert len(ranges) == 2
 
-
-# --- Tests for _validate_apply_request ---
 
 class TestValidateApplyRequest:
     def _make_repo(self, events_by_id: dict):

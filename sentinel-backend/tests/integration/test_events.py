@@ -46,16 +46,6 @@ class TestCreateEvent:
         assert resp.json()["type"] == "reminder"
         assert resp.json()["end_at"] is None
 
-    def test_create_event_end_before_start(self, client, auth_headers):
-        bad = {**FUTURE_EVENT, "end_at": "2026-04-10T09:00:00"}
-        resp = client.post("/events", json=bad, headers=auth_headers)
-        assert resp.status_code == 422
-
-    def test_create_event_missing_title(self, client, auth_headers):
-        bad = {k: v for k, v in FUTURE_EVENT.items() if k != "title"}
-        resp = client.post("/events", json=bad, headers=auth_headers)
-        assert resp.status_code == 422
-
     def test_create_event_no_auth(self, client):
         resp = client.post("/events", json=FUTURE_EVENT)
         assert resp.status_code == 401

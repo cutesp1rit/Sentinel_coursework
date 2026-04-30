@@ -6,8 +6,6 @@ import uuid
 from app.core.schemas.event import EventCreate, EventUpdate
 
 
-# ─── Image attachments ────────────────────────────────────────────────────────
-
 class ImageAttachment(BaseModel):
     url: str
     filename: str
@@ -25,22 +23,18 @@ class UploadResponse(BaseModel):
     mime_type: str
 
 
-# ─── Structured content ───────────────────────────────────────────────────────
-
 class EventSnapshot(BaseModel):
-    """Снимок события на момент создания предложения (для update/delete)."""
     title: str
     start_at: datetime
     end_at: Optional[datetime] = None
 
 
 class EventAction(BaseModel):
-    """Одно предлагаемое действие над событием."""
     action: Literal["create", "update", "delete"]
-    event_id: Optional[uuid.UUID] = None   # обязателен для update/delete
-    payload: Optional[EventCreate | EventUpdate] = None  # данные для create/update
+    event_id: Optional[uuid.UUID] = None
+    payload: Optional[EventCreate | EventUpdate] = None
     status: Literal["pending", "accepted", "rejected"] = "pending"
-    event_snapshot: Optional[EventSnapshot] = None  # данные события для отображения
+    event_snapshot: Optional[EventSnapshot] = None
 
     @model_validator(mode="after")
     def check_fields(self) -> "EventAction":
@@ -54,12 +48,9 @@ class EventAction(BaseModel):
 
 
 class EventActionsContent(BaseModel):
-    """content_structured сообщения ассистента с предложениями действий."""
     type: Literal["event_actions"] = "event_actions"
     actions: list[EventAction]
 
-
-# ─── Chat ─────────────────────────────────────────────────────────────────────
 
 class ChatCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -82,8 +73,6 @@ class ChatList(BaseModel):
     total: int
 
 
-# ─── Chat messages ────────────────────────────────────────────────────────────
-
 StructuredContent = Annotated[
     Union[EventActionsContent, ImageMessageContent],
     Field(discriminator="type"),
@@ -94,7 +83,7 @@ class ChatMessageCreate(BaseModel):
     role: Literal["user", "assistant", "tool", "system"]
     content_text: Optional[str] = None
     content_structured: Optional[StructuredContent] = None
-    images: Optional[list[ImageAttachment]] = None  # для user-сообщений с картинками
+    images: Optional[list[ImageAttachment]] = None
     ai_model: Optional[str] = None
 
 
@@ -103,7 +92,7 @@ class ChatMessage(BaseModel):
     chat_id: uuid.UUID
     role: str
     content_text: Optional[str]
-    content_structured: Optional[dict[str, Any]]  # читаем как dict из JSONB
+    content_structured: Optional[dict[str, Any]]
     ai_model: Optional[str]
     created_at: datetime
 
@@ -112,12 +101,9 @@ class ChatMessage(BaseModel):
 
 
 class ChatMessageList(BaseModel):
-    items: list[ChatMessage]  # отсортированы от старых к новым
-    has_more: bool            # есть ли более старые сообщения (для подгрузки)
+    items: list[ChatMessage]  # oldest to newest
+    has_more: bool            # True if older messages exist
 
-
-# ─── Apply actions ────────────────────────────────────────────────────────────
 
 class ApplyActionsRequest(BaseModel):
-    """Индексы действий из списка, которые пользователь хочет применить."""
     accepted_indices: list[int]

@@ -4,32 +4,28 @@ from typing import Optional
 import uuid
 
 from app.infrastructure.database.models import User
-from app.core.schemas.user import UserCreate
+from app.core.schemas.user import UserCreate, UpdateProfileRequest
 from app.core.security import get_password_hash
 
 
 class UserRepository:
-    """Репозиторий для работы с пользователями"""
-    
+
     def __init__(self, db: AsyncSession):
         self.db = db
-    
+
     async def get_by_id(self, user_id: uuid.UUID) -> Optional[User]:
-        """Получить пользователя по ID"""
         result = await self.db.execute(
             select(User).where(User.id == user_id)
         )
         return result.scalar_one_or_none()
-    
+
     async def get_by_email(self, email: str) -> Optional[User]:
-        """Получить пользователя по email"""
         result = await self.db.execute(
             select(User).where(User.email == email)
         )
         return result.scalar_one_or_none()
-    
+
     async def create(self, user_data: UserCreate) -> User:
-        """Создать нового пользователя"""
         user = User(
             email=user_data.email,
             password_hash=get_password_hash(user_data.password),
@@ -64,6 +60,16 @@ class UserRepository:
         await self.db.execute(
             update(User).where(User.id == user_id).values(password_hash=password_hash)
         )
+
+    async def update_profile(self, user_id: uuid.UUID, data: UpdateProfileRequest) -> Optional[User]:
+        user = await self.get_by_id(user_id)
+        if not user:
+            return None
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(user, field, value)
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
 
     async def delete(self, user: User) -> None:
         await self.db.delete(user)

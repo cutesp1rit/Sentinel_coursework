@@ -39,7 +39,6 @@ class TestIdempotencyKey:
         r2 = client.post("/events/", json=EVENT_PAYLOAD, headers=user["headers"])
         assert r1.status_code == 201
         assert r2.status_code == 201
-        # без ключа — два разных события
         assert r1.json()["id"] != r2.json()["id"]
 
     def test_same_key_returns_same_event(self, client):
@@ -79,7 +78,6 @@ class TestIdempotencyKey:
 
         assert r1.status_code == 201
         assert r2.status_code == 201
-        # один и тот же ключ, но разные пользователи — должно быть разные события
         assert r1.json()["id"] != r2.json()["id"]
 
     def test_repeated_request_returns_original_data(self, client):
@@ -95,8 +93,8 @@ class TestIdempotencyKey:
         assert r1.json()["id"] == r2.json()["id"]
 
     def test_key_isolation_after_event_deleted(self, client):
-        """После удаления события idempotency-запись тоже удаляется (CASCADE).
-        Повторный запрос с тем же ключом создаёт новое событие."""
+        # The idempotency record is deleted via CASCADE when the event is deleted,
+        # so the same key creates a new event on the next request.
         user = make_user(client)
         key = str(uuid.uuid4())
         headers = {**user["headers"], "X-Idempotency-Key": key}
@@ -110,5 +108,4 @@ class TestIdempotencyKey:
 
         r2 = client.post("/events/", json=EVENT_PAYLOAD, headers=headers)
         assert r2.status_code == 201
-        # idempotency-запись удалилась вместе с событием — создаётся новое
         assert r2.json()["id"] != event_id

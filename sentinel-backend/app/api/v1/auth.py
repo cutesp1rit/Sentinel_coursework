@@ -12,6 +12,7 @@ from app.core.schemas.user import (
     ResendVerificationRequest,
     ResetPasswordRequest,
     Token,
+    UpdateProfileRequest,
     User,
     UserCreate,
     UserLogin,
@@ -185,6 +186,16 @@ async def reset_password(
 @router.get("/me", response_model=User)
 async def get_me(current_user: UserModel = Depends(get_current_user)):
     return current_user
+
+
+@router.patch("/me", response_model=User)
+async def update_me(
+    data: UpdateProfileRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user_repo = UserRepository(db)
+    return await user_repo.update_profile(current_user.id, data)
 
 
 @router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)

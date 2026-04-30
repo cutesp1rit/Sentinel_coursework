@@ -84,6 +84,54 @@ class TestProtectedEndpoints:
         assert resp.status_code == 401
 
 
+class TestVerifyEmail:
+    def test_invalid_token_returns_400(self, client):
+        resp = client.post("/auth/verify-email", json={"token": "invalid_token_xyz"})
+        assert resp.status_code == 400
+
+    def test_missing_token_returns_422(self, client):
+        resp = client.post("/auth/verify-email", json={})
+        assert resp.status_code == 422
+
+
+class TestResendVerification:
+    def test_unknown_email_returns_200(self, client):
+        resp = client.post("/auth/resend-verification", json={"email": "nobody@example.com"})
+        assert resp.status_code == 200
+
+    def test_already_verified_user_returns_400(self, client, registered_user):
+        resp = client.post("/auth/resend-verification", json={"email": registered_user["email"]})
+        assert resp.status_code == 400
+
+    def test_missing_email_returns_422(self, client):
+        resp = client.post("/auth/resend-verification", json={})
+        assert resp.status_code == 422
+
+
+class TestForgotPassword:
+    def test_known_email_returns_200(self, client, registered_user):
+        resp = client.post("/auth/forgot-password", json={"email": registered_user["email"]})
+        assert resp.status_code == 200
+
+    def test_unknown_email_returns_200(self, client):
+        resp = client.post("/auth/forgot-password", json={"email": "nobody@example.com"})
+        assert resp.status_code == 200
+
+    def test_missing_email_returns_422(self, client):
+        resp = client.post("/auth/forgot-password", json={})
+        assert resp.status_code == 422
+
+
+class TestResetPassword:
+    def test_invalid_token_returns_400(self, client):
+        resp = client.post("/auth/reset-password", json={"token": "bad_token", "new_password": "NewPass1!"})
+        assert resp.status_code == 400
+
+    def test_missing_fields_returns_422(self, client):
+        resp = client.post("/auth/reset-password", json={"token": "only_token"})
+        assert resp.status_code == 422
+
+
 class TestDeleteAccount:
     def _create_and_login(self, client) -> tuple[str, dict]:
         """Register a fresh user and return (password, auth_headers)."""

@@ -22,12 +22,10 @@ class TestEventCreateValidation:
             EventCreate(title="Meeting", start_at=END, end_at=START)
 
     def test_end_equals_start_rejected(self):
-        # Нулевая длительность — не событие
         with pytest.raises(ValidationError):
             EventCreate(title="Meeting", start_at=START, end_at=START)
 
     def test_no_end_at_allowed(self):
-        # Напоминание без end_at — валидно
         e = EventCreate(title="Take pills", start_at=START)
         assert e.end_at is None
 
@@ -50,7 +48,6 @@ class TestEventCreateValidation:
 
 class TestEventUpdateValidation:
     def test_fully_empty_update_allowed(self):
-        # Патч без полей — валидный (exclude_unset в репозитории ничего не обновит)
         u = EventUpdate()
         assert u.title is None
 
@@ -63,9 +60,8 @@ class TestEventUpdateValidation:
             EventUpdate(title="")
 
     def test_end_before_start_in_update_not_caught(self):
-        # EventUpdate не знает текущий start_at события — валидатор отсутствует намеренно.
-        # Проверка должна происходить на уровне сервиса/репозитория.
-        # Этот тест документирует текущее поведение.
+        # EventUpdate doesn't know the current start_at — validation is intentionally absent here.
+        # Cross-field checks happen at the service/repository layer.
         u = EventUpdate(end_at=datetime(2020, 1, 1, tzinfo=timezone.utc))
         assert u.end_at is not None
 

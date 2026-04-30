@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 import uuid
 
 from app.infrastructure.database.models.chat import Chat, ChatMessage
-from app.core.config import settings
 from app.core.schemas.chat import ChatCreate, ChatMessageCreate
 
 
@@ -56,16 +55,12 @@ class ChatMessageRepository:
         before: Optional[uuid.UUID] = None,
     ) -> tuple[List[ChatMessage], bool]:
         """
-        Cursor-based пагинация сообщений чата.
-
-        Возвращает (messages, has_more):
-        - messages: список сообщений от старых к новым
-        - has_more: True если есть ещё более старые сообщения
+        Cursor-based pagination. Returns (messages, has_more).
+        messages are sorted oldest to newest; has_more indicates older pages exist.
         """
         query = select(ChatMessage).where(ChatMessage.chat_id == chat_id)
 
         if before is not None:
-            # Находим created_at курсорного сообщения и берём всё старше него
             ref = await self.db.execute(
                 select(ChatMessage.created_at).where(ChatMessage.id == before)
             )
@@ -73,7 +68,7 @@ class ChatMessageRepository:
             if ref_ts is not None:
                 query = query.where(ChatMessage.created_at < ref_ts)
 
-        # Запрашиваем limit+1 чтобы понять есть ли ещё сообщения
+        # fetch limit+1 to detect if more messages exist
         query = query.order_by(ChatMessage.created_at.desc()).limit(limit + 1)
         result = await self.db.execute(query)
         rows = list(result.scalars().all())
@@ -82,7 +77,6 @@ class ChatMessageRepository:
         if has_more:
             rows = rows[:limit]
 
-        # Разворачиваем в хронологический порядок (старые → новые)
         rows.reverse()
         return rows, has_more
 
@@ -96,7 +90,7 @@ class ChatMessageRepository:
         return result.scalar_one_or_none()
 
     async def create(self, chat_id: uuid.UUID, data: ChatMessageCreate) -> ChatMessage:
-        # Сериализуем Pydantic-объект в dict для JSONB
+        # serialize to dict for JSONB storage
         structured = (
             data.content_structured.model_dump(mode="json", exclude_none=True)
             if data.content_structured is not None
@@ -111,7 +105,6 @@ class ChatMessageRepository:
         )
         self.db.add(message)
 
-        # Обновляем last_message_at у чата
         chat_result = await self.db.execute(select(Chat).where(Chat.id == chat_id))
         chat = chat_result.scalar_one_or_none()
         if chat:
@@ -122,11 +115,7 @@ class ChatMessageRepository:
         return message
 
     async def get_recent_for_llm(self, chat_id: uuid.UUID, limit: int) -> list[dict]:
-        """Последние N сообщений чата в формате для передачи в LLM.
-
-        Для сообщений с изображениями реконструирует multimodal content array
-        вместо простой текстовой строки.
-        """
+        """Return the last N messages formatted for the LLM. Image messages are expanded to multimodal content arrays."""
         result = await self.db.execute(
             select(ChatMessage)
             .where(ChatMessage.chat_id == chat_id)
@@ -144,18 +133,51 @@ class ChatMessageRepository:
                 and m.content_structured
                 and m.content_structured.get("type") == "image_message"
             ):
-                if settings.LLM_VISION_ENABLED:
-                    content: list[dict] = []
-                    if m.content_text:
-                        content.append({"type": "text", "text": m.content_text})
-                    for img in m.content_structured.get("images", []):
-                        content.append({"type": "image_url", "image_url": {"url": img["url"]}})
-                    history.append({"role": "user", "content": content})
-                else:
-                    history.append({
-                        "role": "user",
-                        "content": m.content_text or "User sent an image attachment.",
-                    })
+                content: list[dict] = []
+                if m.content_text:
+                    content.append({"type": "text", "text": m.content_text})
+                for img in m.content_structured.get("images", []):
+                    content.append({"type": "image_url", "image_url": {"url": img["url"]}})
+                history.append({"role": "user", "content": content})
+            elif (
+                m.role == "assistant"
+                and m.content_structured
+                and m.content_structured.get("type") == "event_actions"
+            ):
+                # Convert actions to plain statements so the LLM understands outcomes
+                # without treating them as open proposals.
+                parts = [m.content_text] if m.content_text else []
+                actions = m.content_structured.get("actions", [])
+                for a in actions:
+                    status = a.get("status", "pending")
+                    op = a["action"]
+                    if op == "create":
+                        payload = a.get("payload", {})
+                        title = payload.get("title", "?")
+                        start = payload.get("start_at", "?")
+                        if status == "accepted":
+                            parts.append(f"'{title}' at {start} was saved to the calendar.")
+                        elif status == "rejected":
+                            parts.append(f"'{title}' at {start} was proposed but the user declined it.")
+                        else:
+                            parts.append(f"'{title}' at {start} was proposed, awaiting user confirmation.")
+                    elif op == "update":
+                        eid = a.get("event_id", "?")
+                        if status == "accepted":
+                            parts.append(f"Event {eid} was updated and saved.")
+                        elif status == "rejected":
+                            parts.append(f"Update for event {eid} was proposed but the user declined it.")
+                        else:
+                            parts.append(f"Update for event {eid} was proposed, awaiting user confirmation.")
+                    elif op == "delete":
+                        eid = a.get("event_id", "?")
+                        if status == "accepted":
+                            parts.append(f"Event {eid} was deleted.")
+                        elif status == "rejected":
+                            parts.append(f"Deletion of event {eid} was proposed but the user declined it.")
+                        else:
+                            parts.append(f"Deletion of event {eid} was proposed, awaiting user confirmation.")
+                history.append({"role": "assistant", "content": "\n".join(parts)})
             else:
                 history.append({"role": m.role, "content": m.content_text or ""})
 
@@ -167,7 +189,7 @@ class ChatMessageRepository:
         chat_id: uuid.UUID,
         content_structured: dict,
     ) -> Optional[ChatMessage]:
-        """Обновить content_structured сообщения (статусы действий после apply)."""
+        """Update content_structured of a message (action statuses after apply)."""
         message = await self.get_by_id(message_id, chat_id)
         if not message:
             return None

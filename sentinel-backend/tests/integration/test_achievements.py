@@ -1,8 +1,5 @@
 import uuid
 import pytest
-import httpx
-
-BASE_URL = "http://localhost:8000/api/v1"
 
 EVENT = {
     "title": "Test event",
@@ -26,19 +23,13 @@ REMINDER = {
 }
 
 
-def make_user(client: httpx.Client) -> dict:
+def make_user(client) -> dict:
     email = f"ach_{uuid.uuid4().hex[:10]}@test.com"
     password = "TestPass1!"
     client.post("/auth/register", json={"email": email, "password": password})
     resp = client.post("/auth/login", json={"email": email, "password": password})
     token = resp.json()["access_token"]
     return {"headers": {"Authorization": f"Bearer {token}"}}
-
-
-@pytest.fixture(scope="module")
-def client():
-    with httpx.Client(base_url=BASE_URL, timeout=30, follow_redirects=True) as c:
-        yield c
 
 
 def get_group(data: dict, group_code: str) -> dict | None:
@@ -50,7 +41,6 @@ def get_level(group: dict, level: int) -> dict | None:
 
 
 class TestAchievementsStructure:
-    """Проверяем корректность формата ответа."""
 
     def test_returns_groups(self, client):
         user = make_user(client)
@@ -88,8 +78,6 @@ class TestAchievementsStructure:
 
 
 class TestCounterIncrements:
-    """Проверяем что счётчики правильно обновляются."""
-
     def test_user_event_increments_total_events(self, client):
         user = make_user(client)
         client.post("/events/", json=EVENT, headers=user["headers"])
@@ -98,7 +86,6 @@ class TestCounterIncrements:
         assert group["current_value"] == 1
 
     def test_ai_event_increments_total_events(self, client):
-        """AI-событие должно учитываться в total_events."""
         user = make_user(client)
         client.post("/events/", json=AI_EVENT, headers=user["headers"])
         resp = client.get("/achievements/", headers=user["headers"])
@@ -145,7 +132,6 @@ class TestCounterIncrements:
 
 
 class TestCounterDecrements:
-    """Проверяем что удаление событий корректно обновляет счётчики."""
 
     def test_delete_decrements_total_events(self, client):
         user = make_user(client)
@@ -170,12 +156,11 @@ class TestCounterDecrements:
         assert group["current_value"] == 0
 
     def test_counter_never_goes_negative(self, client):
-        """Удаление при нулевом счётчике не должно давать отрицательное значение."""
         user = make_user(client)
         r = client.post("/events/", json=EVENT, headers=user["headers"])
         event_id = r.json()["id"]
         client.delete(f"/events/{event_id}", headers=user["headers"])
-        # Второе удаление того же события — 404, счётчик не должен уйти в минус
+        # second delete returns 404; counter must not go below zero
         client.delete(f"/events/{event_id}", headers=user["headers"])
 
         resp = client.get("/achievements/", headers=user["headers"])
@@ -184,7 +169,6 @@ class TestCounterDecrements:
 
 
 class TestActiveDays:
-    """Проверяем логику подсчёта уникальных дней."""
 
     def test_two_events_same_day_count_as_one(self, client):
         user = make_user(client)
@@ -222,7 +206,6 @@ class TestActiveDays:
 
 
 class TestAchievementUnlocking:
-    """Проверяем логику выдачи достижений."""
 
     def test_first_event_unlocks_level_1(self, client):
         user = make_user(client)
@@ -244,7 +227,6 @@ class TestAchievementUnlocking:
         assert level2["unlocked"] is False
 
     def test_achievement_not_awarded_twice(self, client):
-        """Создание ещё одного события не должно дублировать первый уровень."""
         user = make_user(client)
         ev1 = {**EVENT, "start_at": "2026-09-01T10:00:00+00:00", "end_at": "2026-09-01T11:00:00+00:00"}
         ev2 = {**EVENT, "start_at": "2026-09-02T10:00:00+00:00", "end_at": "2026-09-02T11:00:00+00:00"}
@@ -277,7 +259,6 @@ class TestAchievementUnlocking:
 
 
 class TestUserIsolation:
-    """Достижения и счётчики не должны пересекаться между пользователями."""
 
     def test_events_of_user_a_not_visible_to_user_b(self, client):
         user_a = make_user(client)

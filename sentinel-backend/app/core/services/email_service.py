@@ -22,23 +22,23 @@ async def send_verification_email(email: str, token: str) -> None:
     verify_url = f"{settings.FRONTEND_URL}?verify_token={token}"
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2>Подтвердите вашу почту</h2>
-        <p>Для завершения регистрации в Sentinel нажмите кнопку ниже:</p>
+        <h2>Confirm your email</h2>
+        <p>Click the button below to complete your Sentinel registration:</p>
         <p>
             <a href="{verify_url}"
                style="display:inline-block;padding:12px 24px;background:#000;color:#fff;
                       text-decoration:none;border-radius:6px;">
-                Подтвердить почту
+                Confirm email
             </a>
         </p>
         <p style="color:#666;font-size:13px;">
-            Ссылка действительна 24 часа.<br>
-            Если вы не регистрировались в Sentinel — просто проигнорируйте это письмо.
+            This link is valid for 24 hours.<br>
+            If you did not register with Sentinel, you can safely ignore this email.
         </p>
     </div>
     """
     message = MessageSchema(
-        subject="Подтвердите вашу почту — Sentinel",
+        subject="Confirm your email — Sentinel",
         recipients=[email],
         body=html,
         subtype=MessageType.html,
@@ -50,23 +50,23 @@ async def send_password_reset_email(email: str, token: str) -> None:
     reset_url = f"{settings.FRONTEND_URL}?reset_token={token}"
     html = f"""
     <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2>Сброс пароля</h2>
-        <p>Вы запросили сброс пароля для вашего аккаунта Sentinel.</p>
+        <h2>Reset your password</h2>
+        <p>You requested a password reset for your Sentinel account.</p>
         <p>
             <a href="{reset_url}"
                style="display:inline-block;padding:12px 24px;background:#000;color:#fff;
                       text-decoration:none;border-radius:6px;">
-                Сбросить пароль
+                Reset password
             </a>
         </p>
         <p style="color:#666;font-size:13px;">
-            Ссылка действительна 1 час.<br>
-            Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.
+            This link is valid for 1 hour.<br>
+            If you did not request a password reset, you can safely ignore this email.
         </p>
     </div>
     """
     message = MessageSchema(
-        subject="Сброс пароля — Sentinel",
+        subject="Reset your password — Sentinel",
         recipients=[email],
         body=html,
         subtype=MessageType.html,

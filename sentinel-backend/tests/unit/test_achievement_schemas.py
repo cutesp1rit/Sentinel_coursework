@@ -134,7 +134,6 @@ class TestAchievementsResponseSchema:
 
 
 class TestProgressLogic:
-    """Проверяем что данные в схемах позволяют корректно вычислить прогресс."""
 
     def test_progress_can_be_derived_from_current_and_target(self):
         level2 = AchievementLevel(**make_level(level=2, target_value=10, unlocked=False))

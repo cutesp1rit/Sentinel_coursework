@@ -5,7 +5,6 @@ from alembic import context
 import os
 import sys
 
-# Добавляем корневую директорию проекта в путь
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.config import settings
@@ -16,7 +15,6 @@ from app.infrastructure.database.models import User, Event, Chat, ChatMessage  #
 # access to the values within the .ini file in use.
 config = context.config
 
-# Устанавливаем URL базы данных из настроек
 config.set_main_option("sqlalchemy.url", settings.DATABASE_SYNC_URL)
 
 # Interpret the config file for Python logging.

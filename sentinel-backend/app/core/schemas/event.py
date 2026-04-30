@@ -8,7 +8,7 @@ class EventBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     description: Optional[str] = None
     start_at: datetime = Field(..., description="ISO-8601")
-    end_at: Optional[datetime] = Field(None, description="NULL для напоминаний")
+    end_at: Optional[datetime] = Field(None, description="NULL for reminders")
     all_day: bool = False
     type: Literal["event", "reminder"] = "event"
     location: Optional[str] = Field(None, max_length=255)

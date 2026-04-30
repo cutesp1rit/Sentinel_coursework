@@ -25,7 +25,6 @@ class EventRepository:
         start_from: Optional[datetime] = None,
         start_to: Optional[datetime] = None,
     ) -> List[Event]:
-        """Поиск событий по диапазону дат."""
         query = select(Event).where(Event.user_id == user_id)
 
         if start_from is not None:
