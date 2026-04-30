@@ -3,9 +3,7 @@
     assert(cfg.project != none)
     assert(cfg.project.code != none)
     assert(cfg.project.name != none)
-    assert(cfg.student != none)
-    assert(cfg.student.name != none)
-    assert(cfg.student.group != none)
+    assert(cfg.students != none)
     assert(cfg.agreed_by.name != none)
     assert(cfg.agreed_by.position != none)
     assert(cfg.approved_by.name != none)
@@ -99,13 +97,17 @@
         let student_info = align(right)[
             #set par(spacing: 1em)
 
-            Исполнитель:
+            Исполнители:
 
-            Студент группы #cfg.student.group
+            #cfg.students.map(
+              student => [
+                Студент группы #student.group
 
-            #un(13) / #cfg.student.name /
+                #un(13) / #student.name /
 
-            "#un(3)" #un(15) #cfg.year г.
+                "#un(3)" #un(15) #cfg.year г.
+              ]
+            ).join[#linebreak() #linebreak()]
         ]
 
         let bottom_banner = [
