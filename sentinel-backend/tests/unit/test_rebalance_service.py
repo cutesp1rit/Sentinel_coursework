@@ -296,7 +296,7 @@ class TestBuildResponse:
         eid = uuid.uuid4()
         e = _event(event_id=eid, start_at=datetime(2026, 4, 25, 10, tzinfo=UTC))
         llm_output = {
-            "events": [{"id": str(eid), "start_at": "2026-04-25T13:00:00+03:00"}],
+            "events": [{"id": str(eid), "start_at": "2026-04-25T14:00:00+03:00"}],
             "summary": "Перенёс тяжёлые задачи на утро",
         }
         result = self._svc()._build_response([e], llm_output, MSK)
