@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: sentinel_test
+          POSTGRES_USER: sentinel_user
+          POSTGRES_PASSWORD: sentinel_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+asyncpg://sentinel_user:sentinel_password@localhost:5432/sentinel_test
+      DATABASE_SYNC_URL: postgresql://sentinel_user:sentinel_password@localhost:5432/sentinel_test
+      SECRET_KEY: ci-test-secret-key
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      BACKEND_CORS_ORIGINS: '["http://localhost:3000"]'
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_MODEL: openai/gpt-4.1-nano
+      LLM_BASE_URL: https://openrouter.ai/api/v1
+      LLM_HISTORY_LIMIT: 20
+      LLM_VISION_ENABLED: "false"
+      SMTP_HOST: localhost
+      SMTP_PORT: 587
+      SMTP_USER: test
+      SMTP_PASSWORD: test
+      EMAILS_FROM: noreply@sentinel-ai.tech
+      EMAILS_FROM_NAME: Sentinel
+      FRONTEND_URL: http://localhost:3000
+      REQUIRE_EMAIL_VERIFICATION: "false"
+      S3_BUCKET_NAME: sentinel-media
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_PUBLIC_URL: http://localhost:9000/sentinel-media
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies into venv
+        run: |
+          python -m venv sentinel-backend/venv
+          sentinel-backend/venv/bin/pip install --upgrade pip
+          sentinel-backend/venv/bin/pip install -r sentinel-backend/requirements.txt
+
+      - name: Start MinIO
+        run: |
+          docker run -d -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio server /data
+          sleep 5
+
+      - name: Create MinIO bucket
+        run: |
+          sentinel-backend/venv/bin/python - <<'EOF'
+          import boto3
+          client = boto3.client(
+              "s3",
+              endpoint_url="http://localhost:9000",
+              aws_access_key_id="minioadmin",
+              aws_secret_access_key="minioadmin",
+              region_name="us-east-1",
+          )
+          client.create_bucket(Bucket="sentinel-media")
+          client.put_bucket_acl(Bucket="sentinel-media", ACL="public-read")
+          print("Bucket ready.")
+          EOF
+
+      - name: Run unit tests
+        run: |
+          cd sentinel-backend
+          venv/bin/python -m pytest tests/unit -v
+
+      - name: Run integration tests
+        run: |
+          cd sentinel-backend
+          venv/bin/python -m pytest tests/integration -v
